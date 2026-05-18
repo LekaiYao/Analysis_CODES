@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-cd /eos/user/h/hmarques/Analysis_CODES/selectionER
+cd /eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost
 source .envs/xgb_train/bin/activate
 
 SAMPLE="${1:?Usage: run_optuna_PbPb.sh SAMPLE RUN_ID}"

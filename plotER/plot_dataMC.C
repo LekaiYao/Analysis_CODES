@@ -32,15 +32,15 @@ TString getPlotParticleLabel(TString treeName){
     return treeName;
 }
 
-void plot_dataMC(TString TREE ="ntmix_X3872", TString systemNAME = "PbPb")
+void plot_dataMC(TString TREE ="ntmix_X3872", TString systemNAME = "PbPb23")
 {
     gSystem->Exec("mkdir -p ./presel_STUDY_vars/");
 
     //VARIABLES
     //VARIABLES
     //VARIABLES
-    const char * variables[] = {"Bmass", "abs(BLxy)",  "BsvpvDistance_2D",  "abs(By)",  "BtktkvProb",    "Bpt",     "BQvalue",   "Bcos_dtheta", "BtrkPtimb", "Bchi2Prob", "Btrk2dR", "Btrk1dR", "Btrk1Pt", "Btrk2Pt", "Bnorm_svpvDistance_2D", "xgb_score" };
-    const double ranges[][2] = {{3.6,4},    {0,0.1},             {0,0.25},    {0,2.4},         {0,1},   {0,50},     {0.0,0.6},         {0.95,1},    {0,0.8},     {0.0,1},   {0,1.5},   {0,1.5},    {0.5,4.5},    {0.5,4.5},          {0,20},   {0,1}};    
+    const char * variables[] = {"Bmass", "abs(BLxy)",  "BsvpvDistance_2D",  "abs(By)",  "BtktkvProb",    "Bpt",     "BQvalue",   "Bcos_dtheta", "BtrkPtimb", "Bchi2Prob", "Btrk2dR", "Btrk1dR", "Btrk1Pt", "Btrk2Pt", "Bnorm_svpvDistance_2D", "Prediction" };
+    const double ranges[][2] = {{3.6,4},    {0,0.1},             {0,0.25},    {0,2.4},         {0,1},   {0,50},     {0.0,0.6},         {0.95,1},    {0,0.8},     {0.0,1},   {0,1.5},   {0,1.5},    {0.5,4.5},    {0.5,4.5},            {0,20},   {0,1}};    
     //const char * variables[] = {"BQvalue"};
     //const double ranges[][2] = {{0,0.6}};
     //const char * variables[] = {"Btrk1dR","Btrk2dR",};
@@ -64,10 +64,27 @@ void plot_dataMC(TString TREE ="ntmix_X3872", TString systemNAME = "PbPb")
     TString baseDir = "";
     if (TREE == "ntmix_X3872") {
         dataTreeName = "ntmix";
-        path_to_MC = Form("/eos/user/h/hmarques/Analysis_CODES/selectionER/scored_samples/flat_ntmix_PbPb23_scored_MC_X3872.root");
-        path_to_MC_spec = Form("/eos/user/h/hmarques/Analysis_CODES/selectionER/scored_samples/flat_ntmix_PbPb23_scored_MC_PSI2S.root");
+        if (systemNAME.Contains("PbPb23")) {
+            path_to_MC      = Form("/eos/user/k/kprince/X3872_PbPb/MC_X3872_PbPb_AANN.root");
+            path_to_MC_spec = Form("/eos/user/k/kprince/X3872_PbPb/MC_PSI2S_PbPb_AANN.root");
+            path_to_data    = Form("/eos/user/k/kprince/X3872_PbPb/DATA_PbPb_AANN.root");
+            //path_to_MC = Form("/eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost/scored_samples/flat_ntmix_PbPb23_scored_MC_X3872.root");
+            //path_to_MC_spec = Form("/eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost/scored_samples/flat_ntmix_PbPb23_scored_MC_PSI2S.root");
+            //path_to_data = Form("/eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost/scored_samples/flat_ntmix_PbPb_scored_DATA.root");
+        } 
+        if (systemNAME.Contains("PbPb24")) {
+            path_to_MC      = Form("/eos/user/k/kprince/X3872_PbPb/MC_X3872_24_PbPb_AANN.root");
+            path_to_MC_spec = Form("/eos/user/k/kprince/X3872_PbPb/MC_PSI2S_24_PbPb_AANN.root");
+            path_to_data    = Form("/eos/user/k/kprince/X3872_PbPb/DATA_24_PbPb_AANN.root");
+        } else {
+            path_to_data    = Form("/eos/user/k/kprince/X3872_pp_new/DATA_pp_AANN.root");
+            path_to_MC_spec = Form("/eos/user/k/kprince/X3872_pp_new/MC_PSI2S_pp_AANN.root");
+            path_to_MC      = Form("/eos/user/k/kprince/X3872_pp_new/MC_X3872_pp_AANN.root");
+            //path_to_MC = Form("/eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost/scored_samples/flat_ntmix_ppRef_scored_MC_X3872.root");
+            //path_to_MC_spec = Form("/eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost/scored_samples/flat_ntmix_ppRef_scored_MC_PSI2S.root");
+            //path_to_data = Form("/eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost/scored_samples/flat_ntmix_ppRef_scored_DATA.root");
+        }
         mcTreeNameSpec = "ntmix_PSI2S";
-        path_to_data = Form("/eos/user/h/hmarques/Analysis_CODES/selectionER/scored_samples/flat_ntmix_PbPb_scored_DATA.root");
     } else {
         path_to_MC = Form("./../flatER/Bmeson/flat_%s_%s_MC.root", TREE.Data(), systemNAME.Data());
         path_to_data = Form("./../flatER/Bmeson/flat_%s_%s_DATA.root", dataTreeName.Data(), systemNAME.Data());
@@ -122,13 +139,13 @@ void plot_dataMC(TString TREE ="ntmix_X3872", TString systemNAME = "PbPb")
         TH1F *hist_spec = new TH1F("hist_spec", Form("; %s; Entries / %.3f ", Xlabel.Data(), bin_length_MEV) , nbinsVARhistos, hist_Xlow ,hist_Xhigh);
                
         TString sideband = "1";
-        if(TREE == "ntmix_X3872"){ sideband = "(((Bmass > 3.95) & (Bmass < 4.00)) || ((Bmass > 3.75) & (Bmass < 3.80)) || ((Bmass > 3.60) & (Bmass < 3.625)))";}
+        if(TREE == "ntmix_X3872"){ sideband = "(((Bmass > 3.95) & (Bmass < 4.00)) || ((Bmass > 3.75) & (Bmass < 3.80)))";}
         else {sideband = "(Bmass > 5.55)";}
 
-        TString ANYsel = "xgb_score > 0.85 & abs(By) < 1.2 & Bpt > 15  & CentBin > 10" ;//"5"; // customize if needed
-
-        tree_MC->Draw(Form("%s >> hist_SIG", var.Data()), Form(" %s ", ANYsel.Data()));
-        chain.Draw(Form("%s >> hist_BKG", var.Data()), Form(" %s && %s ", sideband.Data(), ANYsel.Data()));
+        TString ANYsel = "1"; // Prediction > 0.59
+        TString ANA_region = "Bpt > 10 && abs(By) < 1.6"; // Bpt > 10 && abs(By) < 1.6
+        tree_MC->Draw(Form("%s >> hist_SIG", var.Data()), Form(" %s && %s", ANYsel.Data(), ANA_region.Data()));
+        chain.Draw(Form("%s >> hist_BKG", var.Data()), Form(" %s && %s && %s", sideband.Data(), ANYsel.Data(), ANA_region.Data()));
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
 
@@ -137,19 +154,19 @@ void plot_dataMC(TString TREE ="ntmix_X3872", TString systemNAME = "PbPb")
         hist_SIG->SetLineColor(kOrange-3);
         hist_SIG->SetLineWidth(3);
         hist_SIG->SetFillStyle(0);
-        if (hist_SIG->Integral() > 0) hist_SIG->Scale(1.0 / hist_SIG->Integral());
+        if (hist_SIG->Integral() > 0) hist_SIG->Scale(1.0 / hist_SIG->Integral(""));
         hist_SIG->SetMinimum(0.0);
 
         if (tree_MC_spec) {
-            tree_MC_spec->Draw(Form("%s >> hist_spec", var.Data()), Form(" %s ", ANYsel.Data()));
+            tree_MC_spec->Draw(Form("%s >> hist_spec", var.Data()), Form(" %s && %s", ANYsel.Data(), ANA_region.Data()));
             hist_spec->SetLineWidth(3);
             hist_spec->SetFillStyle(0);
-            if (hist_spec->Integral() > 0) hist_spec->Scale(1.0 / hist_spec->Integral());
+            if (hist_spec->Integral() > 0) hist_spec->Scale(1.0 / hist_spec->Integral(""));
             hist_spec->SetMinimum(0.0);
             hist_spec->SetLineColor(kOrange-2);
         }
 
-        if (hist_BKG->Integral() > 0) hist_BKG->Scale(1.0 / hist_BKG->Integral());
+        if (hist_BKG->Integral() > 0) hist_BKG->Scale(1.0 / hist_BKG->Integral(""));
         hist_BKG->SetLineColor(kBlue);
         hist_BKG->SetFillColor(kBlue);     
         hist_BKG->SetFillStyle(3358); 
@@ -175,7 +192,12 @@ void plot_dataMC(TString TREE ="ntmix_X3872", TString systemNAME = "PbPb")
         if (ANYsel == "1") { ANYsel = ""; }
         else {var += "_SELECTED";}
         sidebandLatex.ReplaceAll("B", "");
-        TLegend *leg = new TLegend(0.18, 0.72, 0.4, 0.93, NULL, "brNDC");
+        // Split sideband into two lines at the || operator
+        TString sidebandLine1 = sidebandLatex;
+        sidebandLine1.Remove(sidebandLine1.First('|'));
+        TString sidebandLine2 = sidebandLatex(sidebandLatex.First('|'), sidebandLatex.Length());
+        
+        TLegend *leg = new TLegend(0.18, 0.62, 0.4, 0.93, NULL, "brNDC");
         leg->SetBorderSize(0);
         leg->SetFillStyle(0);
         leg->SetTextSize(0.035);
@@ -186,7 +208,8 @@ void plot_dataMC(TString TREE ="ntmix_X3872", TString systemNAME = "PbPb")
             leg->AddEntry(hist_spec, "#Psi(2S) MC", "l");
         }
         leg->AddEntry(hist_BKG, "Data sideband", "f");
-        leg->AddEntry((TObject*)0, sidebandLatex.Data(), "");
+        leg->AddEntry((TObject*)0, sidebandLine1.Data(), "");
+        leg->AddEntry((TObject*)0, sidebandLine2.Data(), "");
         leg->Draw();
 
         // Save the canvas as an image

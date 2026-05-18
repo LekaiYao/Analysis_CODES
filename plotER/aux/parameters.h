@@ -4,7 +4,7 @@
 double BR_B0s_jpsiphi_mumuKK = 3.04*10e-5;
 double BR_Bp_jpsiK_mumuK = 6.08*10e-5;
 
-int nbinsmasshisto = 40;
+int nbinsmasshisto = 80;
 
 double minhisto = 0;
 double maxhisto = 999;
@@ -14,7 +14,7 @@ double minhisto_X=3.6;
 double maxhisto_X=4.0;
 
 const int N_pt_Bins_X = 3;
-std::vector<double> ptbinsvec_X = { 10, 15, 25, 50};
+std::vector<double> ptbinsvec_X = {10, 15, 20, 50};
 
 ///FOR TESTING TESTING
 //const int N_pt_Bins_X = 1;

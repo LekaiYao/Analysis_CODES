@@ -17,7 +17,7 @@ TString selectedPbPbTreeName(TString sampleKind)
 TString selectedPbPbPath(TString year, TString sampleKind)
 {
     sampleKind.ToUpper();
-    return Form("/eos/user/h/hmarques/Analysis_CODES/selectionER/scored_samples/flat_ntmix_%s_scored_%s.root",
+    return Form("/eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost/scored_samples/flat_ntmix_%s_scored_%s.root",
                 year.Data(), sampleKind.Data());
 }
 
@@ -66,12 +66,12 @@ void merge_selected_PbPb(
     const TString treeName = selectedPbPbTreeName(sampleKind);
 
     if (outputPath.IsNull()) {
-        outputPath = Form("/eos/user/h/hmarques/Analysis_CODES/selectionER/scored_samples/flat_ntmix_PbPb_selected_%s.root",
+        outputPath = Form("/eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost/scored_samples/flat_ntmix_PbPb_selected_%s.root",
                           sampleKind.Data());
     }
 
-    const TString cut23 = "abs(By) < 1.6 && Bpt > 10 && xgb_score > 0.90 && BQvalue < 0.15 && CentBin > 10 && CentBin < 80";
-    const TString cut24 = "abs(By) < 1.6 && Bpt > 10 && xgb_score > 0.85 && BQvalue < 0.15 && CentBin > 10 && CentBin < 80";
+    const TString cut23 = "abs(By) < 1.6 && Bpt > 10 && Prediction > 0.90 && BQvalue < 0.15 && CentBin > 10 && CentBin < 80";
+    const TString cut24 = "abs(By) < 1.6 && Bpt > 10 && Prediction > 0.85 && BQvalue < 0.15 && CentBin > 10 && CentBin < 80";
 
     gSystem->mkdir("/tmp/hmarques", kTRUE);
     const TString temp23 = Form("/tmp/hmarques/selected_PbPb23_%s.root", sampleKind.Data());

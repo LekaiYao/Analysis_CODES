@@ -19,6 +19,7 @@
 #include "RooExtendPdf.h"
 #include "RooPlot.h"
 #include "RooFitResult.h"
+#include "RooMinimizer.h"
 #include "RooChi2Var.h"
 #include "RooHist.h"
 #include "RooProdPdf.h"
@@ -34,7 +35,6 @@
 #include <iostream>
 #include <TCanvas.h>
 #include <TPad.h>
-#include "RooMCStudy.h"
 #include "../../plotER/aux/masses.h"
 #include <vector>
 #include <array>
@@ -70,25 +70,10 @@
 #include <TFitResult.h>
 #include "TMultiGraph.h"
 #include <stdio.h>
+#include "TParameter.h"
+#include "TObjString.h"
 
 using namespace std;
-
-
-
-inline double GetNtmixDataYmax(float binMin, float binMax)
-{
-    if (binMin == 10. && binMax == 50.) return 11000.0;
-    else if (binMin == 5. && binMax == 10.) return 200.0;
-    else if (binMin == 10. && binMax == 15.) return 2400.0;
-    else if (binMin == 15. && binMax == 25.) return 3700.0;
-    else if (binMin == 25. && binMax == 50.) return 1050.0;
-    else    return -1.0;
-}
-
-
-
-
-
 
 
 
@@ -147,6 +132,229 @@ inline double GetSignificance(
 	return signif;
 }
 
+struct FitSignificanceResult {
+	double value = -1.0;
+	TString label = "S";
+};
+
+inline TString FitVarLabel(TString var);
+inline TString FitParticleLabel(TString tree, bool bold);
+
+inline FitSignificanceResult GetFitSignificanceForPlot(
+	RooWorkspace* ws,
+	int count,
+	RooRealVar* mass,
+	RooDataSet* data,
+	RooFitResult* fitResult,
+	bool useProfileLikelihood,
+	bool saveProfileScan,
+	const TString& tree,
+	const TString& var,
+	double binMin,
+	double binMax,
+	const TString& outputDir,
+	const TString& system)
+{
+	FitSignificanceResult result;
+	if (!ws) return result;
+
+	if (!useProfileLikelihood) {
+		result.value = GetSignificance(ws, count, mass, 2.0);
+		return result;
+	}
+
+	RooAbsPdf* model = ws->pdf(Form("model%d_%s", count, ""));
+	RooRealVar* nsig = ws->var(Form("nsig%d_%s", count, ""));
+	if (!model || !data || !nsig || !fitResult) return result;
+	result.label = "Z_{PL}";
+
+	RooArgSet* params = model->getParameters(*data->get());
+	if (params) params->assignValueOnly(fitResult->floatParsFinal());
+
+	const bool oldConstant = nsig->isConstant();
+	const double oldVal = nsig->getVal();
+	const double oldMin = nsig->getMin();
+	const double oldMax = nsig->getMax();
+	if (nsig->getMin() > 0.0) nsig->setMin(0.0);
+
+	RooAbsReal* nll = model->createNLL(*data, RooFit::Extended(kTRUE), RooFit::Range("all"));
+	double q0 = -1.0;
+	double nllSB = -1.0;
+	double bestNsig = oldVal;
+	double bestNsigErr = nsig->getError();
+	auto restoreFitResult = [&]() {
+		if (params) params->assignValueOnly(fitResult->floatParsFinal());
+		nsig->setConstant(kFALSE);
+	};
+	auto runMigrad = [](RooMinimizer& minimizer) {
+		int status = minimizer.migrad();
+		if (status != 0) {
+			minimizer.setStrategy(0);
+			status = minimizer.migrad();
+		}
+		if (status != 0) {
+			minimizer.setStrategy(2);
+			status = minimizer.migrad();
+		}
+		return status;
+	};
+
+	if (nll) {
+		restoreFitResult();
+		nsig->setConstant(kFALSE);
+		RooMinimizer sbMinimizer(*nll);
+		sbMinimizer.setPrintLevel(-1);
+		sbMinimizer.setStrategy(1);
+		const int sbStatus = runMigrad(sbMinimizer);
+		nllSB = nll->getVal();
+		bestNsig = nsig->getVal();
+		bestNsigErr = nsig->getError();
+
+		if (std::isfinite(nllSB) && bestNsig > 0.0) {
+			restoreFitResult();
+			nsig->setVal(0.0);
+			nsig->setConstant(kTRUE);
+			RooMinimizer bMinimizer(*nll);
+			bMinimizer.setPrintLevel(-1);
+			bMinimizer.setStrategy(1);
+			const int bStatus = runMigrad(bMinimizer);
+			const double nllB = nll->getVal();
+
+			if (std::isfinite(nllB)) {
+				q0 = 2.0 * (nllB - nllSB);
+				result.value = (q0 > 0.0) ? std::sqrt(q0) : 0.0;
+			}
+			if (sbStatus != 0 || bStatus != 0) {
+				Warning("GetFitSignificanceForPlot", "Profile likelihood minimizer returned status SB=%d B=%d for %s %.1f-%.1f, using finite NLL values.", sbStatus, bStatus, tree.Data(), binMin, binMax);
+			}
+		} else if (std::isfinite(nllSB)) {
+			q0 = 0.0;
+			result.value = 0.0;
+		}
+	}
+
+	if (nll && saveProfileScan && std::isfinite(nllSB)) {
+		const int nScan = 35;
+		double scanMax = std::max(10.0, bestNsig * 3.0);
+		if (std::isfinite(bestNsigErr) && bestNsigErr > 0.0) scanMax = std::max(scanMax, bestNsig + 5.0 * bestNsigErr);
+		scanMax = std::min(scanMax, nsig->getMax());
+		if (!(scanMax > 0.0)) scanMax = std::max(10.0, oldMax);
+
+		TGraph* rawGraph = new TGraph();
+		TGraph* profileGraph = new TGraph();
+		rawGraph->SetName("rawLikelihoodScan");
+		profileGraph->SetName("profileLikelihoodScan");
+		double yMax = 6.0;
+
+		for (int i = 0; i < nScan; ++i) {
+			const double x = scanMax * static_cast<double>(i) / static_cast<double>(nScan - 1);
+
+			if (params) params->assignValueOnly(fitResult->floatParsFinal());
+			nsig->setVal(x);
+			nsig->setConstant(kTRUE);
+			double rawQ = 2.0 * (nll->getVal() - nllSB);
+			if (!std::isfinite(rawQ)) rawQ = -1.0;
+			else if (rawQ < 0.0 && rawQ > -1e-6) rawQ = 0.0;
+
+			if (params) params->assignValueOnly(fitResult->floatParsFinal());
+			nsig->setVal(x);
+			nsig->setConstant(kTRUE);
+			RooMinimizer profileMinimizer(*nll);
+			profileMinimizer.setPrintLevel(-1);
+			profileMinimizer.setStrategy(1);
+			runMigrad(profileMinimizer);
+			double profileQ = 2.0 * (nll->getVal() - nllSB);
+			if (!std::isfinite(profileQ)) profileQ = -1.0;
+			else if (profileQ < 0.0 && profileQ > -1e-6) profileQ = 0.0;
+
+			rawGraph->SetPoint(rawGraph->GetN(), x, rawQ);
+			profileGraph->SetPoint(profileGraph->GetN(), x, profileQ);
+			if (std::isfinite(rawQ)) yMax = std::max(yMax, rawQ * 1.15);
+			if (std::isfinite(profileQ)) yMax = std::max(yMax, profileQ * 1.15);
+		}
+
+		if (rawGraph->GetN() > 0 && profileGraph->GetN() > 0) {
+			TString scanVar = var;
+			if (var == "By") scanVar = "absBy";
+			TVirtualPad* previousPad = gPad;
+			TCanvas* cScan = new TCanvas("cLikelihoodScan", "likelihood scan", 700, 650);
+			cScan->SetLeftMargin(0.14);
+			cScan->SetRightMargin(0.04);
+			cScan->SetBottomMargin(0.13);
+			cScan->SetTopMargin(0.08);
+
+			TMultiGraph* scans = new TMultiGraph();
+			rawGraph->SetLineColor(kRed + 1);
+			rawGraph->SetLineWidth(2);
+			rawGraph->SetLineStyle(2);
+			profileGraph->SetLineColor(kBlue + 1);
+			profileGraph->SetLineWidth(2);
+			scans->Add(rawGraph, "L");
+			scans->Add(profileGraph, "L");
+			scans->Draw("AL");
+			scans->SetTitle("");
+			scans->GetXaxis()->SetLimits(0.0, scanMax);
+			scans->GetXaxis()->SetTitle("Y_{s}");
+			scans->GetYaxis()->SetTitle("-2#Delta log L");
+			scans->GetYaxis()->SetRangeUser(0.0, yMax);
+			scans->GetXaxis()->CenterTitle();
+			scans->GetYaxis()->CenterTitle();
+
+			TLine* lineOne = new TLine(0.0, 1.0, scanMax, 1.0);
+			lineOne->SetLineColor(kGray + 2);
+			lineOne->SetLineStyle(3);
+			lineOne->Draw("same");
+			TLine* lineFour = new TLine(0.0, 4.0, scanMax, 4.0);
+			lineFour->SetLineColor(kGray + 2);
+			lineFour->SetLineStyle(3);
+			lineFour->Draw("same");
+
+			TLegend* leg = new TLegend(0.60, 0.72, 0.92, 0.88);
+			leg->SetBorderSize(0);
+			leg->SetFillStyle(0);
+			leg->SetTextFont(42);
+			leg->SetTextSize(0.035);
+			leg->AddEntry(rawGraph, "Raw scan", "l");
+			leg->AddEntry(profileGraph, "Profile scan", "l");
+			leg->Draw();
+
+			TLatex latex;
+			latex.SetNDC();
+			latex.SetTextAlign(13);
+			latex.SetTextFont(42);
+			latex.SetTextSize(0.060);
+			latex.DrawLatex(0.18, 0.84, FitParticleLabel(tree, true));
+			latex.SetTextSize(0.035);
+			latex.DrawLatex(0.18, 0.77, Form("%.0f < %s < %.0f", binMin, FitVarLabel(var).Data(), binMax));
+			latex.DrawLatex(0.62, 0.66, Form("q_{0} = %.2f", q0));
+			latex.DrawLatex(0.62, 0.60, Form("Z_{PL} = %.2f", result.value));
+
+			cScan->SaveAs(Form("%s/likelihood_scan_%s_%s_%s_%.1f_%.1f.pdf",
+			                   outputDir.Data(), system.Data(), tree.Data(), scanVar.Data(), binMin, binMax));
+			delete cScan;
+			if (previousPad) previousPad->cd();
+		}
+
+		delete rawGraph;
+		delete profileGraph;
+	}
+
+	RooRealVar profileSignificanceVar(Form("signif_profile%d_%s", count, ""), "", result.value);
+	RooRealVar profileQ0Var(Form("q0_profile%d_%s", count, ""), "", q0);
+	ws->import(profileSignificanceVar);
+	ws->import(profileQ0Var);
+
+	if (nll) delete nll;
+	nsig->setRange(oldMin, oldMax);
+	nsig->setVal(oldVal);
+	nsig->setConstant(oldConstant);
+	if (params) params->assignValueOnly(fitResult->floatParsFinal());
+	delete params;
+
+	return result;
+}
+
+
 
 inline void setupLABELS(TLatex* latexTEXT, double tSize = 0.035, bool DrawText = true){
 	latexTEXT->SetNDC();
@@ -155,6 +363,27 @@ inline void setupLABELS(TLatex* latexTEXT, double tSize = 0.035, bool DrawText =
 	latexTEXT->SetTextSize(tSize);
 	latexTEXT->SetLineWidth(2);
 	if (DrawText) latexTEXT->Draw();
+}
+
+inline TString FitVarLabel(TString var)
+{
+	if (var == "Bpt") return "p_{T} [GeV/c]";
+	if (var == "By") return "|y|";
+	if (var == "nSelectedChargedTracks") return "n_{ch}";
+	if (var == "CentBin") return "Centrality (%)";
+	return var;
+}
+
+inline TString FitParticleLabel(TString tree, bool bold = false)
+{
+	TString label = tree;
+	if (tree == "ntKp") label = "B^{+}";
+	else if (tree == "ntKstar") label = "B^{0}";
+	else if (tree == "ntphi") label = "B_{s}^{0}";
+	else if (tree == "ntmix_X3872") label = "X(3872)";
+	else if (tree == "ntmix_PSI2S") label = "#psi(2S)";
+	if (bold) label = Form("#bf{%s}", label.Data());
+	return label;
 }
 
 inline void DrawCmsHeader(
@@ -167,7 +396,7 @@ inline void DrawCmsHeader(
 	if (!pad) return;
 	TString rightText = "";
 	if (COLsystem=="ppRef") rightText = "pp #sqrt{s}=5.36 TeV, (L=455.7 pb^{-1})" ;
-	else if (COLsystem=="PbPb23") rightText = "PbPb #sqrt{s_{NN}}=5.36 TeV, (L=1.72 nb^{-1})" ;
+	else if (COLsystem=="PbPb") rightText = "PbPb #sqrt{s_{NN}}=5.36 TeV, (L=3.5 nb^{-1})" ;
 
 
 	pad->cd();
@@ -222,13 +451,13 @@ inline std::vector<SystVariationConfig> GetBackgroundSystematicModels(const TStr
 		return {{"2nd", "2nd-order Chebyshev"}, {"4th", "4th-order Chebyshev"}};
 	}
 	if (tree == "ntKstar"){//3rd-order Chebyshev
-		return {{"2nd", "2nd-order Chebyshev"}, {"3rd", "3rd-order Chebyshev"}};
+		return {{"2nd", "2nd-order Chebyshev"}, {"4th", "4th-order Chebyshev"}};
 	}
 	if (tree == "ntKp")  {//Exponential
-		return {{"2nd", "2nd-order Chebyshev + erfc"}, {"3rd", "3rd-order Chebyshev + erfc"}};
+		return {{"2nd", "2nd-order Chebyshev"}, {"3rd", "3rd-order Chebyshev"}};
 	}
-	if (tree == "ntmix_X3872" || tree == "ntmix_PSI2S") {//3rd-order Chebyshev
-		return {{"4th", "4th-order Chebyshev"}};
+	if (tree == "ntmix_X3872" || tree == "ntmix_PSI2S") {//2nd-order Chebyshev
+		return {{"3rd", "3rd-order Chebyshev"}};
 	}
 	return {};
 }
@@ -246,7 +475,7 @@ inline std::vector<SystVariationConfig> GetSignalSystematicModels(const TString&
 		return {{"3gauss", "Triple Gaussian"}, {"gauss_cb", "Gaussian + Crystal Ball"}, {"fixed", "Fixed mean"}};
 	}
 	if (tree == "ntmix_X3872" || tree == "ntmix_PSI2S") {// Double Gaussian
-		return {{"1gauss", "Gaussian"}, {"3gauss", "Triple Gaussian"}};
+		return {{"3gauss", "Triple Gaussian"}};
 	}
 	return {};
 }
@@ -411,4 +640,34 @@ inline void WriteSystematicsTablesDocument(
 	std::vector<std::vector<std::vector<double> > > table_numbers = {signal_numbers, back_numbers, general_numbers};
 
 	latex_tables_document(filename, table_n_cols, table_n_lines, table_col_names, table_labels, table_numbers);
+}
+
+inline void WriteFitMetadata(TDirectory* dir, const TString& tree, const TString& var, const TString& system, const TString& cut, const std::vector<double>& bins, double massMin, double massMax, int nMassBinsVal)
+{
+	if (!dir) return;
+	dir->cd();
+	TParameter<int> nMassBins("nMassBins", nMassBinsVal);
+	TParameter<double> massMinPar("massMin", massMin);
+	TParameter<double> massMaxPar("massMax", massMax);
+	TParameter<int> nVarBins("nVarBins", static_cast<int>(bins.size() > 0 ? bins.size() - 1 : 0));
+	TObjString treeStr(tree);
+	TObjString varStr(var);
+	TObjString systemStr(system);
+	TObjString cutStr(cut);
+	nMassBins.Write("nMassBins");
+	massMinPar.Write("massMin");
+	massMaxPar.Write("massMax");
+	nVarBins.Write("nVarBins");
+	treeStr.Write("treeName");
+	varStr.Write("variableName");
+	systemStr.Write("systemName");
+	cutStr.Write("selectionCut");
+	if (!bins.empty()) {
+		TH1D hVarBins("analysisVarBins", ";analysis bin edges;", static_cast<int>(bins.size()) - 1, bins.data());
+		hVarBins.SetDirectory(nullptr);
+		hVarBins.Write("analysisVarBins");
+	}
+	TH1D hMassBins("massPlotBins", ";m_{J/#psi #pi^{+}#pi^{-}} [GeV/c^{2}];", nMassBinsVal, massMin, massMax);
+	hMassBins.SetDirectory(nullptr);
+	hMassBins.Write("massPlotBins");
 }

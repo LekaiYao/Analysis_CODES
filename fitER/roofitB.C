@@ -6,6 +6,8 @@
 #include <string>
 #include <sstream>
 #include <TGraph.h>
+#include <TObjString.h>
+#include <TParameter.h>
 #include <stdio.h>
 
 #include "../plotER/aux/parameters.h"   //
@@ -14,10 +16,10 @@ void read_samples(RooWorkspace& w, vector<TString> label, TString fName, TString
 std::pair<int, std::vector<double>> defineBinning(const TString& var, const TString& tree, int full);
 
 // PDF VARIATION FOR SYST STUDIES
-int syst_study=0;
+int syst_study=1;
 
-// VALIDATION STUDIES
-int val=0;
+// PROFILE LIKELIHOOD SIGNIFICANCE + INCLUSIVE SCAN
+int use_profile_likelihood=1;
 
 void roofitB(TString TREE = "ntphi", int FULL = 0, TString INPUTDATA = "", TString INPUTMC = "", TString VAR = "", TString CUT = "", TString SYSTEM = "ppRef"){
 
@@ -27,7 +29,6 @@ void roofitB(TString TREE = "ntphi", int FULL = 0, TString INPUTDATA = "", TStri
 	TString TABLE_DIR = Form("%s/tables", RESULT_BASE.Data());
 	TString GRAPH_DIR = Form("%s/Graphs", RESULT_BASE.Data());
 	TString OUTPLOTF = Form("%s/%s/%s", RESULT_BASE.Data(), TREE.Data(), VAR.Data());
-	gSystem->mkdir(Form("./%s/validation",OUTPLOTF.Data()),true); 
 	gSystem->mkdir(TABLE_DIR.Data(),true); 
 	gSystem->mkdir(GRAPH_DIR.Data(), true); 
 	gSystem->mkdir(ROOT_BASE.Data(), true);
@@ -57,6 +58,8 @@ void roofitB(TString TREE = "ntphi", int FULL = 0, TString INPUTDATA = "", TStri
 	if (TREE == "ntmix_X3872"){ minhisto = 3.8; maxhisto = 4.0;}
 	else if (TREE == "ntmix_PSI2S"){ minhisto = 3.6; maxhisto = 3.8;}
 	else { minhisto = minhisto_B, maxhisto = maxhisto_B; }
+	int fitMassBins = nbinsmasshisto;
+	if (TREE == "ntmix_X3872" || TREE == "ntmix_PSI2S") fitMassBins = nbinsmasshisto/2;
 	mass = new RooRealVar("Bmass", "Bmass", minhisto, maxhisto);
 	mass->setRange("m_rangeB", 5.2 , 5.5);        //set a range to be used if pdf = mass_rangeB
 	mass->setRange("all", minhisto, maxhisto);
@@ -81,7 +84,6 @@ void roofitB(TString TREE = "ntphi", int FULL = 0, TString INPUTDATA = "", TStri
 	RooDataSet* data = (RooDataSet*) ws->data("data");
 	RooDataSet* mc   = (RooDataSet*) ws->data("mc");
 	//DATA and MC SAMPLES
-
 
 	//MODELS for syst studies
 	vector<SystVariationConfig> background = GetBackgroundSystematicModels(TREE);
@@ -151,7 +153,7 @@ void roofitB(TString TREE = "ntphi", int FULL = 0, TString INPUTDATA = "", TStri
 		////////// FITFITFITFITFITFITFITFITFITFITFITFIT //////////
 
 		cout << "Starting the fiting function for " << TREE.Data() << " " << VAR.Data() << " ["<< _varBINS[i] << ", " << _varBINS[i+1] << "]" << endl;
-		RooFitResult* f_results = fit("", "", TREE, c, cMC, ith_DATA_bin, ith_MC_bin, mass, _varBINS[i], _varBINS[i+1], *ws, VAR.Data(),nbinsmasshisto);
+		RooFitResult* f_results = fit(SYSTEM, "", "", TREE, c, cMC, ith_DATA_bin, ith_MC_bin, mass, _varBINS[i], _varBINS[i+1], *ws, VAR.Data(), fitMassBins);
 		ws->saveSnapshot(Form("nominalPars_bin%d", _count), f_results->floatParsFinal(), true);
 
 		////////// FITFITFITFITFITFITFITFITFITFITFITFIT //////////
@@ -193,41 +195,36 @@ void roofitB(TString TREE = "ntphi", int FULL = 0, TString INPUTDATA = "", TStri
 
 		////////////////////////////////////////////////////////// LABELS IN PLOTS
 		// print fit meson NAME
-		if (TREE == "ntKp" || TREE == "ntKstar" || TREE == "ntphi" || TREE == "ntmix_X3872" || TREE == "ntmix_PSI2S") {
-			TString mesonLabel = "";
-			if (TREE == "ntKp") mesonLabel = "#bf{B^{+}}";
-			else if (TREE == "ntKstar") mesonLabel = "#bf{B^{0}}";
-			else if (TREE == "ntphi") mesonLabel = "#bf{B_{s}^{0}}";
-			else if (TREE == "ntmix_X3872") mesonLabel = "#bf{X(3872)}";
-			else if (TREE == "ntmix_PSI2S") mesonLabel = "#bf{#psi(2S)}";
-			TLatex* mesonName = new TLatex(0.18, 0.8, mesonLabel);
-			setupLABELS(mesonName, 0.060, true);
-		}
+		TLatex* mesonName = new TLatex(0.2, 0.85, FitParticleLabel(TREE, true));
+		setupLABELS(mesonName, 0.060, true);
 
 		// print fit xi2
 		TLatex* chi_square = new TLatex(0.68, 0.55, Form("#chi^{2}/ndf = %.2f",chi2_vec[i]));
 		setupLABELS(chi_square);
 
-		// print var bin
-		TString varLabel;
-		if (VAR == "Bpt"){varLabel = "p_{T} [GeV/c]";}
-		else if (VAR == "By"){varLabel = "|y|";}
-		else if (VAR == "nSelectedChargedTracks"){varLabel = "n_{ch}";}
-		else if (VAR == "CentBin"){varLabel = "Centrality (%)";}
-		TLatex* varBIN = new TLatex(0.68, 0.50, Form("%d < %s < %d", (int)_varBINS[i], varLabel.Data(), (int)_varBINS[i+1]));
+		// print var bin (& kinmetic info) 
+		TLatex* rapidityLabel = new TLatex(0.68, 0.50, "|y| < 1.6");
+		setupLABELS(rapidityLabel);
+		TLatex* varBIN = new TLatex(0.68, 0.45, Form("%d < %s < %d", (int)_varBINS[i], FitVarLabel(VAR).Data(), (int)_varBINS[i+1]));
 		setupLABELS(varBIN);
 
 		// print Nsig in plot
-		TLatex* N_signal = new TLatex(0.68, 0.45, Form("Y_{s} = %.0f #pm %.0f", yield_vec[i], yield_Stat_unc[i]));
+		TLatex* N_signal = new TLatex(0.68, 0.40, Form("Y_{s} = %.0f #pm %.0f", yield_vec[i], yield_Stat_unc[i]));
 		setupLABELS(N_signal);
 
-		TLatex* variationLabel = new TLatex(0.68, 0.40, "");
+		TLatex* variationLabel = new TLatex(0.68, 0.35, "");
 		setupLABELS(variationLabel, 0.030, false);
 
-		if( (TREE == "ntmix_X3872") || (TREE == "ntKstar") ){		//SIGNIFICANCE
-			double signif = GetSignificance( ws, _count, mass, 2.0);
-			TLatex *Signf = new TLatex(0.68, 0.3, Form("S = %.2f", signif));
-			setupLABELS(Signf);
+		if(TREE == "ntmix_X3872"){		//SIGNIFICANCE
+			FitSignificanceResult signif = GetFitSignificanceForPlot(
+				ws, _count, mass, ith_DATA_bin, f_results,
+				use_profile_likelihood == 1, use_profile_likelihood == 1,
+				TREE, VAR, _varBINS[i], _varBINS[i+1], OUTPLOTF, SYSTEM
+			);
+			TPad* fitPad = (TPad*)c->GetPrimitive("p1");
+			if (fitPad) fitPad->cd();
+			TLatex *Signf = new TLatex(0.68, 0.35, Form("%s = %.2f", signif.label.Data(), signif.value));
+			setupLABELS(Signf, 0.035);
 		}
 
 		DrawCmsHeader(c, SYSTEM);
@@ -257,17 +254,19 @@ void roofitB(TString TREE = "ntphi", int FULL = 0, TString INPUTDATA = "", TStri
 			//BACKGROUND MODEL SYSTEMATIC STUDY
 			for(int j=0; j < static_cast<int>(background.size()); j++)
 			{
-				RooFitResult* f_back = fit("background", background[j].code.c_str(), TREE, c, cMC, ith_DATA_bin, ith_MC_bin, mass, _varBINS[i], _varBINS[i+1], *ws, VAR, nbinsmasshisto);
+				RooFitResult* f_back = fit(SYSTEM, "background", background[j].code.c_str(), TREE, c, cMC, ith_DATA_bin, ith_MC_bin, mass, _varBINS[i], _varBINS[i+1], *ws, VAR, fitMassBins);
 				RooRealVar* chi2_data_norm_back = ws->var(Form("chi2_data_norm%d_%s", _count, background[j].code.c_str()));
 				RooRealVar* fitYield_back = static_cast<RooRealVar*>(f_back->floatParsFinal().at(f_back->floatParsFinal().index(Form("nsig%d_%s",_count,background[j].code.c_str()))));
 				chi2_vec_back[j][i] = (chi2_data_norm_back ? chi2_data_norm_back->getVal() : -1.0);
 				chi_square->SetText(0.68,0.55,Form("#chi^{2}/ndf = %.2f ",chi2_vec_back[j][i]));
 				chi_square->Draw();
+				rapidityLabel->Draw();
 				varBIN->Draw();
 				N_signal->SetTitle(Form("Y_{s} = %.0f #pm %.0f", fitYield_back->getVal(), fitYield_back->getError()));
 				N_signal->Draw();
 				variationLabel->SetTitle(Form("(%s)", background[j].label.c_str()));
 				variationLabel->Draw();
+				mesonName->Draw();
 				c->Update();
 
 				if(VAR == "By"){c->SaveAs(Form("%s/data_%s_%s_%0.1f_%0.1f_%s_", OUTPLOTF.Data(), SYSTEM.Data(), Form("abs(%s)",VAR.Data()),(float)_varBINS[i],(float)_varBINS[i+1],background[j].code.c_str())+TREE+ ".pdf");}
@@ -284,17 +283,19 @@ void roofitB(TString TREE = "ntphi", int FULL = 0, TString INPUTDATA = "", TStri
 			//SIGNAL MODEL SYSTEMATIC STUDY
 			for(int j=0; j< static_cast<int>(signal.size()); j++)
 			{
-				RooFitResult* f_signal = fit("signal", signal[j].code.c_str(), TREE, c, cMC, ith_DATA_bin, ith_MC_bin, mass, _varBINS[i], _varBINS[i+1], *ws, VAR, nbinsmasshisto);
+				RooFitResult* f_signal = fit(SYSTEM, "signal", signal[j].code.c_str(), TREE, c, cMC, ith_DATA_bin, ith_MC_bin, mass, _varBINS[i], _varBINS[i+1], *ws, VAR, fitMassBins);
 				RooRealVar* chi2_data_norm_sig = ws->var(Form("chi2_data_norm%d_%s", _count, signal[j].code.c_str()));
 				RooRealVar* fitYield_signal = static_cast<RooRealVar*>(f_signal->floatParsFinal().at(f_signal->floatParsFinal().index(Form("nsig%d_%s",_count,signal[j].code.c_str()))));
 					chi2_vec_sig[j][i] = (chi2_data_norm_sig ? chi2_data_norm_sig->getVal() : -1.0);
 					chi_square->SetText(0.68, 0.55, Form("#chi^{2}/ndf = %.2f ", chi2_vec_sig[j][i]));
 					chi_square->Draw();
+					rapidityLabel->Draw();
 					varBIN->Draw();
 					N_signal->SetTitle(Form("Y_{s} = %.0f #pm %.0f", fitYield_signal->getVal(), fitYield_signal->getError()));
 					N_signal->Draw();
 					variationLabel->SetTitle(Form("(%s)", signal[j].label.c_str()));
 					variationLabel->Draw();
+					mesonName->Draw();
 					c->Update();
 				
 				if (signal[j].code != "fixed") {
@@ -321,30 +322,23 @@ void roofitB(TString TREE = "ntphi", int FULL = 0, TString INPUTDATA = "", TStri
 			yield_vec_systerr_high[i] = general_unc[2] / 100 * yield_vec[i];
 		}
 
-		//VALIDATION STUDIES
-		if (val==1 && syst_study==0){
-			string Path_val=Form("./%s/validation",OUTPLOTF.Data());
-			validate_fit(ws, "", TREE, VAR, FULL, _varBINS[i], _varBINS[i+1],Path_val);
-		}
-		//VALIDATION STUDIES
 	}
 	//BIN ANALYSIS END
 	//BIN ANALYSIS END
 	
-	// Save yields in ROOT file
-	TFile* outf = new TFile(Form("%s/yields_%s_%s_%s.root",ROOT_BASE.Data(), TREE.Data(), VAR.Data(), SYSTEM.Data()),"recreate");
-	outf->cd();
-	hPt->Write();	
+	// Save fit workspace and metadata for later plotting
+	TString fitFileName = FULL==1
+		? Form("%s/nominalFitModel_%s_%s.root", ROOT_BASE.Data(), TREE.Data(), SYSTEM.Data())
+		: Form("%s/fitResults_%s_%s_%s.root", ROOT_BASE.Data(), TREE.Data(), VAR.Data(), SYSTEM.Data());
+	TFile* nominalModelOut = new TFile(fitFileName, "recreate");
+	nominalModelOut->cd();
+	ws->Write("ws_nominal");
+	hPt->Write();
 	hPtMC->Write();
-	outf->Close();
+	WriteFitMetadata(nominalModelOut, TREE, VAR, SYSTEM, CUT, _varBINS, minhisto, maxhisto, fitMassBins);
+	nominalModelOut->Close();
 
-	// for sPlot purpose
-	if (FULL==1){ 
-		TFile* nominalModelOut = new TFile(Form("%s/nominalFitModel_%s_%s.root", ROOT_BASE.Data(), TREE.Data(), SYSTEM.Data()), "recreate");
-		nominalModelOut->cd();
-		ws->Write("ws_nominal");
-		nominalModelOut->Close();
-	}
+	if (FULL==1) return;
 
 	//systematic tables!
 	if(syst_study==1 && FULL==0){
@@ -797,34 +791,6 @@ void read_samples(RooWorkspace& w, vector<TString> label, TString fName, TString
 	gROOT->cd();                 
 	TTree* t1 = tIn->CopyTree(fullCut);
 	savedDir->cd();              
-
-	if(true){ // Create a canvas to draw the mass histogram
-        TCanvas *canvas = new TCanvas("canvas", "Bmass Distribution", 600, 600);
-        canvas->SetLeftMargin(0.15); // or try 0.18 for more space
-
-        // Define histogram parameters
-        double hist_Xlow  = minhisto;  // Minimum Bmass
-        double hist_Xhigh = maxhisto;   // Maximum Bmass
-        double bin_length_MEV = (hist_Xhigh - hist_Xlow)*1000 / nbinsmasshisto;
-
-        // Create a histogram for Bmass
-		TH1F *hist_Bmass = new TH1F("hist_Bmass", Form("; m_{J/#psi #pi^{-} #pi^{+}} ; Entries / %.1f MeV", bin_length_MEV), nbinsmasshisto, hist_Xlow, hist_Xhigh);
-		t1->Draw("Bmass >> hist_Bmass");
-		hist_Bmass->SetLineColor(kBlack);
-		hist_Bmass->SetLineWidth(1);
-		hist_Bmass->SetFillColor(kBlack);    
-		hist_Bmass->SetFillStyle(3017); 
-		hist_Bmass->Draw("");
-		gPad->Update();
-
-		// Save the canvas as an image
-		TString samplePlotDir = Form("results/%s/validation", colsys.Data());
-		gSystem->mkdir(samplePlotDir.Data(), true);
-		canvas->SaveAs(Form("%s/%s_%s_Bmass.pdf", samplePlotDir.Data(), sample.Data(), treeName.Data()));
-		// Clean up
-		delete hist_Bmass;
-		delete canvas;
-	}
 
 	// Get the variables	
 	RooArgList arg_list("arg_list");

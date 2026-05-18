@@ -8,8 +8,7 @@ using namespace RooFit;
 using namespace std;
 
 Int_t _count=0;
-
-RooFitResult *fit(TString variation, TString pdf, TString tree, TCanvas* c, TCanvas* cMC, RooDataSet* ds, RooDataSet* dsMC, RooRealVar* mass, float binmin, float binmax, RooWorkspace& w, TString which_var, int NBIN){
+RooFitResult *fit(TString system, TString variation, TString pdf, TString tree, TCanvas* c, TCanvas* cMC, RooDataSet* ds, RooDataSet* dsMC, RooRealVar* mass, float binmin, float binmax, RooWorkspace& w, TString which_var, int NBIN){
 	double init_mean = Bs_MASS;
 	if (tree == "ntKp") init_mean = Bu_MASS;
 	else if (tree == "ntKstar") init_mean = Bd_MASS;
@@ -96,13 +95,16 @@ RooFitResult *fit(TString variation, TString pdf, TString tree, TCanvas* c, TCan
 	frameMC->SetStats(0);
 
 	pMC1->cd();
+	const int signalColor = (tree == "ntmix_PSI2S") ? kOrange - 2 : kOrange - 3;
 	dsMC->plotOn(frameMC, Name(Form("dsMC%d_%s", _count, pdf.Data())), Binning(NBIN), MarkerSize(0.5), MarkerStyle(8), LineColor(1), LineWidth(1));
-	modelMC->plotOn(frameMC, Name(Form("sigMC%d_%s", _count, pdf.Data())), Range("signal"), NormRange("signal"), Normalization(nsigMC->getVal(), RooAbsReal::NumEvent), DrawOption("LF"), FillStyle(3002), FillColor(kOrange-3), LineStyle(7), LineColor(kOrange-3), LineWidth(1));
+	modelMC->plotOn(frameMC, Name(Form("sigMC%d_%s", _count, pdf.Data())), Range("signal"), NormRange("signal"), Normalization(nsigMC->getVal(), RooAbsReal::NumEvent), DrawOption("LF"), FillStyle(3002), FillColor(signalColor), LineStyle(7), LineColor(signalColor), LineWidth(1));
 	modelMC->plotOn(frameMC, Name(Form("modelMCcurve%d_%s", _count, pdf.Data())), DrawOption("L"), LineWidth(0));
-	modelMC->paramOn(frameMC, Layout(0.15, 0.3, 0.85), Format("NEU", AutoPrecision(2)));
+	modelMC->paramOn(frameMC, Layout(0.18, 0.48, 0.78), Format("NEU", AutoPrecision(2)));
 	frameMC->getAttFill()->SetFillStyle(0);
 	frameMC->getAttLine()->SetLineWidth(0);
 	frameMC->Draw();
+	TLatex* mesonNameMC = new TLatex(0.2, 0.85, FitParticleLabel(tree, true));
+	setupLABELS(mesonNameMC, 0.060, true);
 	cMC->RedrawAxis();
 
 	TLegend* legMC = new TLegend(0.6, 0.78, 0.92, 0.90, NULL, "brNDC");
@@ -111,17 +113,13 @@ RooFitResult *fit(TString variation, TString pdf, TString tree, TCanvas* c, TCan
 	legMC->SetTextFont(42);
 	legMC->SetFillStyle(0);
 	legMC->AddEntry(frameMC->findObject(Form("dsMC%d_%s", _count, pdf.Data())), "Signal MC", "lp");
-	TString ident_par = "";
-	if (tree == "ntphi") ident_par = "B^{0}_{s}";
-	else if (tree == "ntKp") ident_par = "B^{+}";
-	else if (tree == "ntKstar") ident_par = "B^{0}";
-	else if (tree == "ntmix_X3872") ident_par = "X(3872)";
-	else if (tree == "ntmix_PSI2S") ident_par = "#psi(2S)";
-	legMC->AddEntry(frameMC->findObject(Form("sigMC%d_%s", _count, pdf.Data())), Form("%s, %s ", ident_par.Data(), pdf.Data()), "f");
+	legMC->AddEntry(frameMC->findObject(Form("sigMC%d_%s", _count, pdf.Data())), "Signal PDF", "f");
 	legMC->Draw();
 
 	double n_signal_initial = ds->sumEntries(TString::Format("abs(Bmass-%g)<%g", init_mean, (tree == "ntmix_X3872" || tree == "ntmix_PSI2S") ? 0.005 : 0.05));
-	RooRealVar nsig(Form("nsig%d_%s", _count, pdf.Data()), "", n_signal_initial * 0.4, n_signal_initial * 0.2, n_signal_initial * 1.5);
+	const double nsigInit = std::max(0.0, n_signal_initial * 0.4);
+	const double nsigMax = std::max(10.0, n_signal_initial * 2.0);
+	RooRealVar nsig(Form("nsig%d_%s", _count, pdf.Data()), "", nsigInit, 0.0, nsigMax);
 
 	RooRealVar nbkg(Form("nbkg%d_%s", _count, pdf.Data()), "", ds->sumEntries() * 0.7, ds->sumEntries() * 0.1, ds->sumEntries());
 	RooRealVar a0(Form("a0%d_%s", _count, pdf.Data()), "", -0.35, -2, 2);
@@ -141,8 +139,8 @@ RooFitResult *fit(TString variation, TString pdf, TString tree, TCanvas* c, TCan
 
 	RooAddPdf* model = nullptr;
 	if (tree == "ntmix_X3872" || tree == "ntmix_PSI2S") {
-		if ((variation == "" && pdf == "") || variation == "signal") model = new RooAddPdf(Form("model%d_%s", _count, pdf.Data()), "", RooArgList(*sig, bkg_3rd), RooArgList(nsig, nbkg));
-		if (variation == "background" && pdf == "4th") model = new RooAddPdf(Form("model%d_%s", _count, pdf.Data()), "", RooArgList(*sig, bkg_4th), RooArgList(nsig, nbkg));
+		if ((variation == "" && pdf == "") || variation == "signal") model = new RooAddPdf(Form("model%d_%s", _count, pdf.Data()), "", RooArgList(*sig, bkg_2nd), RooArgList(nsig, nbkg));
+		if (variation == "background" && pdf == "3rd") model = new RooAddPdf(Form("model%d_%s", _count, pdf.Data()), "", RooArgList(*sig, bkg_3rd), RooArgList(nsig, nbkg));
 	}
 	if (tree == "ntphi") {
 		if ((variation == "" && pdf == "") || variation == "signal") model = new RooAddPdf(Form("model%d_%s", _count, pdf.Data()), "", RooArgList(*sig, bkg_3rd), RooArgList(nsig, nbkg));
@@ -200,7 +198,6 @@ RooFitResult *fit(TString variation, TString pdf, TString tree, TCanvas* c, TCan
 	frame->GetYaxis()->SetLabelFont(42);
 	frame->GetXaxis()->SetLabelSize(0);
 	frame->GetYaxis()->SetLabelSize(0.035);
-	if ((tree == "ntmix_X3872" || tree == "ntmix_PSI2S") && true) { frame->GetYaxis()->SetRangeUser(0.0, GetNtmixDataYmax(binmin, binmax));}	
 	TPad* p1 = new TPad("p1", "p1", 0., 0.22, 1., 1);
 	p1->SetBorderMode(1);
 	p1->SetFrameBorderMode(0);
@@ -223,16 +220,19 @@ RooFitResult *fit(TString variation, TString pdf, TString tree, TCanvas* c, TCan
 	p1->cd();
 	ds->plotOn(frame, Name(Form("ds_cut%d", _count)), Binning(NBIN), MarkerSize(0.5), MarkerStyle(8), MarkerColor(1), LineColor(1), LineWidth(1));
 	model->plotOn(frame, Name(Form("model%d_%s", _count, pdf.Data())), Range(fitRange), NormRange(fitRange), Precision(1e-6), DrawOption("L"), LineColor(2), LineWidth(1));
-	model->plotOn(frame, Name(Form("sig%d_%s", _count, pdf.Data())), Components(*sig), DrawOption("LF"), FillStyle(3002), FillColor(kOrange-3), LineStyle(7), LineColor(kOrange-3), LineWidth(1));
+	model->plotOn(frame, Name(Form("sig%d_%s", _count, pdf.Data())), Components(*sig), DrawOption("LF"), FillStyle(3002), FillColor(signalColor), LineStyle(7), LineColor(signalColor), LineWidth(1));
 	if (tree == "ntKp") model->plotOn(frame, RooFit::Name(Form("erfc%d_%s", _count, "")), Components(*erfc), Range(fitRange), NormRange(fitRange), LineColor(kGreen + 3), LineStyle(9), LineWidth(2), DrawOption("L"));
 	model->plotOn(frame, Name(Form("bkg%d_%s", _count, pdf.Data())), Components(bkg), Range(fitRange), NormRange(fitRange), Precision(1e-6), DrawOption("L"), LineStyle(7), LineColor(4), LineWidth(1));
 	double chi2Ndf = frame->chiSquare(Form("model%d_%s", _count, pdf.Data()), Form("ds_cut%d", _count), fitResult->floatParsFinal().getSize());
 	if (!std::isfinite(chi2Ndf) || chi2Ndf < 0) chi2Ndf = -1.0;
 	RooRealVar chi2Var(Form("chi2_data_norm%d_%s", _count, pdf.Data()), "", chi2Ndf);
 	w.import(chi2Var);
+	model->paramOn(frame, Layout(0.18, 0.48, 0.78), Format("NEU", AutoPrecision(2)));
+	frame->getAttFill()->SetFillStyle(0);
+	frame->getAttLine()->SetLineWidth(0);
 	frame->Draw();
 
-	TLegend* leg = new TLegend(0.68, 0.60, 0.92, 0.90, NULL, "brNDC");
+	TLegend* leg = new TLegend(0.67, 0.60, 0.91, 0.90, NULL, "brNDC");
 	if (tree != "ntKp" && tree != "ntmix_X3872") leg = new TLegend(0.68, 0.66, 0.92, 0.90, NULL, "brNDC");
 	leg->SetBorderSize(0);
 	leg->SetFillStyle(0);
@@ -294,132 +294,3 @@ RooFitResult *fit(TString variation, TString pdf, TString tree, TCanvas* c, TCan
 	return fitResult;
 }
 // END OF MAIN FITTING FUNCTION
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void validate_fit(
-  RooWorkspace* w, 
-  TString pdf, 
-  TString tree, 
-  TString variable, 
-  int full, 
-  float binmin, 
-  float binmax, 
-  string Path)
-{
-	std::cout << "Performing Check on Fit" << std::endl;
-	RooRealVar mass = *(w->var("mass"));
-	RooAbsPdf* model  = w->pdf(Form("model%d_%s",_count,pdf.Data()));
-	//RooDataSet* data = (RooDataSet*) w->data("data");
-
-	//model->fitTo(*data);
-	vector<RooRealVar> params;
-	params.push_back(*(w->var(Form("nsig%d_%s",_count,pdf.Data()))));
-	//params.push_back(*(w->var(Form("mean%d_%s",_count,pdf.Data()))));
-
-	double n_signal_init = params[0].getVal();
-	double n_signal_error_init = params[0].getError();
-	int params_size = params.size();
-
-	RooMCStudy* mcstudy = new RooMCStudy(*model, mass,  Extended(), FitOptions(Save(kTRUE), PrintEvalErrors(0)));
-	mcstudy->generateAndFit(5000);
-
-	cout << "DONE Generate and Fit " << endl;
-
-	TString XName[2] = {"P(Y)","mean"};
-	vector<RooPlot*> framesPull, framesParam, framesError;
-
-	for(int i = 0; i < params_size; ++i)
-	{
-		framesPull.push_back(mcstudy->plotPull(params.at(i),FrameBins(50),FrameRange(-5,5)));
-		framesPull[i]->SetTitle("");
-		framesParam.push_back(mcstudy->plotParam(params.at(i),FrameBins(50)));
-		framesParam[i]->SetTitle("");
-		framesError.push_back(mcstudy->plotError(params.at(i),FrameBins(50)));
-		framesError[i]->SetTitle("");
-	}
-
-	vector<TGraph*> h1;
-	vector<TGraph*> h2;
-	vector<TGraph*> h3;
-
-	for(int i = 0; i < params_size; ++i){
-		h1.push_back(static_cast<TGraph*>(framesPull.at(i)->getObject(0)));
-		h2.push_back(static_cast<TGraph*>(framesParam.at(i)->getObject(0)));
-		h3.push_back(static_cast<TGraph*>(framesError.at(i)->getObject(0)));
-	}
-
-	TCanvas* c_pull = new TCanvas("pulls", "pulls", 700, 700);
-	TCanvas* c_params = new TCanvas("params", "params", 700, 700);
-	TCanvas* c_errors = new TCanvas("errors", "errors", 700, 700);
-	gStyle->SetOptFit(0111);
-	gPad->SetLeftMargin(0.15);
-	gStyle->SetStatX(0.95);		//Stat box x position (top right hand corner)	
-	gStyle->SetStatY(0.9); 		//Stat box y position 	
-	gStyle->SetStatW(0.1);	 		//Stat box width as fraction of pad size	0.05	
-	gStyle->SetStatFont(62);  		//Stat box font
-	gStyle->SetStatFontSize(0);
-	gStyle->SetStatBorderSize(0);
-	gStyle->SetStatColor(0);
-	gStyle->SetStatStyle(0);		//Stat box fill style hollow
-
-	for(int i = 0; i < params_size; ++i){
-
-		n_signal_init = params[i].getVal();
-		n_signal_error_init = params[i].getError();
-
-		c_pull->cd();
-		h1[i]->SetTitle("");
-		h1[i]->Fit("gaus","","",-5,5);
-		
-		c_pull->Update();
-		h1[i]->GetFunction("gaus")->SetLineColor(kCyan+1);
-		h1[i]->GetFunction("gaus")->SetLineWidth(1);
-		h1[i]->GetFunction("gaus")->SetFillStyle(3019);
-		h1[i]->GetFunction("gaus")->SetFillColor(kCyan+1);
-		h1[i]->GetXaxis()->SetTitle(Form("%s",XName[i].Data()));
-		h1[i]->GetYaxis()->SetTitle("Toy MCs");
-		h1[i]->GetXaxis()->SetRangeUser(-5, 5);
-		h1[i]->Draw("APsame");
-	
-		c_errors->cd();
-		h3[i]->SetTitle("");
-		h3[i]->Fit("gaus","","",n_signal_error_init*0.5,n_signal_error_init*1.5);
-		
-		c_errors->Update();
-		h3[i]->GetFunction("gaus")->SetLineColor(4);
-		h3[i]->GetFunction("gaus")->SetLineWidth(1);
-		h3[i]->GetXaxis()->SetTitle(Form("%s Error",XName[i].Data()));
-		h3[i]->GetYaxis()->SetTitle("");
-		h3[i]->Draw("APsame");
-
-		c_params->cd();
-		h2[i]->SetTitle("");
-		h2[i]->Fit("gaus","","",n_signal_init * 0.5,n_signal_init * 1.5);
-
-		c_params->Update();
-		h2[i]->GetFunction("gaus")->SetLineColor(4);
-		h2[i]->GetFunction("gaus")->SetLineWidth(1);
-		h2[i]->GetXaxis()->SetTitle(Form("%s Mean",XName[i].Data()));
-		h2[i]->GetYaxis()->SetTitle("");
-		h2[i]->Draw("APsame");
-
-		c_pull->SaveAs(Form("%s/pull_signal_%s_%0.1f_%0.1f_%d_%s.pdf",Path.c_str(),variable.Data(),binmin,binmax,i,tree.Data()));
-		c_params->SaveAs(Form("%s/param_signal_%s_%0.1f_%0.1f_%d_%s.pdf",Path.c_str(),variable.Data(),binmin,binmax,i,tree.Data()));
-		c_errors->SaveAs(Form("%s/error_signal_%s_%0.1f_%0.1f_%d_%s.pdf",Path.c_str(),variable.Data(),binmin,binmax,i,tree.Data()));
-	}
-}

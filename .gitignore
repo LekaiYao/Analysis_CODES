@@ -19,6 +19,12 @@ selectionER/condor_logs/
 selectionER/xgb_outputs/
 selectionER/archived_optuna_runs/
 selectionER/*.json
+selectionER/ML_xgboost/.envs/
+selectionER/ML_xgboost/condor_logs/
+selectionER/ML_xgboost/xgb_outputs/
+selectionER/ML_xgboost/scored_samples/
+selectionER/ML_xgboost/archived_optuna_runs/
+selectionER/ML_xgboost/*.json
 __pycache__/
 */__pycache__/
 *_C.d

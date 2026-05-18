@@ -6,7 +6,7 @@ XGBoost-based event selection workflow for the X(3872) analysis. This folder con
 
 - `XGB_train.py`: trains one final XGBoost model for a selected sample and writes diagnostic plots.
 - `XGB_optuna.py`: runs Optuna hyperparameter scans and saves one JSON summary per seed.
-- `XGB_apply.py`: applies a trained model to data, X(3872) MC, and Psi(2S) MC, adding an `xgb_score` branch.
+- `XGB_apply.py`: applies a trained model to data, X(3872) MC, and Psi(2S) MC, adding an `Prediction` branch.
 - `updater_train.py`: helper used by Optuna to copy best parameters into `XGB_train.py`.
 - `run_optuna_ppRef.sh`, `run_optuna_PbPb.sh`: Condor wrapper scripts.
 - `submit_optuna_*.sub`: Condor submit files for 200 Optuna jobs per sample.
@@ -41,7 +41,7 @@ Features:   Bchi2Prob, Btrk1dR, Btrk2dR, BtrkPtimb, Btrk2Pt, Bcos_dtheta
 Run commands from this folder:
 
 ```bash
-cd /eos/user/h/hmarques/Analysis_CODES/selectionER
+cd /eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost
 source .envs/xgb_train/bin/activate
 ```
 
@@ -148,9 +148,9 @@ Submit a tagged ppRef scan without `Bcos_dtheta`:
 TAG="noBcosDtheta_$(date +%Y%m%d_%H%M)"
 condor_submit \
   -append "environment = \"DROP_FEATURES=Bcos_dtheta SCAN_TAG=${TAG} SUMMARY_SUBDIR=optuna_summaries SEED_BASE=$(date +%s)\"" \
-  -append "output = /eos/home-h/hmarques/Analysis_CODES/selectionER/condor_logs/optuna_ppRef_${TAG}_\$(ProcId).out" \
-  -append "error = /eos/home-h/hmarques/Analysis_CODES/selectionER/condor_logs/optuna_ppRef_${TAG}_\$(ProcId).err" \
-  -append "log = /eos/home-h/hmarques/Analysis_CODES/selectionER/condor_logs/optuna_ppRef_${TAG}_\$(ClusterId).log" \
+  -append "output = /eos/home-h/hmarques/Analysis_CODES/selectionER/ML_xgboost/condor_logs/optuna_ppRef_${TAG}_\$(ProcId).out" \
+  -append "error = /eos/home-h/hmarques/Analysis_CODES/selectionER/ML_xgboost/condor_logs/optuna_ppRef_${TAG}_\$(ProcId).err" \
+  -append "log = /eos/home-h/hmarques/Analysis_CODES/selectionER/ML_xgboost/condor_logs/optuna_ppRef_${TAG}_\$(ClusterId).log" \
   submit_optuna_ppRef.sub
 ```
 
@@ -275,7 +275,7 @@ xgb_outputs/ntmix_PbPb/pbpb24/optuna_summaries_centBin15/optuna_summary_PbPb24_s
 
 ## Apply Trained Models
 
-Apply a trained model and create ROOT files with an `xgb_score` branch:
+Apply a trained model and create ROOT files with an `Prediction` branch:
 
 ```bash
 .envs/xgb_train/bin/python XGB_apply.py --sample ppRef24
@@ -315,7 +315,7 @@ flat_ntmix_PbPb_selected_MC_X3872.root
 flat_ntmix_PbPb_selected_MC_PSI2S.root
 ```
 
-with `xgb_score > 0.90` for PbPb23 and `xgb_score > 0.85` for PbPb24, plus the common `abs(By) < 1.6`, `Bpt > 10`, `BQvalue < 0.15`, and `10 < CentBin < 80` cuts.
+with `Prediction > 0.90` for PbPb23 and `Prediction > 0.85` for PbPb24, plus the common `abs(By) < 1.6`, `Bpt > 10`, `BQvalue < 0.15`, and `10 < CentBin < 80` cuts.
 
 ## Current ppRef Reference Result
 

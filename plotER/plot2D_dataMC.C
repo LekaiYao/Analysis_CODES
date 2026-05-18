@@ -46,8 +46,8 @@ void plot2D_dataMC(TString TREE = "ntKstar", TString systemNAME = "ppRef")
         }
     } else {
         if (TREE == "ntmix") {
-            chain.Add("/eos/user/h/hmarques/Analysis_CODES/selectionER/scored_samples/flat_ntmix_ppRef_scored_DATA.root");
-            path_to_MC = "/eos/user/h/hmarques/Analysis_CODES/selectionER/scored_samples/flat_ntmix_ppRef_scored_MC_X3872.root";
+            chain.Add("/eos/user/k/kprince/x3872/DATA_pp_AANN.root");
+            path_to_MC = "/eos/user/k/kprince/x3872/MC_X3872_pp_AANN.root";
         } else if (TREE == "ntphi") {
             chain.Add("/eos/user/h/hmarques/Analysis_CODES/flatER/Bmeson/flat_ntphi_ppRef_DATA.root");
             path_to_MC = "/eos/user/h/hmarques/RUN3_Data_MC_sharing/Bmesons/MC_Bs.root";

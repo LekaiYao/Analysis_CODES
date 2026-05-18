@@ -37,7 +37,7 @@ SAMPLE_CONFIGS = {
         "output_dir": Path('xgb_outputs/ntmix_ppRef'),
     },
 }
-DEFAULT_SAMPLE = 'PbPb24'
+DEFAULT_SAMPLE = 'ppRef24'
 CURRENT_SAMPLE = DEFAULT_SAMPLE
 DEFAULT_DATA = SAMPLE_CONFIGS[DEFAULT_SAMPLE]["data"]
 DEFAULT_SIGNAL = SAMPLE_CONFIGS[DEFAULT_SAMPLE]["signal"]
@@ -76,18 +76,18 @@ SAVE_MODEL = True
 
 # XGBoost model hyperparameters.
 XGB_PARAMS = {
-    "colsample_bytree": 0.9703591997447545,
-    "eta": 0.006514572818277719,
+    "colsample_bytree": 0.9825630326870106,
+    "eta": 0.11990871315587849,
     "eval_metric": "auc",
-    "gamma": 7.589525469391047,
-    "max_delta_step": 0.3184897642973362,
-    "max_depth": 3,
-    "min_child_weight": 0.5818598810876913,
+    "gamma": 7.54643885039783,
+    "max_delta_step": 0.10948820196334519,
+    "max_depth": 2,
+    "min_child_weight": 6.224850557927005,
     "nthread": 4,
     "objective": "binary:logistic",
-    "reg_alpha": 9.72819574590519,
-    "reg_lambda": 39.837794353069995,
-    "subsample": 0.5870176727785119,
+    "reg_alpha": 6.280872468876446,
+    "reg_lambda": 27.309755278369753,
+    "subsample": 0.5595976677200045,
 }
 # Output files.
 OUTPUT_MODEL = 'xgb_X3872_vs_sideband.json'

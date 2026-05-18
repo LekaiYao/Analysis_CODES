@@ -7,7 +7,7 @@ DOANALYSISPbPb_BINNED_MULT_X=0
 syst="PbPb"
 
 #Data and MC Samples
-MC_X="/eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost/scored_samples/flat_ntmix_PbPb_scored_MC_X3872.root"
+MC_X="/eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost/scored_samples/flat_ntmix_PbPb_scored_MC_PSI2S.root"
 Data_X="/eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost/scored_samples/flat_ntmix_PbPb_scored_DATA.root"
 #Data and MC Samples
 
@@ -25,7 +25,7 @@ mkdir -p "ROOTfiles/$syst" "results/$syst"
 #
 
 if [ $DOANALYSISPbPb_FULL_X  -eq 1  ]; then
-root -b -q "roofitB.C++(\"ntmix_X3872\", \
+root -b -q "roofitB.C++(\"ntmix_PSI2S\", \
                       1, \
                       \"$Data_X\", \
                       \"$MC_X\", \
@@ -35,7 +35,7 @@ root -b -q "roofitB.C++(\"ntmix_X3872\", \
 fi
 
 if [ $DOANALYSISPbPb_BINNED_PT_X  -eq 1  ]; then
-root -b -q "roofitB.C++(\"ntmix_X3872\",\
+root -b -q "roofitB.C++(\"ntmix_PSI2S\",\
                       0, \
                       \"$Data_X\", \
                       \"$MC_X\", \
@@ -45,7 +45,7 @@ root -b -q "roofitB.C++(\"ntmix_X3872\",\
 fi
 
 if [ $DOANALYSISPbPb_BINNED_MULT_X  -eq 1  ]; then
-root -b -q "roofitB.C++(\"ntmix_X3872\",\
+root -b -q "roofitB.C++(\"ntmix_PSI2S\",\
                       0, \
                       \"$Data_X\", \
                       \"$MC_X\", \

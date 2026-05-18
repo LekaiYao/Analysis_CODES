@@ -13,7 +13,7 @@ import XGB_train as train_cfg
 # =============================================================================
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-SCORE_BRANCH = "xgb_score"
+SCORE_BRANCH = "Prediction"
 SCORED_SAMPLE_SYSTEMS = {
     "ppRef24": "ppRef",
     "PbPb23": "PbPb23",

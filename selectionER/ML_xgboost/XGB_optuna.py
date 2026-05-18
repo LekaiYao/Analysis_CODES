@@ -19,9 +19,9 @@ import updater_train
 
 SAMPLE_CONFIGS = {
     "ppRef24": {
-        "data": "/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_DATA.root",
-        "signal": "/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_MC_X3872.root",
-        "spectator": "/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_MC_PSI2S.root",
+        "data": "/eos/user/k/kprince/x3872/DATA_pp_AANN.root",
+        "signal": "/eos/user/k/kprince/x3872/MC_X3872_pp_AANN.root",
+        "spectator": "/eos/user/k/kprince/x3872/MC_PSI2S_pp_AANN.root",
         "output_dir": Path("xgb_outputs/ntmix_ppRef"),
     },
     "PbPb23": {
