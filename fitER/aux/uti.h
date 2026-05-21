@@ -475,7 +475,7 @@ inline std::vector<SystVariationConfig> GetSignalSystematicModels(const TString&
 		return {{"3gauss", "Triple Gaussian"}, {"gauss_cb", "Gaussian + Crystal Ball"}, {"fixed", "Fixed mean"}};
 	}
 	if (tree == "ntmix_X3872" || tree == "ntmix_PSI2S") {// Double Gaussian
-		return {{"3gauss", "Triple Gaussian"}};
+		return {{"3gauss", "Triple Gaussian"}, {"fixed", "Fixed mean"}};
 	}
 	return {};
 }

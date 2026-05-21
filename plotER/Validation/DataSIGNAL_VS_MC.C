@@ -10,6 +10,7 @@
 #include <TStyle.h>
 #include <TTreeFormula.h>
 #include <TParameter.h>
+#include <TLatex.h>
 
 #include <RooRealVar.h>
 #include <RooArgSet.h>
@@ -27,6 +28,7 @@
 #include <memory>
 
 #include "aux.h"
+#include "../../fitER/aux/uti.h"
 
 using namespace RooFit;
 
@@ -124,14 +126,23 @@ void DataSIGNAL_VS_MC(
         }
         if (!weightPath.IsNull() && weightPath.Length() > 0) {
             TFile* fWeight = TFile::Open(Form("file:%s", weightPath.Data()), "READ");
-            TH1D* hWeight = (TH1D*)fWeight->Get("hWeightSP_Prediction");
-            predictionWeight = (TH1D*)hWeight->Clone("hPredictionWeight_runtime");
+            if (!fWeight || fWeight->IsZombie()) {
+                std::cerr << "[ERROR] Weight file not found or corrupted: " << weightPath << std::endl;
+                return;
+            }
+            TH1D* hWeight = (TH1D*)fWeight->Get("hWeight");
+            if (!hWeight) {
+                std::cerr << "[ERROR] hWeight missing in: " << weightPath << std::endl;
+                fWeight->Close();
+                return;
+            }
+            predictionWeight = (TH1D*)hWeight->Clone("hWeight_runtime");
             predictionWeight->SetDirectory(nullptr);
             fWeight->Close();
-            std::cout << "Running reweighted validation with Prediction weights from " << weightPath << std::endl;
+            std::cout << "Running reweighted validation with weights from " << weightPath << std::endl;
         }
     } else {
-        std::cout << "Running nominal validation and saving Prediction weights..." << std::endl;
+        std::cout << "Running nominal validation and saving weights..." << std::endl;
     }
 
     const double signalNSigma = (treeName == "ntmix_psi2s" || treeName == "ntmix_PSI2S") ? 3.0 : 2.0;
@@ -193,10 +204,14 @@ void DataSIGNAL_VS_MC(
     TLegend* legWin = new TLegend(0.62, 0.70, 0.90, 0.90);
     legWin->SetBorderSize(0);
     legWin->SetFillStyle(0);
-    legWin->SetHeader(particleLabel(treeName), "C");
     legWin->AddEntry(hMassWin, "Data", "lep");
     legWin->AddEntry(bSig, Form("Signal region (#pm%g#sigma)", signalNSigma), "f");
     legWin->AddEntry(isNtKp ? bSBR : bSBL, Form("Sideband region (%g-%g#sigma)", sidebandInNSigma, sidebandOutNSigma), "f");
+    TLatex winLabel;
+    winLabel.SetNDC();
+    winLabel.SetTextFont(42);
+    winLabel.SetTextSize(0.060);
+    winLabel.DrawLatex(0.18, 0.84, FitParticleLabel(treeName, true));
     legWin->Draw();
     cWin->SaveAs(Form("COMPARE/%s/mass_windows_%s.pdf", treeName.Data(), treeName.Data()));
 
@@ -308,17 +323,71 @@ void DataSIGNAL_VS_MC(
     std::cout << "[sPlot] sWeight stats: min=" << swMin << ", max=" << swMax << ", mean=" << swMean
               << ", negative=" << negWeights << "/" << totalWeights << std::endl;
 
-    TCanvas* cMass = new TCanvas(Form("cMass_%s", treeName.Data()), "", 760, 650);
+    TCanvas* cMass = new TCanvas(Form("cMass_%s", treeName.Data()), "", 760, 680);
+    cMass->SetLeftMargin(0.14);
+    cMass->SetRightMargin(0.04);
+    cMass->SetBottomMargin(0.13);
     Bmass.setBins(nMassBins);
     RooPlot* frame = Bmass.frame();
     frame->SetTitle("");
+    frame->SetStats(0);
     frame->GetXaxis()->SetTitle(massFinalStateAxisTitle(treeName));
+    frame->GetXaxis()->SetTitleSize(0.030);
+    frame->GetXaxis()->SetTitleOffset(1.25);
+    frame->GetXaxis()->CenterTitle();
+    frame->GetXaxis()->SetTitleFont(42);
+    frame->GetXaxis()->SetLabelFont(42);
+    frame->GetXaxis()->SetLabelOffset(0.012);
+    frame->GetXaxis()->SetLabelSize(0.031);
+    frame->GetXaxis()->SetTickLength(0.035);
+    frame->GetYaxis()->SetTitle("Events");
+    frame->GetYaxis()->SetTitleOffset(1.65);
+    frame->GetYaxis()->SetTitleSize(0.035);
+    frame->GetYaxis()->SetTitleFont(42);
+    frame->GetYaxis()->SetLabelFont(42);
+    frame->GetYaxis()->SetLabelSize(0.035);
     frame->SetMinimum(0.0);
-    data.plotOn(frame, Binning(nMassBins));
-    model->plotOn(frame);
-    if (fitRes) model->paramOn(frame, Layout(0.55, 0.99, 0.97));
+    const int signalColor = (treeName == "ntmix_PSI2S") ? kOrange - 2 : kOrange - 3;
+    data.plotOn(frame, Name("data_splot_fit"), Binning(nMassBins), MarkerSize(0.5), MarkerStyle(8), MarkerColor(kBlack), LineColor(kBlack), LineWidth(1));
+    std::unique_ptr<RooArgSet> components(model->getComponents());
+    RooAbsPdf* sigPdf = dynamic_cast<RooAbsPdf*>(components->find("sig_doubleG1_"));
+    RooAbsPdf* bkgPdf = dynamic_cast<RooAbsPdf*>(components->find("bkg1_"));
+    RooAbsPdf* partPdf = dynamic_cast<RooAbsPdf*>(components->find("erfc1"));
+
+    if (sigPdf) model->plotOn(frame, Name("signal_splot_fit"), Components(*sigPdf), DrawOption("LF"), FillStyle(3002), FillColor(signalColor), LineStyle(7), LineColor(signalColor), LineWidth(1), Precision(1e-6));
+    if (partPdf) model->plotOn(frame, Name("partial_reco_splot_fit"), Components(*partPdf), DrawOption("L"), LineStyle(9), LineColor(kGreen + 3), LineWidth(2), Precision(1e-6));
+    model->plotOn(frame, Name("model_splot_fit"), Precision(1e-6), DrawOption("L"), LineColor(kRed), LineWidth(1));
+    if (bkgPdf) model->plotOn(frame, Name("background_splot_fit"), Components(*bkgPdf), Precision(1e-6), DrawOption("L"), LineStyle(7), LineColor(kBlue + 1), LineWidth(2));
+    frame->getAttFill()->SetFillStyle(0);
     frame->Draw();
+
+    TLegend* legMass = new TLegend(0.62, 0.66, 0.91, 0.90);
+    legMass->SetBorderSize(0);
+    legMass->SetFillStyle(0);
+    legMass->SetTextFont(42);
+    legMass->SetTextSize(0.035);
+    legMass->AddEntry(frame->findObject("data_splot_fit"), "Data", "lep");
+    legMass->AddEntry(frame->findObject("model_splot_fit"), "Fit Model", "l");
+    TObject* bkgObj = bkgPdf ? frame->findObject("background_splot_fit") : nullptr;
+    TObject* sigObj = sigPdf ? frame->findObject("signal_splot_fit") : nullptr;
+    TObject* partObj = partPdf ? frame->findObject("partial_reco_splot_fit") : nullptr;
+    if (bkgObj) legMass->AddEntry(bkgObj, "Comb. Bkg.", "l");
+    if (sigObj) legMass->AddEntry(sigObj, FitParticleLabel(treeName, true), "f");
+    if (partObj) legMass->AddEntry(partObj, "Partial reco.", "l");
+    legMass->Draw();
+
+    TLatex label;
+    label.SetNDC();
+    label.SetTextFont(42);
+    label.SetTextSize(0.036);
+    label.DrawLatex(0.16, 0.86, FitParticleLabel(treeName, true));
+    label.SetTextSize(0.030);
+    label.DrawLatex(0.16, 0.80, Form("N_{sig} = %.1f #pm %.1f", nsig->getVal(), nsig->getError()));
+    label.DrawLatex(0.16, 0.75, Form("N_{bkg} = %.1f #pm %.1f", nbkg->getVal(), nbkg->getError()));
+    if (nbkgPartR) label.DrawLatex(0.16, 0.70, Form("N_{part} = %.1f #pm %.1f", nbkgPartR->getVal(), nbkgPartR->getError()));
+
     cMass->SaveAs(Form("COMPARE/%s/massFit_splot_%s.pdf", treeName.Data(), treeName.Data()));
+    delete legMass;
     delete frame;
     delete cMass;
 
@@ -354,11 +423,11 @@ void DataSIGNAL_VS_MC(
         h.splot->SetMarkerStyle(24);
         h.splot->SetLineWidth(2);
 
-        TH1D* hPredictionWeight = nullptr;
+        TH1D* hWeight = nullptr;
         if (fWeights && h.tag == "Prediction") {
-            hPredictionWeight = makeWeightHist(h.splot, h.mc, "hWeightSP_Prediction");
+            hWeight = makeWeightHist(h.splot, h.mc, "hWeight");
             fWeights->cd();
-            hPredictionWeight->Write();
+            hWeight->Write();
         }
 
         TH1D* hMCBand = (TH1D*)h.mc->Clone(Form("hMCBand_cmp_%s", h.tag.Data()));
@@ -407,13 +476,20 @@ void DataSIGNAL_VS_MC(
         h.sideband->Draw("E SAME");
         h.splot->Draw("E SAME");
 
-        TLegend* leg = new TLegend(0.7, 0.68, 0.9, 0.9);
+        TLegend* leg = new TLegend(0.62, 0.68, 0.92, 0.90);
         leg->SetBorderSize(0);
         leg->SetFillStyle(0);
-        leg->SetHeader(particleLabel(treeName), "C");
+        leg->SetTextFont(42);
+        leg->SetTextSize(0.06);
         leg->AddEntry(h.mc, "MC", "l");
-        leg->AddEntry(h.sideband, "Sideband Subtraction (sig)", "lep");
-        leg->AddEntry(h.splot, "sPlot (sig)", "lep");
+        leg->AddEntry(h.sideband, "Sideband sub.", "lep");
+        leg->AddEntry(h.splot, "sPlot", "lep");
+
+        TLatex cmpLabel;
+        cmpLabel.SetNDC();
+        cmpLabel.SetTextFont(42);
+        cmpLabel.SetTextSize(0.060);
+        cmpLabel.DrawLatex(0.18, 0.84, FitParticleLabel(treeName, true));
         leg->Draw();
 
         pBot->cd();
@@ -443,7 +519,7 @@ void DataSIGNAL_VS_MC(
         delete pBot;
         delete c;
         delete hRatioSP;
-        delete hPredictionWeight;
+        delete hWeight;
         delete hMCBand;
     }
 

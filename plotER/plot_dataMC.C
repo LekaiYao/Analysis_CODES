@@ -68,14 +68,14 @@ void plot_dataMC(TString TREE ="ntmix_X3872", TString systemNAME = "PbPb23")
             path_to_MC      = Form("/eos/user/k/kprince/X3872_PbPb/MC_X3872_PbPb_AANN.root");
             path_to_MC_spec = Form("/eos/user/k/kprince/X3872_PbPb/MC_PSI2S_PbPb_AANN.root");
             path_to_data    = Form("/eos/user/k/kprince/X3872_PbPb/DATA_PbPb_AANN.root");
-            //path_to_MC = Form("/eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost/scored_samples/flat_ntmix_PbPb23_scored_MC_X3872.root");
-            //path_to_MC_spec = Form("/eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost/scored_samples/flat_ntmix_PbPb23_scored_MC_PSI2S.root");
-            //path_to_data = Form("/eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost/scored_samples/flat_ntmix_PbPb_scored_DATA.root");
+            //path_to_MC = Form("/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/PbPb23/flat_ntmix_PbPb23_MC_X3872.root");
+            //path_to_MC_spec = Form("/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/PbPb23/flat_ntmix_PbPb23_MC_PSI2S.root");
+            //path_to_data = Form("/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/PbPb23/flat_ntmix_PbPb23_DATA.root");
         } 
-        if (systemNAME.Contains("PbPb24")) {
-            path_to_MC      = Form("/eos/user/k/kprince/X3872_PbPb/MC_X3872_24_PbPb_AANN.root");
-            path_to_MC_spec = Form("/eos/user/k/kprince/X3872_PbPb/MC_PSI2S_24_PbPb_AANN.root");
-            path_to_data    = Form("/eos/user/k/kprince/X3872_PbPb/DATA_24_PbPb_AANN.root");
+        else if (systemNAME.Contains("PbPb24")) {
+            path_to_MC      = Form("/eos/user/k/kprince/X3872_PbPb/MC_X3872_24b_PbPb_AANN.root");
+            path_to_MC_spec = Form("/eos/user/k/kprince/X3872_PbPb/MC_PSI2S_24b_PbPb_AANN.root");
+            path_to_data    = Form("/eos/user/k/kprince/X3872_PbPb/DATA_24b_PbPb_AANN.root");
         } else {
             path_to_data    = Form("/eos/user/k/kprince/X3872_pp_new/DATA_pp_AANN.root");
             path_to_MC_spec = Form("/eos/user/k/kprince/X3872_pp_new/MC_PSI2S_pp_AANN.root");

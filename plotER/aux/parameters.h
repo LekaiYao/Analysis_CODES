@@ -28,7 +28,7 @@ const int N_y_Bins_X = 4;
 std::vector<double> ybinsvec = {0.0, 0.8, 1.5, 2.0, 2.4};
 
 const int N_mult_Bins_X = 4;
-std::vector<double> nmbinsvec = {0, 10, 20, 50, 100};
+std::vector<double> nmbinsvec = {0, 15, 30, 50, 100};
 
-const int N_cent_Bins_X = 5;
-std::vector<double> centbinsvec = {0, 20, 40, 60, 80, 100};
+const int N_cent_Bins_X = 3;
+std::vector<double> centbinsvec = {0, 20, 40, 80};

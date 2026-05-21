@@ -3,72 +3,67 @@
 #include "TCanvas.h"
 #include "TLegend.h"
 #include "TBox.h"
-#include "TLine.h"
 #include "TPad.h"
 #include "TSystem.h"
 #include "TStyle.h"
-#include <algorithm>
 #include <iostream>
+#include <stdexcept>
 #include <vector>
 
 #include "../plotER/aux/parameters.h"
 #include "../fitER/aux/uti.h"
 #include "aux.h"
 
-// Usage:
+// Nominal ratio only: sPlot corrected yields with the ML-weighted ACCxEFF map.
 // root -l -b -q 'Ratio_CorrectedYields.C()'
-// root -l -b -q 'Ratio_CorrectedYields.C("ppRef","Bpt","all")'
+// root -l -b -q 'Ratio_CorrectedYields.C("ppRef","Bpt")'
+// root -l -b -q 'Ratio_CorrectedYields.C("ppRef","nSelectedChargedTracks")'
 
-static const TString kDefaultCases  = "splot"; // keywords: "splot", "2D", "1D", "all"
-static constexpr double kRatioYmin  = 0.04;
-static constexpr double kRatioYmax  = 0.10;
+static constexpr double kRatioYmin = 0.04;
+static constexpr double kRatioYmax = 0.10;
+static const TString kNominalMapTag = "ML_weighted";
+static const TString kNominalMethod = "splot";
 
-
-
-static TH1D* BuildRatio(TString numFile, TString denFile, TString method, TString var)
+static TH1D* LoadCorrectedYield(TString fileName, TString cloneName)
 {
-    // Load numerator
-    TFile* f = TFile::Open(numFile, "READ");
+    TFile* f = TFile::Open(fileName, "READ");
+    if (!f || f->IsZombie()) throw std::runtime_error(Form("Could not open corrected-yield file: %s", fileName.Data()));
+
     TH1D* h = (TH1D*)f->Get("hYieldCorr");
-    TH1D* hNum = h ? (TH1D*)h->Clone(Form("hYieldCorr_num_%s", method.Data())) : nullptr;
-    if (hNum) hNum->SetDirectory(nullptr);
-    f->Close();
+    if (!h) throw std::runtime_error(Form("Could not find hYieldCorr in: %s", fileName.Data()));
 
-    // Load denominator
-    f = TFile::Open(denFile, "READ");
-    h = (TH1D*)f->Get("hYieldCorr");
-    TH1D* hDen = h ? (TH1D*)h->Clone(Form("hYieldCorr_den_%s", method.Data())) : nullptr;
-    if (hDen) hDen->SetDirectory(nullptr);
+    TH1D* out = (TH1D*)h->Clone(cloneName);
+    out->SetDirectory(nullptr);
     f->Close();
+    return out;
+}
 
-    // Build ratio
-    TH1D* hRatio = (TH1D*)hNum->Clone(Form("hRatio_%s", method.Data()));
+static TH1D* BuildNominalRatio(TString system, TString var)
+{
+    const TString numFile = Form("../effER/output/ROOTs/ntmix_X3872_%s_%s_%s_%s_CorrectedYields.root",
+                                 system.Data(), var.Data(), kNominalMapTag.Data(), kNominalMethod.Data());
+    const TString denFile = Form("../effER/output/ROOTs/ntmix_PSI2S_%s_%s_%s_%s_CorrectedYields.root",
+                                 system.Data(), var.Data(), kNominalMapTag.Data(), kNominalMethod.Data());
+
+    TH1D* hNum = LoadCorrectedYield(numFile, Form("hYieldCorr_X3872_%s", var.Data()));
+    TH1D* hDen = LoadCorrectedYield(denFile, Form("hYieldCorr_PSI2S_%s", var.Data()));
+
+    TH1D* hRatio = (TH1D*)hNum->Clone(Form("hRatio_X3872_over_PSI2S_%s_%s", system.Data(), var.Data()));
     hRatio->SetDirectory(nullptr);
     hRatio->SetTitle(Form(";%s;X(3872) / #psi(2S)", RatioAxisTitle(var).Data()));
     hRatio->Divide(hDen);
+
     delete hNum;
     delete hDen;
     return hRatio;
 }
 
-static void SaveSingleRatio(TH1D* hRatio, TString outStem, TString system)
+static void StyleRatio(TH1D* hRatio)
 {
-    TCanvas* c = new TCanvas(Form("c_%s", hRatio->GetName()), "ratio", 700, 700);
-    c->cd();
-    TPad* pad = new TPad(Form("p_%s", hRatio->GetName()), Form("p_%s", hRatio->GetName()), 0., 0., 1., 1.);
-    pad->SetBorderMode(1);
-    pad->SetFrameBorderMode(0);
-    pad->SetBorderSize(2);
-    pad->SetTopMargin(0.08);
-    pad->SetBottomMargin(0.16);
-    pad->SetLeftMargin(0.14);
-    pad->SetRightMargin(0.04);
-    pad->Draw();
-    pad->cd();
-
     hRatio->SetLineColor(kBlack);
     hRatio->SetMarkerColor(kBlack);
     hRatio->SetMarkerStyle(20);
+    hRatio->SetLineWidth(2);
     hRatio->SetStats(0);
     hRatio->SetTitle("");
     hRatio->GetYaxis()->SetRangeUser(kRatioYmin, kRatioYmax);
@@ -85,44 +80,13 @@ static void SaveSingleRatio(TH1D* hRatio, TString outStem, TString system)
     hRatio->GetXaxis()->SetLabelOffset(0.012);
     hRatio->GetXaxis()->SetLabelSize(0.031);
     hRatio->GetXaxis()->SetTickLength(0.035);
-    hRatio->Draw("E1");
-    pad->RedrawAxis();
-    c->cd();
-    DrawCmsHeader(c, system);
-    c->Update();
-    c->SaveAs(Form("output_ntmix/%s.pdf", outStem.Data()));
-
-    TFile* fout = new TFile(Form("output_ntmix/root_files/%s.root", outStem.Data()), "RECREATE");
-    hRatio->Write();
-    fout->Close();
-    delete c;
 }
 
-
-
-
-
-
-
-
-
-static void SaveRatioComparison(const std::vector<TH1D*>& ratios, const std::vector<TString>& labels, TString outStem, TString system)
+static void SaveNominalRatio(TH1D* hRatio, TString outStem, TString system)
 {
-    if (ratios.size() < 2) return;
-    const int colors[] = {kBlack, kBlue + 1, kRed + 1, kGreen + 2, kMagenta + 1};
-    double ymax = 0.0;
-    double ymin = 1e9;
-    for (TH1D* h : ratios) {
-        ymax = std::max(ymax, h->GetMaximum());
-        for (int i = 1; i <=  h->GetNbinsX(); ++i) {
-            const double y =  h->GetBinContent(i);
-            if (y > 0.0) ymin = std::min(ymin, y);
-        }
-    }
-
-    TCanvas* c = new TCanvas("cRatioComparison", "ratio comparison", 700, 700);
+    TCanvas* c = new TCanvas(Form("c_%s", hRatio->GetName()), "ratio", 700, 700);
     c->cd();
-    TPad* pad = new TPad("pRatioComparison", "pRatioComparison", 0., 0., 1., 1.);
+    TPad* pad = new TPad(Form("p_%s", hRatio->GetName()), Form("p_%s", hRatio->GetName()), 0., 0., 1., 1.);
     pad->SetBorderMode(1);
     pad->SetFrameBorderMode(0);
     pad->SetBorderSize(2);
@@ -133,62 +97,20 @@ static void SaveRatioComparison(const std::vector<TH1D*>& ratios, const std::vec
     pad->Draw();
     pad->cd();
 
-    TLegend* leg = new TLegend(0.58, 0.68, 0.88, 0.88);
-    leg->SetBorderSize(0);
-    leg->SetFillStyle(0);
-    leg->SetTextSize(0.035);
-    leg->SetTextFont(42);
-
-    bool first = true;
-    for (size_t i = 0; i < ratios.size(); ++i) {
-        TH1D* h = ratios[i];
-        if (!h) continue;
-        h->SetLineColor(colors[i % 5]);
-        h->SetMarkerColor(colors[i % 5]);
-        h->SetMarkerStyle(20 + (int)i);
-        h->SetStats(0);
-        h->SetTitle("");
-        h->GetYaxis()->SetRangeUser(kRatioYmin, kRatioYmax);
-        h->GetYaxis()->SetTitleOffset(2.0);
-        h->GetYaxis()->SetTitleSize(0.035);
-        h->GetYaxis()->SetLabelSize(0.035);
-        h->GetYaxis()->SetTitleFont(42);
-        h->GetYaxis()->SetLabelFont(42);
-        h->GetXaxis()->SetTitleSize(0.030);
-        h->GetXaxis()->SetTitleOffset(1.3);
-        h->GetXaxis()->CenterTitle();
-        h->GetXaxis()->SetTitleFont(42);
-        h->GetXaxis()->SetLabelFont(42);
-        h->GetXaxis()->SetLabelOffset(0.012);
-        h->GetXaxis()->SetLabelSize(0.031);
-        h->GetXaxis()->SetTickLength(0.035);
-        h->Draw(first ? "E1" : "E1 SAME");
-        leg->AddEntry(h, labels[i], "lep");
-        first = false;
-    }
-    leg->Draw();
+    StyleRatio(hRatio);
+    hRatio->Draw("E1");
     pad->RedrawAxis();
     c->cd();
     DrawCmsHeader(c, system);
     c->Update();
     c->SaveAs(Form("output_ntmix/%s.pdf", outStem.Data()));
+
+    TFile* fout = new TFile(Form("output_ntmix/root_files/%s.root", outStem.Data()), "RECREATE");
+    hRatio->Write("hRatio");
+    fout->Close();
+    delete pad;
     delete c;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 static void SaveRun1Comparison(TH1D* hNominal, TString system, TString var)
 {
@@ -212,30 +134,16 @@ static void SaveRun1Comparison(TH1D* hNominal, TString system, TString var)
         hRun1Syst->SetBinError(i, run1Syst[i - 1]);
     }
 
-    TH1D* hRun = (TH1D*)hNominal->Clone(Form("hRun1ComparisonFrame_%s", system.Data()));
-    hRun->SetDirectory(nullptr);
-    hRun->Reset("ICES");
-    hRun->SetTitle(Form(";%s;X(3872) / #psi(2S)", RatioAxisTitle(var).Data()));
-    hRun->SetStats(0);
-    hRun->SetTitle("");
-    hRun->GetYaxis()->SetRangeUser(kRatioYmin, kRatioYmax);
-    hRun->GetYaxis()->SetTitleOffset(2.0);
-    hRun->GetYaxis()->SetTitleSize(0.035);
-    hRun->GetYaxis()->SetLabelSize(0.035);
-    hRun->GetYaxis()->SetTitleFont(42);
-    hRun->GetYaxis()->SetLabelFont(42);
-    hRun->GetXaxis()->SetTitleSize(0.030);
-    hRun->GetXaxis()->SetTitleOffset(1.3);
-    hRun->GetXaxis()->CenterTitle();
-    hRun->GetXaxis()->SetTitleFont(42);
-    hRun->GetXaxis()->SetLabelFont(42);
-    hRun->GetXaxis()->SetLabelOffset(0.012);
-    hRun->GetXaxis()->SetLabelSize(0.031);
-    hRun->GetXaxis()->SetTickLength(0.035);
+    TH1D* hFrame = (TH1D*)hNominal->Clone(Form("hRun1ComparisonFrame_%s_%s", system.Data(), var.Data()));
+    hFrame->SetDirectory(nullptr);
+    hFrame->Reset("ICES");
+    hFrame->SetTitle(Form(";%s;X(3872) / #psi(2S)", RatioAxisTitle(var).Data()));
+    StyleRatio(hFrame);
 
     TCanvas* c = new TCanvas(Form("c_comparison_RUN1_%s_%s", system.Data(), var.Data()), "comparison_RUN1", 700, 700);
     c->cd();
-    TPad* pad = new TPad(Form("p_comparison_RUN1_%s_%s", system.Data(), var.Data()), Form("p_comparison_RUN1_%s_%s", system.Data(), var.Data()), 0., 0., 1., 1.);
+    TPad* pad = new TPad(Form("p_comparison_RUN1_%s_%s", system.Data(), var.Data()),
+                         Form("p_comparison_RUN1_%s_%s", system.Data(), var.Data()), 0., 0., 1., 1.);
     pad->SetBorderMode(1);
     pad->SetFrameBorderMode(0);
     pad->SetBorderSize(2);
@@ -245,7 +153,7 @@ static void SaveRun1Comparison(TH1D* hNominal, TString system, TString var)
     pad->SetRightMargin(0.04);
     pad->Draw();
     pad->cd();
-    hRun->Draw("AXIS");
+    hFrame->Draw("AXIS");
 
     std::vector<TBox*> systBoxes;
     systBoxes.reserve(hRun1Syst->GetNbinsX());
@@ -275,7 +183,7 @@ static void SaveRun1Comparison(TH1D* hNominal, TString system, TString var)
     hNominalDraw->SetMarkerStyle(20);
     hNominalDraw->SetLineWidth(2);
     hNominalDraw->Draw("E1 SAME");
-    hRun->Draw("AXIS SAME");
+    hFrame->Draw("AXIS SAME");
 
     TLegend* leg = new TLegend(0.52, 0.68, 0.88, 0.88);
     leg->SetBorderSize(0);
@@ -290,12 +198,10 @@ static void SaveRun1Comparison(TH1D* hNominal, TString system, TString var)
     c->cd();
     DrawCmsHeader(c, system);
     c->Update();
-
-    TString outStem = Form("comparison_RUN1_%s_%s", system.Data(), var.Data());
-    c->SaveAs(Form("output_ntmix/%s.pdf", outStem.Data()));
+    c->SaveAs(Form("output_ntmix/comparison_RUN1_%s_%s.pdf", system.Data(), var.Data()));
 
     for (TBox* box : systBoxes) delete box;
-    delete hRun;
+    delete hFrame;
     delete hNominalDraw;
     delete hRun1;
     delete hRun1Syst;
@@ -306,75 +212,39 @@ static void SaveRun1Comparison(TH1D* hNominal, TString system, TString var)
 
 void Ratio_CorrectedYields(
     TString SYSTEM = "ppRef",
-    TString VAR    = "Bpt",
-    TString CASES  = kDefaultCases
+    TString VAR = "Bpt"
 ) {
     gSystem->mkdir("output_ntmix", true);
     gSystem->mkdir("output_ntmix/root_files", true);
     gStyle->SetOptStat(0);
 
-    CASES.ToLower();
-    CASES.ReplaceAll(" ", "");
-    std::vector<TString> methods;
-    if (CASES == "all") {
-        methods = {"splot", "2D", "1D"};
-    } else {
-        if (CASES.Contains("splot")) methods.push_back("splot");
-        if (CASES.Contains("2d")) methods.push_back("2D");
-        if (CASES.Contains("1d")) methods.push_back("1D");
-        if (methods.empty()) methods.push_back("splot");
-    }
-    std::vector<TH1D*> ratios;
-    std::vector<TString> labels;
+    std::cout << "[Ratio_CorrectedYields] Nominal X(3872)/#psi(2S), system = " << SYSTEM
+              << ", variable = " << VAR
+              << ", correction = sPlot + ML_weighted map" << std::endl;
 
-    std::cout << "[Ratio_CorrectedYields] X/psi ratio, system = " << SYSTEM
-              << ", variable = " << VAR << ", output = output_ntmix" << std::endl;
+    TH1D* hRatio = BuildNominalRatio(SYSTEM, VAR);
+    const TString outStem = Form("ntmix_X3872_OVER_ntmix_PSI2S_%s_%s_Ratio", SYSTEM.Data(), VAR.Data());
+    SaveNominalRatio(hRatio, outStem, SYSTEM);
+    SaveRun1Comparison(hRatio, SYSTEM, VAR);
 
-    for (const auto& method : methods) {
-        TString tag = "";
-        if (!tag.IsNull() && !tag.BeginsWith("_")) tag = "_" + tag;
-        TString numFile = Form("../effER/output/ROOTs/ntmix_X3872_%s_%s%s_%s_CorrectedYields.root",
-                               SYSTEM.Data(), VAR.Data(), tag.Data(), method.Data());
-        TString denFile = Form("../effER/output/ROOTs/ntmix_PSI2S_%s_%s%s_%s_CorrectedYields.root",
-                               SYSTEM.Data(), VAR.Data(), tag.Data(), method.Data());
-        TH1D* hRatio = BuildRatio(numFile, denFile, method, VAR);
-        if (!hRatio) continue;
-
-        TString outStem = Form("ntmix_X3872_OVER_ntmix_PSI2S_%s_%s_%s_Ratio",
-                               SYSTEM.Data(), VAR.Data(), method.Data());
-        if (method == "splot") SaveSingleRatio(hRatio, outStem, SYSTEM);
-        if (method == "splot") SaveRun1Comparison(hRatio, SYSTEM, VAR);
-        ratios.push_back(hRatio);
-        TString methodLabel = method;
-        if (method == "splot") methodLabel = "sPlot (nominal)";
-        else if (method == "2D") methodLabel = "2D";
-        else if (method == "1D") methodLabel = "1D";
-        labels.push_back(methodLabel);
-
-        std::cout << "[Ratio_CorrectedYields] " << methodLabel << std::endl;
-        for (int i = 1; i <= hRatio->GetNbinsX(); ++i) {
-            std::cout << "  bin " << i << " [" << hRatio->GetXaxis()->GetBinLowEdge(i)
-                      << "," << hRatio->GetXaxis()->GetBinUpEdge(i) << "] = "
-                      << hRatio->GetBinContent(i) << " +- " << hRatio->GetBinError(i) << std::endl;
-        }
+    for (int i = 1; i <= hRatio->GetNbinsX(); ++i) {
+        std::cout << "  bin " << i << " [" << hRatio->GetXaxis()->GetBinLowEdge(i)
+                  << "," << hRatio->GetXaxis()->GetBinUpEdge(i) << "] = "
+                  << hRatio->GetBinContent(i) << " +- " << hRatio->GetBinError(i) << std::endl;
     }
 
-    TString compStem = Form("comparison_effMethods_%s_%s", SYSTEM.Data(), VAR.Data());
-    if (ratios.size() > 1) SaveRatioComparison(ratios, labels, compStem, SYSTEM);
+    delete hRatio;
 }
 
 void Ratio_CorrectedYields(
     TString treenameN,
     TString treenameD,
     TString SYSTEM,
-    TString VAR,
-    TString CASES
+    TString VAR
 ) {
     if (treenameN != "ntmix_X3872" || treenameD != "ntmix_PSI2S") {
-        std::cerr << "[Ratio_CorrectedYields] This macro is dedicated to "
-                  << "ntmix_X3872 / ntmix_PSI2S"
-                  << "; ignoring requested trees " << treenameN << " / " << treenameD
-                  << std::endl;
+        std::cerr << "[Ratio_CorrectedYields] This macro is dedicated to ntmix_X3872 / ntmix_PSI2S; ignoring requested trees "
+                  << treenameN << " / " << treenameD << std::endl;
     }
-    Ratio_CorrectedYields(SYSTEM, VAR, CASES);
+    Ratio_CorrectedYields(SYSTEM, VAR);
 }

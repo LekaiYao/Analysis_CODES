@@ -14,7 +14,7 @@
 #include "aux/parameters.h"
 #include "aux/masses.h"
 
-void plot_Data(TString TREE ="ntmix", TString systemNAME = "PbPb"){
+void plot_Data(TString TREE ="ntmix", TString systemNAME = "PbPb23"){
     gStyle->SetOptStat(0);
 
     // Create a TChain and add all files from the directory
@@ -24,7 +24,7 @@ void plot_Data(TString TREE ="ntmix", TString systemNAME = "PbPb"){
         //chain.Add("/eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost/scored_samples/flat_ntmix_PbPb23_scored_DATA.root");
         chain.Add("/eos/user/k/kprince/x3872/DATA_PbPb_AANN.root");
     } else if(systemNAME.Contains("PbPb24")) {//PbPb24 data
-        chain.Add("/eos/user/k/kprince/X3872_PbPb/DATA_24_PbPb_AANN.root");
+        chain.Add("/eos/user/k/kprince/X3872_PbPb/DATA_24b_PbPb_AANN.root");
     }else if (systemNAME.Contains("PbPb")){
         //chain.Add("/eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost/scored_samples/flat_ntmix_PbPb_scored_DATA.root");
         chain.Add("/eos/user/k/kprince/X3872_PbPb/DATA_PbPb_AANN.root");
@@ -56,9 +56,10 @@ void plot_Data(TString TREE ="ntmix", TString systemNAME = "PbPb"){
     // PbPb24: abs(By) < 1.6 && Bpt > 10 && Prediction > 0.85 && BQvalue < 0.15 && CentBin > 10 && CentBin < 80 && 1
     if (TREE == "ntmix") {
         if (systemNAME.Contains("PbPb23")) {
-            SELECTIONcuts = "abs(By) < 1.6 && Bpt > 10 && Prediction > 0.7 && BQvalue < 0.2 ";
+            SELECTIONcuts = "abs(By) < 1.6 & Bpt > 10 & Prediction > 0.91 & BQvalue < 0.15 ";
         } else if (systemNAME.Contains("PbPb24")){
-            SELECTIONcuts = "  abs(By) < 1.6 & Bpt > 10 & BQvalue < 0.2  & Prediction > 0.7";
+            SELECTIONcuts = "abs(By) < 1.6 & Bpt > 10 & Prediction > 0.91 & BQvalue < 0.2 ";
+
         } else if (systemNAME.Contains("PbPb"))  {
             //SELECTIONcuts = "abs(By) < 1.2 && Bpt > 10 && BQvalue < 0.15 && CentBin > 20 && Btrk1dR < .25 && Btrk2dR < .25 && BtrkPtimb > 0.15";  // sample already has cuts applied
             SELECTIONcuts = "  abs(By) < 1.6 & Bpt > 10 & BQvalue < 0.25  & Prediction > 0.88";  
@@ -74,9 +75,9 @@ void plot_Data(TString TREE ="ntmix", TString systemNAME = "PbPb"){
     //std::cout << "DATA entries (after cuts): " << chain.GetEntries(SELECTIONcuts.Data()) << std::endl;
 
     TString Xlabel;
-    if (TREE == "ntmix")      {Xlabel = "m_{J/#Psi #pi^{+} #pi^{-}} (GeV)";} 
-    else if (TREE == "ntphi") {Xlabel = "m_{J/#Psi K^{+} K^{-}} (GeV)";    }
-    else if (TREE == "ntKp")  {Xlabel = "m_{J/#Psi K^{+}} (GeV)";          }
+    if (TREE == "ntmix")      {Xlabel  = "m_{J/#Psi #pi^{+} #pi^{-}} (GeV)";} 
+    else if (TREE == "ntphi") {Xlabel  = "m_{J/#Psi K^{+} K^{-}} (GeV)";    }
+    else if (TREE == "ntKp")  {Xlabel  = "m_{J/#Psi K^{+}} (GeV)";          }
     else if (TREE == "ntKstar"){Xlabel = "m_{J/#Psi K^{+} #pi^{-}} (GeV)"; }
 
     // Create an histogram for Bmass

@@ -68,7 +68,7 @@ def plot_correlation_dataMC(tree="X3872", system_name="ppRef"):
 
     path_to_data, path_to_mc, data_tree_name, mc_tree_name = resolve_paths(tree, system_name)
 
-    selection = "1"
+    selection = "Bpt > 10 && abs(By) < 1.6"
     sideband = "1"
     if data_tree_name == "ntmix":
         sideband = "(Bmass > 3.95 || (Bmass > 3.75 && Bmass < 3.8))"

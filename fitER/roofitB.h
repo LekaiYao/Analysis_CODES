@@ -22,7 +22,7 @@ RooFitResult *fit(TString system, TString variation, TString pdf, TString tree, 
 	RooRealVar sigma4cb(Form("sigma4cb%d_%s", _count, pdf.Data()), "", 0.005, 0.001, 0.05);
 	RooRealVar alpha(Form("alpha%d_%s", _count, pdf.Data()), "", 4., 0, 15);
 	RooRealVar n(Form("n_%d_%s", _count, pdf.Data()), "", 10, -100, 200);
-	RooRealVar* scale = new RooRealVar("scale", "scale", 1, 0.2, 2);
+	RooRealVar* scale = new RooRealVar("scale", "scale", 1, 0.95, 1.25);
 	RooProduct scaled_sigma1(Form("scaled_sigma1%d_%s", _count, pdf.Data()), "scaled_sigma1", RooArgList(*scale, sigma1));
 	RooProduct scaled_sigma2(Form("scaled_sigma2%d_%s", _count, pdf.Data()), "scaled_sigma2", RooArgList(*scale, sigma2));
 	RooProduct scaled_sigma3(Form("scaled_sigma3%d_%s", _count, pdf.Data()), "scaled_sigma3", RooArgList(*scale, sigma3));
