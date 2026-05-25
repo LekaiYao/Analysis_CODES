@@ -12,14 +12,20 @@ TREE="${3:?missing TREE}"
 PARTICLE="${4:-}"
 PVSNP="${5:-}"
 
-FILELIST_SUBDIR="filelists/${KIND}"
+FILELIST_SUBDIR="${FILELIST_DIR}/${KIND}"
 CASETAG="${PARTICLE}${PVSNP}"
+SHARING_DIR="/eos/user/h/hmarques/RUN3_Data_MC_sharing"
 if [[ "${TREE}" == "ntmix" ]]; then
-  OUTPUT_DIR="${SCRIPT_DIR}/X3872"
+  OUTPUT_SYSTEM="${SYSTEM}"
+  if [[ "${SYSTEM}" == "ppRef" ]]; then
+    OUTPUT_SYSTEM="ppRef24"
+  fi
+  OUTPUT_DIR="${SHARING_DIR}/X3872/${OUTPUT_SYSTEM}"
 else
-  OUTPUT_DIR="${SCRIPT_DIR}/Bmeson"
+  OUTPUT_DIR="${SHARING_DIR}/Bmesons/${SYSTEM}"
 fi
 mkdir -p "${OUTPUT_DIR}"
+echo "Writing flattened samples to ${OUTPUT_DIR}"
 
 FINAL_OUTPUT="${OUTPUT_DIR}/flat_${TREE}_${SYSTEM}_${KIND}${CASETAG}.root"
 TMP_OUTPUT="$(mktemp "/tmp/flat_${TREE}_${SYSTEM}_${KIND}${CASETAG}.XXXXXX.root")"

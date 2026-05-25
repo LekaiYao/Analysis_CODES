@@ -12,7 +12,7 @@ set -euo pipefail
 
 TREE="${1:-ntphi}"
 SYSTEM="${2:-ppRef}"
-CUT_DEFAULT="1"
+CUTs="1"
 X3872_SAMPLE_DIR="/eos/user/k/kprince/X3872_pp_new"
 BASE="/eos/user/h/hmarques/Analysis_CODES"
 
@@ -31,30 +31,32 @@ trap cleanup_aclic EXIT
 case "$TREE" in
   ntmix|ntmix_X3872)
     TREE="ntmix_X3872"
-    DATA_DEFAULT="${X3872_SAMPLE_DIR}/DATA_pp_AANN.root"
-    MC_DEFAULT="${X3872_SAMPLE_DIR}/MC_X3872_pp_AANN.root"
-    CUT_DEFAULT="Prediction > 0.59 && Bpt > 10 && abs(By) < 1.6 && BQvalue < 0.15"
+    DATA_DEFAULT="/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_DATA.root"
+    MC_DEFAULT="/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_MC_X3872.root"
+    ##CUTs="((Bpt > 5  && Bpt < 10 && Prediction > 0.11) || (Bpt > 10 && Bpt < 15 && Prediction > 0.45) || (Bpt > 15 && Bpt < 20 && Prediction > 0.56) || (Bpt > 20 && Bpt < 35 && Prediction > 0.71)) && BQvalue < 0.20  "
+    CUTs=" BQvalue < 0.20  && Btrk1dR < 0.45 && Btrk2dR < 0.45 && Bpt > 7.5 && Bpt < 40"  
     ;;
   ntmix_psi2s|ntmix_PSI2S)
     TREE="ntmix_PSI2S"
-    DATA_DEFAULT="${X3872_SAMPLE_DIR}/DATA_pp_AANN.root"
-    MC_DEFAULT="${X3872_SAMPLE_DIR}/MC_PSI2S_pp_AANN.root"
-    CUT_DEFAULT="Prediction > 0.59 && Bpt > 10 && abs(By) < 1.6 && BQvalue < 0.15"
+    DATA_DEFAULT="/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_DATA.root"
+    MC_DEFAULT="/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_MC_PSI2S.root"
+    ##CUTs="((Bpt > 5  && Bpt < 10 && Prediction > 0.11) || (Bpt > 10 && Bpt < 15 && Prediction > 0.45) || (Bpt > 15 && Bpt < 20 && Prediction > 0.56) || (Bpt > 20 && Bpt < 35 && Prediction > 0.71)) && BQvalue < 0.20  "
+    CUTs=" BQvalue < 0.20  && Btrk1dR < 0.45 && Btrk2dR < 0.45 && Bpt > 7.5 && Bpt < 40"  
     ;;
   ntphi)
     DATA_DEFAULT="${BASE}/flatER/Bmeson/flat_ntphi_${SYSTEM}_DATA.root"
     MC_DEFAULT="${BASE}/flatER/Bmeson/flat_ntphi_${SYSTEM}_MC.root"
-    CUT_DEFAULT="Bnorm_svpvDistance_2D > 4"
+    CUTs="Bnorm_svpvDistance_2D > 4"
     ;;
   ntKp)
     DATA_DEFAULT="${BASE}/flatER/Bmeson/flat_ntKp_${SYSTEM}_DATA.root"
     MC_DEFAULT="${BASE}/flatER/Bmeson/flat_ntKp_${SYSTEM}_MC.root"
-    CUT_DEFAULT="Bnorm_svpvDistance_2D > 4"
+    CUTs="Bnorm_svpvDistance_2D > 4"
     ;;
   ntKstar)
     DATA_DEFAULT="${BASE}/flatER/Bmeson/flat_ntKstar_${SYSTEM}_DATA.root"
     MC_DEFAULT="${BASE}/flatER/Bmeson/flat_ntKstar_${SYSTEM}_MC.root"
-    CUT_DEFAULT="Bnorm_svpvDistance_2D > 4"
+    CUTs="Bnorm_svpvDistance_2D > 4"
     ;;
   *)
     echo "Unknown tree: $TREE"
@@ -63,7 +65,7 @@ case "$TREE" in
     ;;
 esac
 
-CUT="${3:-$CUT_DEFAULT}"
+CUT="${3:-$CUTs}"
 
 DATA="${4:-$DATA_DEFAULT}"
 MC="${5:-$MC_DEFAULT}"

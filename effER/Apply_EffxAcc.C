@@ -22,7 +22,6 @@
 #include <iostream>
 #include <cmath>
 #include <memory>
-#include <stdexcept>
 
 #include "aux/uti.h"
 
@@ -254,29 +253,20 @@ static EffResult RunSPlotMethod(const EffCase& method, TTree* tree, TH2D* h2D, T
 
 
 
-// root -b -q 'Apply_EffxAcc.C("ntmix_PSI2S","ppRef","nSelectedChargedTracks","splot")'
-// root -b -q 'Apply_EffxAcc.C("ntmix_X3872","ppRef","Bpt","all")'
+// root -b -q 'Apply_EffxAcc.C("ntmix_PSI2S","ppRef","nSelectedChargedTracks","splot","usePw")'
+// root -b -q 'Apply_EffxAcc.C("ntmix_X3872","ppRef","Bpt","all","all")'
 
 void Apply_EffxAcc(
     TString treename = "ntmix_X3872",
     TString SYSTEM = "ppRef",
     TString VAR = "Bpt",
-    TString CASES = "splot",
-    bool USE_ML_WEIGHTED_MAP = true
+    TString CASES = "all",
+    TString MAPS = "usePw"
 ) {
-    TString casesNorm = CASES;
-    casesNorm.ToLower();
-    casesNorm.ReplaceAll(" ", "");
-    if (casesNorm.Contains("mapcompare") || casesNorm.Contains("weightcompare")
-        || casesNorm.Contains("mlcompare") || casesNorm.Contains("weightedvsunweighted")) {
-        throw std::runtime_error("Use Compare_MapWeights.C for weighted-vs-unweighted comparisons.");
-    }
-    const TString selectedMapTag = USE_ML_WEIGHTED_MAP ? "ML_weighted" : "unweighted";
-
     std::cout << "Applying EffxAcc correction for " << treename.Data()
               << " in " << SYSTEM.Data() << " for variable " << VAR.Data()
               << " with cases=" << CASES.Data()
-              << " and map=" << selectedMapTag.Data()
+              << " and maps=" << MAPS.Data()
               << std::endl;
 
     TString fitTree = treename;
@@ -285,17 +275,14 @@ void Apply_EffxAcc(
 
     gSystem->mkdir("output", true);
     gSystem->mkdir("output/ROOTs", true);
+    gSystem->mkdir("output/ACCxEFF_plots", true);
     gStyle->SetOptStat(0);
 
     TFile* fData = TFile::Open(dataFilePath, "READ");
-    if (!fData || fData->IsZombie()) throw std::runtime_error(Form("Could not open data file: %s", dataFilePath.Data()));
     TTree* tReco = (TTree*)fData->Get(GetDataEffTreeName(treename));
-    if (!tReco) throw std::runtime_error(Form("Could not find data tree %s", GetDataEffTreeName(treename).Data()));
 
     TFile* fYield = TFile::Open(yieldsFilePath, "READ");
-    if (!fYield || fYield->IsZombie()) throw std::runtime_error(Form("Could not open yield file: %s", yieldsFilePath.Data()));
     TH1D* hYield = (TH1D*)fYield->Get("hPt");
-    if (!hYield) throw std::runtime_error(Form("Could not find hPt in: %s", yieldsFilePath.Data()));
 
     std::vector<double> bins;
     const int nYieldBins = hYield->GetNbinsX();
@@ -303,40 +290,49 @@ void Apply_EffxAcc(
     for (int i = 1; i <= nYieldBins; ++i) bins.push_back(hYield->GetXaxis()->GetBinLowEdge(i));
     bins.push_back(hYield->GetXaxis()->GetBinUpEdge(nYieldBins));
 
-    auto loadMap = [&](const TString& mapTag, TFile*& fAccEff, TH2D*& hACCxEFF, TH1D*& hACCxEFF_1D) {
-        const TString accEffFilePath = Form("./output/ROOTs/%s_%s2Dmap_ACCxEFF_%s.root", treename.Data(), SYSTEM.Data(), mapTag.Data());
-        fAccEff = TFile::Open(accEffFilePath, "READ");
-        if (!fAccEff || fAccEff->IsZombie()) throw std::runtime_error(Form("Could not open ACCxEFF map file: %s", accEffFilePath.Data()));
-        hACCxEFF = (TH2D*)fAccEff->Get("hACCxEFF");
-        hACCxEFF_1D = (TH1D*)fAccEff->Get("hACCxEFF_1D");
-        if (!hACCxEFF || !hACCxEFF_1D) throw std::runtime_error(Form("Missing hACCxEFF or hACCxEFF_1D in: %s", accEffFilePath.Data()));
-        std::cout << "[Apply_EffxAcc] Using ACCxEFF map: " << accEffFilePath << std::endl;
+    TString mapsNorm = MAPS;
+    mapsNorm.ReplaceAll(" ", "");
+    mapsNorm.ToLower();
+    std::vector<TString> mapTags;
+    auto addMap = [&](TString tag) {
+        for (const auto& existing : mapTags) if (existing == tag) return;
+        mapTags.push_back(tag);
     };
-
-    TFile* fAccEff = nullptr;
-    TH2D* hACCxEFF = nullptr;
-    TH1D* hACCxEFF_1D = nullptr;
-    loadMap(selectedMapTag, fAccEff, hACCxEFF, hACCxEFF_1D);
-
-    std::vector<EffCase> methods = RequestedCases(CASES);
-    std::vector<EffResult> results;
-    for (const auto& method : methods) {
-        EffResult result;
-        if (method.suffix == "2D") {
-            result = Run2DMethod(method, tReco, hACCxEFF, hACCxEFF_1D, hYield, bins, treename, SYSTEM, VAR);
-        } else if (method.suffix == "1D") {
-            result = Run1DMethod(method, tReco, hACCxEFF, hACCxEFF_1D, hYield, bins, treename, SYSTEM, VAR);
-        } else {
-            result = RunSPlotMethod(method, tReco, hACCxEFF, hACCxEFF_1D, hYield, bins, treename, SYSTEM, VAR);
-        }
-        TString stem = Form("%s_%s_%s_%s_%s", fitTree.Data(), SYSTEM.Data(), VAR.Data(), selectedMapTag.Data(), method.suffix.Data());
-        SaveResult(result, hYield, stem, fitTree);
-        results.push_back(result);
+    if (mapsNorm == "all") {
+        mapTags = {"raw", "usePw", "useXw"};
+    } else {
+        if (mapsNorm.Contains("raw") || mapsNorm.Contains("unweighted")) addMap("raw");
+        if (mapsNorm.Contains("usepw") || mapsNorm.Contains("psi") || mapsNorm.Contains("psiw")) addMap("usePw");
+        if (mapsNorm.Contains("usexw") || mapsNorm.Contains("x3872") || mapsNorm.Contains("xw")) addMap("useXw");
+        if (mapTags.empty()) addMap("usePw");
     }
 
-    SaveComparison(results, fitTree, SYSTEM, VAR, selectedMapTag);
+    std::vector<EffCase> methods = RequestedCases(CASES);
+    for (const auto& mapTag : mapTags) {
+        const TString accEffFilePath = Form("./output/ROOTs/%s_%s2Dmap_ACCxEFF_%s.root", treename.Data(), SYSTEM.Data(), mapTag.Data());
+        TFile* fAccEff = TFile::Open(accEffFilePath, "READ");
+        TH2D* hACCxEFF = (TH2D*)fAccEff->Get("hACCxEFF");
+        TH1D* hACCxEFF_1D = (TH1D*)fAccEff->Get("hACCxEFF_1D");
+        std::cout << "[Apply_EffxAcc] Using ACCxEFF map: " << accEffFilePath << std::endl;
 
-    fAccEff->Close();
+        for (const auto& method : methods) {
+            EffResult result;
+            if (method.suffix == "2D") {
+                result = Run2DMethod(method, tReco, hACCxEFF, hACCxEFF_1D, hYield, bins, treename, SYSTEM, VAR);
+            } else if (method.suffix == "1D") {
+                result = Run1DMethod(method, tReco, hACCxEFF, hACCxEFF_1D, hYield, bins, treename, SYSTEM, VAR);
+            } else {
+                result = RunSPlotMethod(method, tReco, hACCxEFF, hACCxEFF_1D, hYield, bins, treename, SYSTEM, VAR);
+            }
+            result.hAvg->SetName(Form("hAvg_Inv_EffxAcc_%s_%s", mapTag.Data(), method.suffix.Data()));
+            result.hYield->SetName(Form("hYieldCorr_%s_%s", mapTag.Data(), method.suffix.Data()));
+            TString stem = Form("%s_%s_%s_%s_%s", fitTree.Data(), SYSTEM.Data(), VAR.Data(), mapTag.Data(), method.suffix.Data());
+            SaveResult(result, hYield, stem, fitTree);
+        }
+
+        fAccEff->Close();
+    }
+
     fData->Close();
     fYield->Close();
 }

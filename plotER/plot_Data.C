@@ -14,7 +14,7 @@
 #include "aux/parameters.h"
 #include "aux/masses.h"
 
-void plot_Data(TString TREE ="ntmix", TString systemNAME = "PbPb23"){
+void plot_Data(TString TREE ="ntmix", TString systemNAME = "ppRef"){
     gStyle->SetOptStat(0);
 
     // Create a TChain and add all files from the directory
@@ -45,7 +45,7 @@ void plot_Data(TString TREE ="ntmix", TString systemNAME = "PbPb23"){
     double hist_Xlow = 5;     // Minimum Bmass
     double hist_Xhigh = 5.8;  // Maximum Bmass
     if (TREE == "ntmix"){hist_Xlow = 3.6; hist_Xhigh = 4.0;}
-    int nbinsmasshisto = 40;    
+    int nbinsmasshisto = 80;    
     double bin_length_MEV = (hist_Xhigh - hist_Xlow)*1000 / nbinsmasshisto;
 
     TString SELECTIONcuts = "1";
@@ -64,21 +64,20 @@ void plot_Data(TString TREE ="ntmix", TString systemNAME = "PbPb23"){
             //SELECTIONcuts = "abs(By) < 1.2 && Bpt > 10 && BQvalue < 0.15 && CentBin > 20 && Btrk1dR < .25 && Btrk2dR < .25 && BtrkPtimb > 0.15";  // sample already has cuts applied
             SELECTIONcuts = "  abs(By) < 1.6 & Bpt > 10 & BQvalue < 0.25  & Prediction > 0.88";  
         } else {
-            //SELECTIONcuts = "abs(By) < 1.6 && Bpt > 10 && Prediction > 0.65 && BQvalue < 0.2";
-            SELECTIONcuts = "Prediction > 0.59 && Bpt > 10 && abs(By) < 1.6 && BQvalue < 0.15"; // 
+            SELECTIONcuts = " BQvalue < 0.20  && Btrk1dR < 0.4 && Btrk2dR < 0.4 && Bpt < 7.5"; // 
         }
     }
-    else if (TREE != "ntmix"){ SELECTIONcuts = "Bnorm_svpvDistance_2D > 4" ;}
+    else if (TREE != "ntmix"){ SELECTIONcuts = "1" ;}
 
     //SELECTIONcuts = "1";
     cout << "Applying selection cuts: " << SELECTIONcuts.Data() << std::endl;
     //std::cout << "DATA entries (after cuts): " << chain.GetEntries(SELECTIONcuts.Data()) << std::endl;
 
     TString Xlabel;
-    if (TREE == "ntmix")      {Xlabel  = "m_{J/#Psi #pi^{+} #pi^{-}} (GeV)";} 
-    else if (TREE == "ntphi") {Xlabel  = "m_{J/#Psi K^{+} K^{-}} (GeV)";    }
-    else if (TREE == "ntKp")  {Xlabel  = "m_{J/#Psi K^{+}} (GeV)";          }
-    else if (TREE == "ntKstar"){Xlabel = "m_{J/#Psi K^{+} #pi^{-}} (GeV)"; }
+    if (TREE == "ntmix")       {Xlabel  = "m_{J/#Psi #pi^{+} #pi^{-}} (GeV)";} 
+    else if (TREE == "ntphi")  {Xlabel  = "m_{J/#Psi K^{+} K^{-}} (GeV)";    }
+    else if (TREE == "ntKp")   {Xlabel  = "m_{J/#Psi K^{+}} (GeV)";          }
+    else if (TREE == "ntKstar"){Xlabel = "m_{J/#Psi K^{+} #pi^{-}} (GeV)";  }
 
     // Create an histogram for Bmass
     TH1F *hist_Bmass = new TH1F("hist_Bmass", Form("; %s ; Entries / %.1f MeV", Xlabel.Data(), bin_length_MEV), nbinsmasshisto, hist_Xlow, hist_Xhigh);

@@ -12,14 +12,14 @@
 #include <cmath>
 #include <iostream>
 #include <memory>
-#include <stdexcept>
 #include <vector>
 
 #include "aux/uti.h"
 
 
 // root -b -q 'accXeff_2D.C("ntmix_X3872","ppRef")'
-// root -b -q 'accXeff_2D.C("ntmix_X3872","ppRef",false)'
+// root -b -q 'accXeff_2D.C("ntmix_X3872","ppRef","raw")'
+// root -b -q 'accXeff_2D.C("ntmix_X3872","ppRef","useXw")'
 
 
 
@@ -28,14 +28,14 @@ static Long64_t FillRecoEffNumerators(
     TH2D* hNum2D,
     TH1D* hNum1D,
     const TString& cut,
-    bool ML_weighted,
+    bool useMLWeight,
     TH1D* hWeight)
 {
     TTreeFormula cutFormula("effCutFormula", cut.Data(), tree);
     TTreeFormula ptFormula("effPtFormula", "Bpt", tree);
     TTreeFormula yFormula("effYFormula", "By", tree);
     std::unique_ptr<TTreeFormula> predictionFormula;
-    if (ML_weighted) predictionFormula.reset(new TTreeFormula("effPredictionFormula", "Prediction", tree));
+    if (useMLWeight) predictionFormula.reset(new TTreeFormula("effPredictionFormula", "Prediction", tree));
 
     Long64_t selected = 0;
     Int_t currentTree = -1;
@@ -48,18 +48,18 @@ static Long64_t FillRecoEffNumerators(
             cutFormula.UpdateFormulaLeaves();
             ptFormula.UpdateFormulaLeaves();
             yFormula.UpdateFormulaLeaves();
-            if (ML_weighted) predictionFormula->UpdateFormulaLeaves();
+            if (useMLWeight) predictionFormula->UpdateFormulaLeaves();
         }
 
         cutFormula.GetNdata();
         ptFormula.GetNdata();
         yFormula.GetNdata();
-        if (ML_weighted) predictionFormula->GetNdata();
+        if (useMLWeight) predictionFormula->GetNdata();
         if (cutFormula.EvalInstance() == 0.0) continue;
 
         const double pt = ptFormula.EvalInstance();
         const double absY = std::abs(yFormula.EvalInstance());
-        const double weight = ML_weighted ? EffWeightValue(hWeight, predictionFormula->EvalInstance()) : 1.0;
+        const double weight = useMLWeight ? EffWeightValue(hWeight, predictionFormula->EvalInstance()) : 1.0;
 
         hNum2D->Fill(pt, absY, weight);
         hNum1D->Fill(pt, weight);
@@ -72,16 +72,29 @@ static Long64_t FillRecoEffNumerators(
 void accXeff_2D(
     TString treename = "ntmix_X3872",
     TString SYSTEM = "ppRef",
-    bool ML_weighted = true
+    TString MAP = "usePw"
 )
 {
 
     TString path_to_MC = GetMCEffPath(treename, SYSTEM);
     TString path_to_Gen = GetGenEffPath(treename, SYSTEM);
     TString particleLabel = FitParticleLabel(treename, false);
-    const TString mapTag = ML_weighted ? "ML_weighted" : "unweighted";
+
+    MAP.ReplaceAll(" ", "");
+    MAP.ToLower();
+    TString mapTag = "usePw";
+    TString weightSource = "PSI2S";
+    if (MAP == "raw" || MAP == "unweighted" || MAP == "none") {
+        mapTag = "raw";
+        weightSource = "";
+    } else if (MAP == "usexw" || MAP == "xw" || MAP == "x3872") {
+        mapTag = "useXw";
+        weightSource = "X3872";
+    }
+    const bool useMLWeight = (mapTag != "raw");
 
     gSystem->mkdir("output", true);
+    gSystem->mkdir("output/2Dmaps", true);
     gSystem->mkdir("output/ROOTs", true);
     gStyle->SetOptStat(0);
     gROOT->ForceStyle();
@@ -102,18 +115,17 @@ void accXeff_2D(
     TTree *tree_gen  = (TTree*)finGen->Get("ntGen");
 
     TH1D* hWeight = nullptr;
-    if (ML_weighted) {
-        const TString weightPath = Form("/eos/user/h/hmarques/Analysis_CODES/plotER/Validation/WEIGHTS/ntmix_%s_PSI2S_weight.root", SYSTEM.Data());
+    if (useMLWeight) {
+        const TString weightPath = Form("/eos/user/h/hmarques/Analysis_CODES/plotER/Validation/WEIGHTS/ntmix_%s_%s_weight.root",
+                                        SYSTEM.Data(), weightSource.Data());
         TFile* weightFile = TFile::Open(weightPath, "READ");
-        if (!weightFile || weightFile->IsZombie()) throw std::runtime_error(Form("Could not open ML weight file: %s", weightPath.Data()));
         TH1D* hWeightSource = (TH1D*)weightFile->Get("hWeight");
-        if (!hWeightSource) throw std::runtime_error(Form("Could not find hWeight in: %s", weightPath.Data()));
         hWeight = (TH1D*)hWeightSource->Clone("hWeight_runtime");
         hWeight->SetDirectory(nullptr);
         weightFile->Close();
-        std::cout << "[accXeff_2D] Building ML-weighted EFF map from " << weightPath << std::endl;
+        std::cout << "[accXeff_2D] Building EFF map with " << weightSource << " ML weights from " << weightPath << std::endl;
     } else {
-        std::cout << "[accXeff_2D] Building unweighted EFF map" << std::endl;
+        std::cout << "[accXeff_2D] Building raw EFF map" << std::endl;
     }
 
     TH2D *hDen_ACC = new TH2D("hDen_ACC",";p_{T} [GeV];|y|;denom", nPtBins, ptBins.data(), nYBins, yBins.data());
@@ -181,7 +193,7 @@ void accXeff_2D(
     hACC->SetContour(50);
     hACC->Draw("COLZ")  ;
 
-    TString Acc_out  = "output/" + treename + "_" + SYSTEM + "2Dmap_ACC.pdf";
+    TString Acc_out  = "output/2Dmaps/" + treename + "_" + SYSTEM + "2Dmap_ACC.pdf";
     TString rootName_ACC = "output/ROOTs/" + treename + "_" + SYSTEM + "2Dmap_ACC.root";
     cACC->SaveAs(Acc_out);
 
@@ -209,9 +221,9 @@ void accXeff_2D(
     TH1D *hDen_EFF_1D = (TH1D*)hNum_ACC_1D->Clone("hDen_EFF_1D");
     hDen_EFF_1D->SetTitle("Denominator for EFF; p_{T} [GeV];denom");
 
-    const Long64_t nSelected = FillRecoEffNumerators(tree_reco, hNum_EFF, hNum_EFF_1D, SelectionEFF, ML_weighted, hWeight);
+    const Long64_t nSelected = FillRecoEffNumerators(tree_reco, hNum_EFF, hNum_EFF_1D, SelectionEFF, useMLWeight, hWeight);
     std::cout << "Filled reco EFF numerator with " << nSelected << " selected candidates"
-              << (ML_weighted ? " (ML weighted)." : " (unweighted).") << std::endl;
+              << (useMLWeight ? Form(" (%s weighted).", weightSource.Data()) : " (raw).") << std::endl;
 
     TH2D *hEFF = (TH2D*)hNum_EFF->Clone("hEFF");
     hEFF->SetTitle("EFF");
@@ -232,7 +244,7 @@ void accXeff_2D(
     hEFF->SetContour(50);
     hEFF->Draw("COLZ")  ;
 
-    TString Eff_out  = "output/" + treename + "_" + SYSTEM + "2Dmap_EFF_" + mapTag + ".pdf";
+    TString Eff_out  = "output/2Dmaps/" + treename + "_" + SYSTEM + "2Dmap_EFF_" + mapTag + ".pdf";
     TString rootName_EFF = "output/ROOTs/" + treename + "_" + SYSTEM + "2Dmap_EFF_" + mapTag + ".root";
     cEFF->SaveAs(Eff_out);
 
@@ -265,7 +277,7 @@ void accXeff_2D(
     hACCxEFF->SetContour(50);
     hACCxEFF->Draw("COLZ");
 
-    TString AccEff_out  = "output/" + treename + "_" + SYSTEM + "2Dmap_ACCxEFF_" + mapTag + ".pdf";
+    TString AccEff_out  = "output/2Dmaps/" + treename + "_" + SYSTEM + "2Dmap_ACCxEFF_" + mapTag + ".pdf";
     TString rootName_AccEff = "output/ROOTs/" + treename + "_" + SYSTEM + "2Dmap_ACCxEFF_" + mapTag + ".root";
     cACCxEFF->SaveAs(AccEff_out);
 
