@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -53,6 +54,13 @@ static TString trim(const TString& s) {
     return out;
 }
 
+static std::string trimStdString(const std::string& s) {
+    const auto begin = s.find_first_not_of(" \t\r\n");
+    if (begin == std::string::npos) return "";
+    const auto end = s.find_last_not_of(" \t\r\n");
+    return s.substr(begin, end - begin + 1);
+}
+
 static bool parseSectionName(const TString& line, TString& sectionName) {
     TString s = trim(line);
     if (!s.BeginsWith("[") || !s.EndsWith("]")) return false;
@@ -69,6 +77,30 @@ static bool parseLine(const TString& line, TString& key, TString& value) {
     key = trim(s(0, eq));
     value = trim(s(eq + 1, s.Length() - eq - 1));
     return !(key.IsNull() || value.IsNull());
+}
+
+static bool splitCsvLine(const std::string& line, std::vector<std::string>& fields) {
+    fields.clear();
+    std::stringstream ss(line);
+    std::string item;
+    while (std::getline(ss, item, ',')) {
+        fields.push_back(trimStdString(item));
+    }
+    return !fields.empty();
+}
+
+static TString makeNumberTag(double value) {
+    TString out = Form("%.2f", value);
+    out.ReplaceAll(".", "p");
+    out.ReplaceAll("-", "m");
+    return out;
+}
+
+static TString buildFormulaKey(const FormulaConfig& formula) {
+    return Form("%s_a%s_b%s",
+                formula.fileTag.Data(),
+                makeNumberTag(formula.a).Data(),
+                makeNumberTag(formula.b).Data());
 }
 
 static bool loadConfig(const TString& path, const TString& profile, Config& cfg) {
@@ -128,6 +160,47 @@ static bool loadConfig(const TString& path, const TString& profile, Config& cfg)
     return true;
 }
 
+static bool loadFormulaConfigs(const TString& path, std::vector<FormulaConfig>& formulas) {
+    std::ifstream in(path.Data());
+    if (!in.is_open()) {
+        std::cerr << "ERROR: cannot open formula config file: " << path << std::endl;
+        return false;
+    }
+
+    formulas.clear();
+    std::string raw;
+    int lineNo = 0;
+    while (std::getline(in, raw)) {
+        ++lineNo;
+        const std::string line = trimStdString(raw);
+        if (line.empty() || line[0] == '#') continue;
+
+        std::vector<std::string> fields;
+        if (!splitCsvLine(line, fields)) continue;
+        if (fields.size() < 4 || fields.size() > 5) {
+            std::cerr << "ERROR: invalid formula config line " << lineNo
+                      << " in " << path << ": expected 4 or 5 CSV fields." << std::endl;
+            return false;
+        }
+
+        const std::string enabled = (fields.size() >= 5) ? fields[4] : "1";
+        if (enabled == "0" || enabled == "false" || enabled == "FALSE") continue;
+
+        FormulaConfig formula;
+        formula.label = fields[0];
+        formula.fileTag = fields[1];
+        formula.a = std::stod(fields[2]);
+        formula.b = std::stod(fields[3]);
+        formulas.push_back(formula);
+    }
+
+    if (formulas.empty()) {
+        std::cerr << "ERROR: no enabled formula configs found in " << path << std::endl;
+        return false;
+    }
+    return true;
+}
+
 static double computeSminSimplified(double bkg, double a, double) {
     return a / 2.0 + TMath::Sqrt(bkg);
 }
@@ -154,20 +227,20 @@ static double computeSmin(const TString& formula, double bkg, double a, double b
     return std::numeric_limits<double>::quiet_NaN();
 }
 
-static TString makeNumberTag(double value) {
-    TString out = Form("%.2f", value);
-    out.ReplaceAll(".", "p");
-    out.ReplaceAll("-", "m");
-    return out;
-}
-
 static TString buildBaseDir(const TString& profile) {
     return Form("./opt_tests/punzi_scan/%s", profile.Data());
 }
 
-static TString buildPlotPath(const TString& baseDir, const FormulaConfig& formula) {
+static TString buildResultDir(const TString& baseDir,
+                              const FormulaConfig& formula,
+                              bool splitPerFormula) {
+    if (!splitPerFormula) return baseDir;
+    return Form("%s/%s", baseDir.Data(), buildFormulaKey(formula).Data());
+}
+
+static TString buildPlotPath(const TString& resultDir, const FormulaConfig& formula) {
     return Form("%s/punzi_%s_a%s_b%s.pdf",
-                baseDir.Data(),
+                resultDir.Data(),
                 formula.fileTag.Data(),
                 makeNumberTag(formula.a).Data(),
                 makeNumberTag(formula.b).Data());
@@ -189,7 +262,7 @@ static ScanResult runScan(TTree* data,
         << " b=" << formula.b
         << " ===\n";
 
-    for (double thr = 0.0; thr <= 0.99 + 1e-12; thr += 0.002) {
+    for (double thr = 0.0; thr <= 0.998 + 1e-12; thr += 0.002) {
         TString selMC = Form("(%s) && (%s > %.3f)", cfg.preCut.Data(), cfg.scoreVar.Data(), thr);
         TString selDataLow = Form("(%s) && (%s) && (%s > %.3f)",
                                   cfg.sidebandLow.Data(), cfg.preCut.Data(), cfg.scoreVar.Data(), thr);
@@ -249,8 +322,7 @@ static void drawAndSaveResult(const Config& cfg,
     frame->SetTitle(Form(" ; %s; Punzi FOM (S_{min}/#varepsilon_{sig})", cfg.scoreVar.Data()));
 
     TGraph graph = result.graph;
-    graph.SetMarkerStyle(20);
-    graph.Draw("LP SAME");
+    graph.Draw("L SAME");
 
     TLine bestLine(result.bestThr, 0., result.bestThr, result.bestFom);
     bestLine.SetLineStyle(2);
@@ -264,17 +336,25 @@ static void drawAndSaveResult(const Config& cfg,
     label.DrawLatex(0.16, 0.86, Form("%s", cfg.system.Data()));
     label.DrawLatex(0.16, 0.81, Form("%s", formula.label.Data()));
     label.DrawLatex(0.16, 0.76, Form("a = %.2f, b = %.2f", formula.a, formula.b));
-    label.DrawLatex(0.16, 0.71, Form("Best threshold = %.2f", result.bestThr));
+    label.DrawLatex(0.16, 0.71, Form("Best threshold = %.3f", result.bestThr));
     label.DrawLatex(0.16, 0.66, Form("Min Punzi FOM = %.6f", result.bestFom));
 
     c.SaveAs(outputPath);
 }
 
-void optimalCUT_punzi_test(TString configPath, TString profile) {
+void optimalCUT_punzi_test(TString configPath,
+                           TString profile,
+                           TString formulaConfigPath = "",
+                           TString selectionKey = "") {
     gStyle->SetOptStat(0);
 
     Config cfg;
     if (!loadConfig(configPath, profile, cfg)) return;
+
+    if (formulaConfigPath.IsNull()) formulaConfigPath = "./punzi_test_matrix.conf";
+
+    std::vector<FormulaConfig> formulas;
+    if (!loadFormulaConfigs(formulaConfigPath, formulas)) return;
 
     TFile* fileData = TFile::Open(cfg.dataPath);
     TFile* fileMC = TFile::Open(cfg.mcPath);
@@ -309,50 +389,74 @@ void optimalCUT_punzi_test(TString configPath, TString profile) {
     const TString baseDir = buildBaseDir(profile);
     gSystem->mkdir(baseDir, true);
 
-    std::ofstream scanLog(Form("%s/scan.log", baseDir.Data()));
-    std::ofstream summaryLog(Form("%s/summary.log", baseDir.Data()));
-    if (!scanLog.is_open() || !summaryLog.is_open()) {
-        std::cerr << "ERROR: failed to open log files under " << baseDir << std::endl;
-        return;
+    const bool splitPerFormula = !selectionKey.IsNull();
+    bool matchedSelection = selectionKey.IsNull();
+
+    std::ofstream globalSummaryLog;
+    if (!splitPerFormula) {
+        globalSummaryLog.open(Form("%s/summary.log", baseDir.Data()));
+        if (!globalSummaryLog.is_open()) {
+            std::cerr << "ERROR: failed to open summary log under " << baseDir << std::endl;
+            return;
+        }
+        globalSummaryLog << "profile,formula_key,formula,a,b,best_threshold,min_punzi_fom,plot_path\n";
     }
 
-    scanLog << "Config file: " << configPath << "\n";
-    scanLog << "Profile: [" << profile << "]\n";
-    scanLog << "Data: " << cfg.dataPath << "\n";
-    scanLog << "MC:   " << cfg.mcPath << "\n";
-    scanLog << Form("Signal MC after preCut = %.2f\n", sTotal);
-    scanLog << Form("signalWidth = %.5f, sidebandWidth = %.5f, scale = %.6f\n\n",
-                    cfg.signalWidth, cfg.sidebandWidth, sbToSigScale);
-
-    summaryLog << "profile,formula,a,b,best_threshold,min_punzi_fom,plot_path\n";
-
-    const std::vector<FormulaConfig> formulas = {
-        {"simplified", "simplified", 1.64, 3.0},
-        {"simplified", "simplified", 1.64, 5.0},
-        {"simplified", "simplified", 2.0, 5.0},
-        {"gaussian", "gaussian", 1.64, 3.0},
-        {"gaussian", "gaussian", 1.64, 5.0},
-        {"gaussian", "gaussian", 2.0, 5.0},
-        {"improved", "improved", 1.64, 3.0},
-        {"improved", "improved", 1.64, 5.0},
-        {"improved", "improved", 2.0, 5.0},
-    };
-
     for (const auto& formula : formulas) {
+        const TString formulaKey = buildFormulaKey(formula);
+        if (!selectionKey.IsNull() && selectionKey != formulaKey) continue;
+        matchedSelection = true;
+
+        const TString resultDir = buildResultDir(baseDir, formula, splitPerFormula);
+        gSystem->mkdir(resultDir, true);
+
+        std::ofstream scanLog(Form("%s/scan.log", resultDir.Data()));
+        std::ofstream summaryLog;
+        if (splitPerFormula) summaryLog.open(Form("%s/summary.log", resultDir.Data()));
+
+        if (!scanLog.is_open() || (splitPerFormula && !summaryLog.is_open())) {
+            std::cerr << "ERROR: failed to open log files under " << resultDir << std::endl;
+            return;
+        }
+
+        scanLog << "Config file: " << configPath << "\n";
+        scanLog << "Profile: [" << profile << "]\n";
+        scanLog << "Formula config: " << formulaConfigPath << "\n";
+        scanLog << "Selection key: " << formulaKey << "\n";
+        scanLog << "Data: " << cfg.dataPath << "\n";
+        scanLog << "MC:   " << cfg.mcPath << "\n";
+        scanLog << Form("Signal MC after preCut = %.2f\n", sTotal);
+        scanLog << Form("signalWidth = %.5f, sidebandWidth = %.5f, scale = %.6f\n\n",
+                        cfg.signalWidth, cfg.sidebandWidth, sbToSigScale);
+
+        if (splitPerFormula) {
+            summaryLog << "profile,formula_key,formula,a,b,best_threshold,min_punzi_fom,plot_path\n";
+        }
+
         const ScanResult result = runScan(data, mc, cfg, formula, sTotal, sbToSigScale, scanLog);
-        const TString plotPath = buildPlotPath(baseDir, formula);
+        const TString plotPath = buildPlotPath(resultDir, formula);
+
+        std::ostream& summaryOut = splitPerFormula
+            ? static_cast<std::ostream&>(summaryLog)
+            : static_cast<std::ostream&>(globalSummaryLog);
 
         if (!result.hasValidPoint) {
-            summaryLog << profile << "," << formula.label << "," << formula.a << "," << formula.b
+            summaryOut << profile << "," << formulaKey << "," << formula.label << "," << formula.a << "," << formula.b
                        << ",NA,NA," << plotPath << "\n";
             continue;
         }
 
         drawAndSaveResult(cfg, formula, result, plotPath);
-        summaryLog << profile << "," << formula.label << "," << formula.a << "," << formula.b
-                   << "," << std::fixed << std::setprecision(2) << result.bestThr
+        summaryOut << profile << "," << formulaKey << "," << formula.label << "," << formula.a << "," << formula.b
+                   << "," << std::fixed << std::setprecision(3) << result.bestThr
                    << "," << std::setprecision(6) << result.bestFom
                    << "," << plotPath << "\n";
+    }
+
+    if (!matchedSelection) {
+        std::cerr << "ERROR: selection key [" << selectionKey << "] not found in formula config: "
+                  << formulaConfigPath << std::endl;
+        return;
     }
 
     fileData->Close();
@@ -361,19 +465,21 @@ void optimalCUT_punzi_test(TString configPath, TString profile) {
 
 void optimalCUT_punzi_test() {
     std::cerr << "ERROR: missing required arguments." << std::endl;
-    std::cerr << "Usage: root -l -b -q 'optimalCUT_punzi_test.C(\"<config_path>\",\"<profile_name>\")'" << std::endl;
+    std::cerr << "Usage: root -l -b -q 'optimalCUT_punzi_test.C(\"<config_path>\",\"<profile_name>\",\"[formula_config_path]\",\"[selection_key]\")'" << std::endl;
     std::cerr << "Example: root -l -b -q 'optimalCUT_punzi_test.C(\"optimalCUT.conf\",\"bs_pp\")'" << std::endl;
 }
 
 int main(int argc, char** argv) {
     if (argc < 3) {
         std::cerr << "ERROR: missing required arguments." << std::endl;
-        std::cerr << "Usage: root -l -b -q 'optimalCUT_punzi_test.C(\"<config_path>\",\"<profile_name>\")'" << std::endl;
+        std::cerr << "Usage: root -l -b -q 'optimalCUT_punzi_test.C(\"<config_path>\",\"<profile_name>\",\"[formula_config_path]\",\"[selection_key]\")'" << std::endl;
         std::cerr << "Example: root -l -b -q 'optimalCUT_punzi_test.C(\"optimalCUT.conf\",\"bs_pp\")'" << std::endl;
         return 1;
     }
     TString configPath = argv[1];
     TString profile = argv[2];
-    optimalCUT_punzi_test(configPath, profile);
+    TString formulaConfigPath = (argc >= 4) ? argv[3] : "";
+    TString selectionKey = (argc >= 5) ? argv[4] : "";
+    optimalCUT_punzi_test(configPath, profile, formulaConfigPath, selectionKey);
     return 0;
 }
