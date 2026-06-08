@@ -9,6 +9,7 @@
 #include <TObjString.h>
 #include <TParameter.h>
 #include <stdio.h>
+#include <cstdlib>
 
 #include "../plotER/aux/parameters.h"   //
 
@@ -60,8 +61,30 @@ void roofitB(TString TREE = "ntphi", int FULL = 0, TString INPUTDATA = "", TStri
 	else { minhisto = minhisto_B, maxhisto = maxhisto_B; }
 	int fitMassBins = nbinsmasshisto;
 	if (TREE == "ntmix_X3872" || TREE == "ntmix_PSI2S") fitMassBins = nbinsmasshisto/2;
+	double fitRangeMin = 5.2;
+	double fitRangeMax = 5.5;
+	const char* envMassMin = gSystem->Getenv("ROOFIT_MASS_MIN");
+	const char* envMassMax = gSystem->Getenv("ROOFIT_MASS_MAX");
+	const char* envBinWidth = gSystem->Getenv("ROOFIT_BIN_WIDTH");
+	if (envMassMin && envMassMax) {
+		double userMin = atof(envMassMin);
+		double userMax = atof(envMassMax);
+		if (userMax > userMin) {
+			minhisto = userMin;
+			maxhisto = userMax;
+			fitRangeMin = userMin;
+			fitRangeMax = userMax;
+		}
+	}
+	if (envBinWidth) {
+		double bw = atof(envBinWidth);
+		if (bw > 0.0 && maxhisto > minhisto) {
+			int nb = static_cast<int>(std::round((maxhisto - minhisto) / bw));
+			if (nb > 0) fitMassBins = nb;
+		}
+	}
 	mass = new RooRealVar("Bmass", "Bmass", minhisto, maxhisto);
-	mass->setRange("m_rangeB", 5.2 , 5.5);        //set a range to be used if pdf = mass_rangeB
+	mass->setRange("m_rangeB", fitRangeMin , fitRangeMax);        // set range used when pdf = mass_rangeB
 	mass->setRange("all", minhisto, maxhisto);
 	RooRealVar* pt    = new RooRealVar("Bpt","Bpt",0,300);
 	RooRealVar* y     = new RooRealVar("By","By",-2.4, 2.4);
