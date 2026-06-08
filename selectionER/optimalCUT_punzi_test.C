@@ -189,7 +189,7 @@ static ScanResult runScan(TTree* data,
         << " b=" << formula.b
         << " ===\n";
 
-    for (double thr = 0.0; thr <= 0.99 + 1e-12; thr += 0.01) {
+    for (double thr = 0.0; thr <= 0.99 + 1e-12; thr += 0.002) {
         TString selMC = Form("(%s) && (%s > %.3f)", cfg.preCut.Data(), cfg.scoreVar.Data(), thr);
         TString selDataLow = Form("(%s) && (%s) && (%s > %.3f)",
                                   cfg.sidebandLow.Data(), cfg.preCut.Data(), cfg.scoreVar.Data(), thr);
