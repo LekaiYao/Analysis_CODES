@@ -324,19 +324,24 @@ root -l -b -q 'selectionER/optimalCUT_fom.C("selectionER/optimalCUT.conf","<prof
 当前正确运行方式：
 ```bash
 cd fitER
-bash bmeson_fit_from_conf.sh <profile>
+bash bmeson_fit_from_conf.sh <profile> [cut_mode]
 ```
 
 示例：
 ```bash
 cd fitER
 bash bmeson_fit_from_conf.sh Bd_pp24_v1_fid1_9v1_xgb_v1
+bash bmeson_fit_from_conf.sh Bd_pp24_v1_fid1_9v1_xgb_v1 punzi
+bash bmeson_fit_from_conf.sh Bd_pp24_v1_fid1_9v1_xgb_v1 fom
+bash bmeson_fit_from_conf.sh Bd_pp24_v1_fid1_9v1_xgb_v1 both
 ```
 
 当前实现特点：
 - `optimalCUT.conf` 路径硬编码为 `../selectionER/optimalCUT.conf`
 - 运行前必须在 `fitER/` 目录下
 - 不再接收 `conf_path` 参数
+- `cut_mode` 支持 `punzi`、`fom`、`both`
+- 默认 `cut_mode=both`
 
 所需配置键：
 - `dataPath`, `mcPath`
@@ -345,6 +350,7 @@ bash bmeson_fit_from_conf.sh Bd_pp24_v1_fid1_9v1_xgb_v1
 - `scoreVar`
 - `preCut`
 - `optimalCUT_punzi`
+- `optimalCUT_fom`
 - `mass_range`，格式需为 `(Bmass > a && Bmass < b)`
 - `bin_width`
 
@@ -357,12 +363,21 @@ bash bmeson_fit_from_conf.sh Bd_pp24_v1_fid1_9v1_xgb_v1
 - `ntKstar -> Bd`
 
 当前拟合 cut：
+- `cut_mode=punzi` 时：
 ```text
 (preCut) && (scoreVar > optimalCUT_punzi)
 ```
+- `cut_mode=fom` 时：
+```text
+(preCut) && (scoreVar > optimalCUT_fom)
+```
+- `cut_mode=both` 时：
+  - 先跑 `punzi`
+  - 再跑 `fom`
 
 重要说明：
 - 当前拟合 cut 不再自动注入 sideband cut
+- 当前输出会通过 `ROOFIT_OUTPUT_TAG` 按 `punzi` / `fom` 分开结果目录
 
 质量窗口与 binning：
 - shell 脚本会解析 `mass_range`
