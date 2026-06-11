@@ -56,6 +56,14 @@ static bool parseLine(const TString& line, TString& key, TString& value) {
     return !(key.IsNull() || value.IsNull());
 }
 
+static TString inferChannelFromTree(const TString& treeName) {
+    if (treeName == "ntKp") return "Bu";
+    if (treeName == "ntphi") return "Bs";
+    if (treeName == "ntKstar") return "Bd";
+    if (treeName.BeginsWith("ntmix")) return "X";
+    return "misc";
+}
+
 static bool loadConfig(const TString& path, const TString& profile, Config& cfg) {
     if (profile.IsNull()) {
         std::cerr << "ERROR: profile name is empty." << std::endl;
@@ -332,7 +340,7 @@ void optimalCUT_fom(TString configPath, TString profile) {
 
     TString outName = cfg.fileNamePattern;
     outName.ReplaceAll("punzi", "fom");
-    TString outputDir = "./opt_plots";
+    TString outputDir = Form("./opt_plots/%s", inferChannelFromTree(cfg.mcTreeName).Data());
     gSystem->mkdir(outputDir, true);
     TString outputPath = Form("%s/%s", outputDir.Data(), outName.Data());
     outputPath.ReplaceAll("//", "/");

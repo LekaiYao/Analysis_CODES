@@ -16,6 +16,14 @@
 void read_samples(RooWorkspace& w, vector<TString> label, TString fName, TString treeName, TString sample, TString system="ppRef", TString DOselCUTS="1");
 std::pair<int, std::vector<double>> defineBinning(const TString& var, const TString& tree, int full);
 
+static TString inferOutputChannel(const TString& tree) {
+	if (tree == "ntKp") return "Bu";
+	if (tree == "ntphi") return "Bs";
+	if (tree == "ntKstar") return "Bd";
+	if (tree.BeginsWith("ntmix")) return "X";
+	return tree;
+}
+
 // PDF VARIATION FOR SYST STUDIES
 int syst_study=1;
 
@@ -25,11 +33,17 @@ int use_profile_likelihood=1;
 void roofitB(TString TREE = "ntphi", int FULL = 0, TString INPUTDATA = "", TString INPUTMC = "", TString VAR = "", TString CUT = "", TString SYSTEM = "ppRef"){
 
 	//Setup the working area
-	TString RESULT_BASE = Form("results/%s", SYSTEM.Data());
-	TString ROOT_BASE = Form("ROOTfiles/%s", SYSTEM.Data());
+	TString CHANNEL = inferOutputChannel(TREE);
+	TString OUTPUT_TAG = gSystem->Getenv("ROOFIT_OUTPUT_TAG");
+	TString RESULT_BASE = OUTPUT_TAG.IsNull()
+		? Form("results/%s/%s", SYSTEM.Data(), CHANNEL.Data())
+		: Form("results/%s/%s/%s", SYSTEM.Data(), CHANNEL.Data(), OUTPUT_TAG.Data());
+	TString ROOT_BASE = OUTPUT_TAG.IsNull()
+		? Form("ROOTfiles/%s/%s", SYSTEM.Data(), CHANNEL.Data())
+		: Form("ROOTfiles/%s/%s/%s", SYSTEM.Data(), CHANNEL.Data(), OUTPUT_TAG.Data());
 	TString TABLE_DIR = Form("%s/tables", RESULT_BASE.Data());
 	TString GRAPH_DIR = Form("%s/Graphs", RESULT_BASE.Data());
-	TString OUTPLOTF = Form("%s/%s/%s", RESULT_BASE.Data(), TREE.Data(), VAR.Data());
+	TString OUTPLOTF = Form("%s/%s", RESULT_BASE.Data(), VAR.Data());
 	gSystem->mkdir(TABLE_DIR.Data(),true); 
 	gSystem->mkdir(GRAPH_DIR.Data(), true); 
 	gSystem->mkdir(ROOT_BASE.Data(), true);

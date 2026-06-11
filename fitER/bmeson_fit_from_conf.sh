@@ -3,17 +3,21 @@ set -euo pipefail
 
 # Usage:
 #   cd fitER
-#   bash bmeson_fit_from_conf.sh <profile>
+#   bash bmeson_fit_from_conf.sh <profile> [cut_mode]
 # Example:
 #   cd fitER
 #   bash bmeson_fit_from_conf.sh Bs_pp24_v1_fid1_17v1_xgb_v1
+#   bash bmeson_fit_from_conf.sh Bs_pp24_v1_fid1_17v1_xgb_v1 punzi
+#   bash bmeson_fit_from_conf.sh Bs_pp24_v1_fid1_17v1_xgb_v1 fom
+#   bash bmeson_fit_from_conf.sh Bs_pp24_v1_fid1_17v1_xgb_v1 both
 
 PROFILE="${1:-}"
+CUT_MODE="${2:-both}"
 CONF_PATH="../selectionER/optimalCUT.conf"
 
 if [[ -z "$PROFILE" ]]; then
   echo "ERROR: missing profile tag." >&2
-  echo "Usage: cd fitER && bash bmeson_fit_from_conf.sh <profile>" >&2
+  echo "Usage: cd fitER && bash bmeson_fit_from_conf.sh <profile> [cut_mode]" >&2
   exit 1
 fi
 
@@ -21,6 +25,14 @@ if [[ ! -f "$CONF_PATH" ]]; then
   echo "ERROR: config file not found: $CONF_PATH" >&2
   exit 1
 fi
+
+case "$CUT_MODE" in
+  punzi|fom|both) ;;
+  *)
+    echo "ERROR: unsupported cut_mode '$CUT_MODE'. Expected punzi, fom, or both." >&2
+    exit 1
+    ;;
+esac
 
 get_conf_value() {
   local key="$1"
@@ -54,11 +66,12 @@ SYSTEM_TAG="$(get_conf_value system)"
 SCORE_VAR="$(get_conf_value scoreVar)"
 PRE_CUT="$(get_conf_value preCut)"
 OPT_CUT_PUNZI="$(get_conf_value optimalCUT_punzi)"
+OPT_CUT_FOM="$(get_conf_value optimalCUT_fom)"
 CHANNEL="$(get_conf_value channel)"
 MASS_RANGE_EXPR="$(get_conf_value mass_range)"
 BIN_WIDTH="$(get_conf_value bin_width)"
 
-for var_name in DATA_PATH MC_PATH DATA_TREE MC_TREE SYSTEM_TAG SCORE_VAR PRE_CUT OPT_CUT_PUNZI MASS_RANGE_EXPR BIN_WIDTH; do
+for var_name in DATA_PATH MC_PATH DATA_TREE MC_TREE SYSTEM_TAG SCORE_VAR PRE_CUT MASS_RANGE_EXPR BIN_WIDTH; do
   if [[ -z "${!var_name}" ]]; then
     echo "ERROR: missing key '${var_name,,}' in profile [$PROFILE] of $CONF_PATH" >&2
     exit 1
@@ -99,10 +112,6 @@ if [[ "$DATA_TREE" != "$MC_TREE" ]]; then
   echo "WARNING: dataTreeName=$DATA_TREE, mcTreeName=$MC_TREE. roofitB for B mesons uses TREE arg ($TREE_ARG) for both; ensure trees are consistent." >&2
 fi
 
-# Requested cut composition:
-# preCut + score > optimalCUT_punzi
-CUTS="(${PRE_CUT}) && (${SCORE_VAR} > ${OPT_CUT_PUNZI})"
-
 # Parse mass range expression like: (Bmass > 5.1 && Bmass < 5.7)
 MASS_MIN="$(echo "$MASS_RANGE_EXPR" | sed -nE 's/.*Bmass[[:space:]]*>[[:space:]]*([0-9.+-eE]+).*/\1/p')"
 MASS_MAX="$(echo "$MASS_RANGE_EXPR" | sed -nE 's/.*Bmass[[:space:]]*<[[:space:]]*([0-9.+-eE]+).*/\1/p')"
@@ -113,28 +122,55 @@ fi
 
 mkdir -p ROOTfiles
 
-echo "[INFO] profile        = $PROFILE"
-echo "[INFO] channel        = $CHANNEL"
-echo "[INFO] system         = $SYSTEM_TAG"
-echo "[INFO] dataPath       = $DATA_PATH"
-echo "[INFO] mcPath         = $MC_PATH"
-echo "[INFO] treeArg        = $TREE_ARG"
-echo "[INFO] FULL           = 1"
-echo "[INFO] VAR            = Bpt"
-echo "[INFO] optimalCUT     = $OPT_CUT_PUNZI"
-echo "[INFO] mass_range     = $MASS_RANGE_EXPR  -> [${MASS_MIN}, ${MASS_MAX}]"
-echo "[INFO] bin_width      = $BIN_WIDTH"
-echo "[INFO] CUTS           = $CUTS"
+run_fit() {
+  local cut_label="$1"
+  local cut_value="$2"
 
-ROOFIT_MASS_MIN="$MASS_MIN" \
-ROOFIT_MASS_MAX="$MASS_MAX" \
-ROOFIT_BIN_WIDTH="$BIN_WIDTH" \
-root -b -q "roofitB.C++(\"${TREE_ARG}\", \
-                      1, \
-                      \"${DATA_PATH}\", \
-                      \"${MC_PATH}\", \
-                      \"Bpt\", \
-                      \"${CUTS}\", \
-                      \"${SYSTEM_TAG}\")"
+  if [[ -z "$cut_value" ]]; then
+    echo "ERROR: missing ${cut_label} cut value in profile [$PROFILE] of $CONF_PATH" >&2
+    exit 1
+  fi
+
+  local cuts="(${PRE_CUT}) && (${SCORE_VAR} > ${cut_value})"
+
+  echo "[INFO] profile        = $PROFILE"
+  echo "[INFO] cut_mode       = $cut_label"
+  echo "[INFO] channel        = $CHANNEL"
+  echo "[INFO] system         = $SYSTEM_TAG"
+  echo "[INFO] dataPath       = $DATA_PATH"
+  echo "[INFO] mcPath         = $MC_PATH"
+  echo "[INFO] treeArg        = $TREE_ARG"
+  echo "[INFO] FULL           = 1"
+  echo "[INFO] VAR            = Bpt"
+  echo "[INFO] optimalCUT     = $cut_value"
+  echo "[INFO] mass_range     = $MASS_RANGE_EXPR  -> [${MASS_MIN}, ${MASS_MAX}]"
+  echo "[INFO] bin_width      = $BIN_WIDTH"
+  echo "[INFO] CUTS           = $cuts"
+
+  ROOFIT_MASS_MIN="$MASS_MIN" \
+  ROOFIT_MASS_MAX="$MASS_MAX" \
+  ROOFIT_BIN_WIDTH="$BIN_WIDTH" \
+  ROOFIT_OUTPUT_TAG="$cut_label" \
+  root -b -q "roofitB.C++(\"${TREE_ARG}\", \
+                        1, \
+                        \"${DATA_PATH}\", \
+                        \"${MC_PATH}\", \
+                        \"Bpt\", \
+                        \"${cuts}\", \
+                        \"${SYSTEM_TAG}\")"
+}
+
+case "$CUT_MODE" in
+  punzi)
+    run_fit punzi "$OPT_CUT_PUNZI"
+    ;;
+  fom)
+    run_fit fom "$OPT_CUT_FOM"
+    ;;
+  both)
+    run_fit punzi "$OPT_CUT_PUNZI"
+    run_fit fom "$OPT_CUT_FOM"
+    ;;
+esac
 
 rm -f roofitB_C.d roofitB_C_ACLiC_dict_rdict.pcm roofitB_C.so

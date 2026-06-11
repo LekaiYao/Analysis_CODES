@@ -59,6 +59,14 @@ static bool parseLine(const TString& line, TString& key, TString& value) {
     return !(key.IsNull() || value.IsNull());
 }
 
+static TString inferChannelFromTree(const TString& treeName) {
+    if (treeName == "ntKp") return "Bu";
+    if (treeName == "ntphi") return "Bs";
+    if (treeName == "ntKstar") return "Bd";
+    if (treeName.BeginsWith("ntmix")) return "X";
+    return "misc";
+}
+
 static bool loadConfig(const TString& path, const TString& profile, Config& cfg) {
     if (profile.IsNull()) {
         std::cerr << "ERROR: profile name is empty." << std::endl;
@@ -322,10 +330,12 @@ void optimalCUT_punzi(TString configPath, TString profile) {
     label.DrawLatex(0.16, 0.76, Form("Best threshold = %.2f", bestThr));
     label.DrawLatex(0.16, 0.71, Form("Min Punzi FOM = %.6f", bestFom));
 
-    if (!cfg.outputDir.IsNull() && cfg.outputDir != ".") {
-        gSystem->mkdir(cfg.outputDir, true);
+    TString outputDir = cfg.outputDir;
+    const TString channelDir = Form("%s/%s", outputDir.Data(), inferChannelFromTree(cfg.mcTreeName).Data());
+    if (!channelDir.IsNull() && channelDir != ".") {
+        gSystem->mkdir(channelDir, true);
     }
-    TString outputPath = Form("%s/%s", cfg.outputDir.Data(), cfg.fileNamePattern.Data());
+    TString outputPath = Form("%s/%s", channelDir.Data(), cfg.fileNamePattern.Data());
     outputPath.ReplaceAll("//", "/");
     c.SaveAs(outputPath);
 

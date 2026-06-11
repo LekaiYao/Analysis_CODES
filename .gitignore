@@ -31,3 +31,5 @@ __pycache__/
 *_C.so
 *_C_ACLiC_dict_rdict.pcm
 .envs/
+
+*_C_ACLiC_dict.cxx_tmp_*
