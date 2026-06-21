@@ -65,52 +65,70 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
     // --------------------------------------------------
     const Int_t MAXCAND = 40000;
     Int_t Bsize, nSelectedChargedTracks, CentBin;
-    Float_t Bmass[MAXCAND], Bpt[MAXCAND], By[MAXCAND], Bgen[MAXCAND];
-    Bool_t Bmu1isTriggered[MAXCAND];
-    Bool_t Bmu2isTriggered[MAXCAND];
-    Bool_t Bmu1SoftMuID[MAXCAND];
-    Bool_t Bmu2SoftMuID[MAXCAND];
-    Bool_t Bmu1HybridSoftMuID[MAXCAND];
-    Bool_t Bmu2HybridSoftMuID[MAXCAND];
-    Bool_t Bmu1isAcc[MAXCAND];
-    Bool_t Bmu2isAcc[MAXCAND];
-    Bool_t  Btrk1highPurity[MAXCAND];
-    Bool_t  Btrk2highPurity[MAXCAND];
-    Float_t Btrk1Pt[MAXCAND];
-    Float_t Btrk1Eta[MAXCAND];
-    Float_t Btrk1PtErr[MAXCAND];
-    Float_t Btrk1Chi2ndf[MAXCAND];
-    Float_t Btrk2Pt[MAXCAND];
-    Float_t Btrk2Eta[MAXCAND];
-    Float_t Btrk2PtErr[MAXCAND];
-    Float_t Btrk2Chi2ndf[MAXCAND];
-    Float_t Btktkmass[MAXCAND];
-    Float_t Bujmass[MAXCAND];
-    Float_t BujvProb[MAXCAND];
-    Float_t Bchi2Prob[MAXCAND];
-    Float_t BtrkPtimb[MAXCAND];
-    Float_t Btrk1dR[MAXCAND];
-    Float_t Btrk2dR[MAXCAND];
-    Float_t Btktkpt[MAXCAND];
-    Float_t BtktkvProb[MAXCAND];
-    Float_t BQvalue[MAXCAND];
-    Float_t Bnorm_svpvDistance_2D[MAXCAND];
-    Float_t BsvpvDistance_2D[MAXCAND];
-    Float_t Balpha[MAXCAND];
-    Float_t Bdtheta[MAXCAND];
-    Float_t Bcos_dtheta[MAXCAND];
-    Float_t Bnorm_trk1Dxy[MAXCAND];
-    Float_t Bnorm_trk2Dxy[MAXCAND];
-    Float_t Btrk1nPixelLayer[MAXCAND];
-    Float_t Btrk1nStripLayer[MAXCAND];
-    Float_t Btrk2nPixelLayer[MAXCAND];  
-    Float_t Btrk2nStripLayer[MAXCAND];
-    Float_t BLxy[MAXCAND];
+    Float_t PVx, PVy, PVz, PVnchi2;
+    static Float_t Bmass[MAXCAND], Bpt[MAXCAND], By[MAXCAND], Bgen[MAXCAND];
+    static Float_t BvtxX[MAXCAND], BvtxY[MAXCAND];
+    static Bool_t Bmu1isTriggered[MAXCAND];
+    static Bool_t Bmu2isTriggered[MAXCAND];
+    static Bool_t Bmu1SoftMuID[MAXCAND];
+    static Bool_t Bmu2SoftMuID[MAXCAND];
+    static Bool_t Bmu1HybridSoftMuID[MAXCAND];
+    static Bool_t Bmu2HybridSoftMuID[MAXCAND];
+    static Bool_t Bmu1isAcc[MAXCAND];
+    static Bool_t Bmu2isAcc[MAXCAND];
+    static Bool_t  Btrk1highPurity[MAXCAND];
+    static Bool_t  Btrk2highPurity[MAXCAND];
+    static Float_t Btrk1Pt[MAXCAND];
+    static Float_t Btrk1Eta[MAXCAND];
+    static Float_t Btrk1Phi[MAXCAND];
+    static Float_t Btrk1PtErr[MAXCAND];
+    static Float_t Btrk1Chi2ndf[MAXCAND];
+    static Float_t Btrk2Pt[MAXCAND];
+    static Float_t Btrk2Eta[MAXCAND];
+    static Float_t Btrk2Phi[MAXCAND];
+    static Float_t Btrk2PtErr[MAXCAND];
+    static Float_t Btrk2Chi2ndf[MAXCAND];
+    static Float_t Btktkmass[MAXCAND];
+    static Float_t Bujmass[MAXCAND];
+    static Float_t BujvProb[MAXCAND];
+    static Float_t Bchi2Prob[MAXCAND];
+    static Float_t BtrkPtimb[MAXCAND];
+    static Float_t Btrk1dR[MAXCAND];
+    static Float_t Btrk2dR[MAXCAND];
+    static Float_t Btktkpt[MAXCAND];
+    static Float_t BtktkvProb[MAXCAND];
+    static Float_t BQvalue[MAXCAND];
+    static Float_t Bnorm_svpvDistance_2D[MAXCAND];
+    static Float_t BsvpvDistance_2D[MAXCAND];
+    static Float_t BsvpvDisErr_2D[MAXCAND];
+    static Float_t Balpha[MAXCAND];
+    static Float_t Bdtheta[MAXCAND];
+    static Float_t Bcos_dtheta[MAXCAND];
+    static Float_t Bnorm_trk1Dxy[MAXCAND];
+    static Float_t Bnorm_trk2Dxy[MAXCAND];
+    static Float_t Btrk1nPixelLayer[MAXCAND];
+    static Float_t Btrk1nStripLayer[MAXCAND];
+    static Float_t Btrk2nPixelLayer[MAXCAND];  
+    static Float_t Btrk2nStripLayer[MAXCAND];
+    static Float_t BLxy[MAXCAND];
+    static Float_t Bmu1y[MAXCAND];
+    static Float_t Bmu2y[MAXCAND];
+    static Float_t Bmu1pt[MAXCAND];
+    static Float_t Bmu2pt[MAXCAND];
+    static Float_t Bnorm_trk1Dz[MAXCAND];
+    static Float_t Bnorm_trk2Dz[MAXCAND];
+
 
     tin->SetBranchAddress("Bsize", &Bsize);
+    tin->SetBranchAddress("PVx", &PVx);
+    tin->SetBranchAddress("PVy", &PVy);
+    tin->SetBranchAddress("PVz", &PVz);
+    tin->SetBranchAddress("PVnchi2", &PVnchi2);
     tin->SetBranchAddress("nSelectedChargedTracks", &nSelectedChargedTracks);
     tin->SetBranchAddress("CentBin", &CentBin);
     tin->SetBranchAddress("Bmass", Bmass);
+    tin->SetBranchAddress("BvtxX", BvtxX);
+    tin->SetBranchAddress("BvtxY", BvtxY);
     tin->SetBranchAddress("Bpt", Bpt);
     tin->SetBranchAddress("By", By);
     tin->SetBranchAddress("Bgen", Bgen);
@@ -120,16 +138,20 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
     tin->SetBranchAddress("Bmu2SoftMuID", Bmu2SoftMuID);
     tin->SetBranchAddress("Bmu1HybridSoftMuID", Bmu1HybridSoftMuID);
     tin->SetBranchAddress("Bmu2HybridSoftMuID", Bmu2HybridSoftMuID);
+    tin->SetBranchAddress("Bmu1y", Bmu1y);
+    tin->SetBranchAddress("Bmu2y", Bmu2y);
     tin->SetBranchAddress("Bmu1isAcc", Bmu1isAcc);
     tin->SetBranchAddress("Bmu2isAcc", Bmu2isAcc);  
     tin->SetBranchAddress("Btrk1highPurity", Btrk1highPurity);
     tin->SetBranchAddress("Btrk2highPurity", Btrk2highPurity);
     tin->SetBranchAddress("Btrk1Pt", Btrk1Pt);
     tin->SetBranchAddress("Btrk1Eta", Btrk1Eta);
+    tin->SetBranchAddress("Btrk1Phi", Btrk1Phi);
     tin->SetBranchAddress("Btrk1PtErr", Btrk1PtErr);
     tin->SetBranchAddress("Btrk1Chi2ndf", Btrk1Chi2ndf);
     tin->SetBranchAddress("Btrk2Pt", Btrk2Pt);
     tin->SetBranchAddress("Btrk2Eta", Btrk2Eta);
+    tin->SetBranchAddress("Btrk2Phi", Btrk2Phi);
     tin->SetBranchAddress("Btrk2PtErr", Btrk2PtErr);
     tin->SetBranchAddress("Btrk2Chi2ndf", Btrk2Chi2ndf);
     tin->SetBranchAddress("Btktkmass", Btktkmass);
@@ -144,6 +166,7 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
     tin->SetBranchAddress("BQvalue", BQvalue);
     tin->SetBranchAddress("Bnorm_svpvDistance_2D", Bnorm_svpvDistance_2D);
     tin->SetBranchAddress("BsvpvDistance_2D", BsvpvDistance_2D);
+    tin->SetBranchAddress("BsvpvDisErr_2D", BsvpvDisErr_2D);
     tin->SetBranchAddress("Balpha", Balpha);
     tin->SetBranchAddress("Bdtheta", Bdtheta);
     tin->SetBranchAddress("Bcos_dtheta", Bcos_dtheta);
@@ -154,14 +177,26 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
     tin->SetBranchAddress("Btrk2nPixelLayer", Btrk2nPixelLayer);  
     tin->SetBranchAddress("Btrk2nStripLayer", Btrk2nStripLayer);
     tin->SetBranchAddress("BLxy", BLxy);
+    tin->SetBranchAddress("Bmu1pt", Bmu1pt);
+    tin->SetBranchAddress("Bmu2pt", Bmu2pt);
+    tin->SetBranchAddress("Bnorm_trk1Dz", Bnorm_trk1Dz);
+    tin->SetBranchAddress("Bnorm_trk2Dz", Bnorm_trk2Dz);
     // --------------------------------------------------
     // Output branches (for Selection // Analysis)
     // --------------------------------------------------
+    float PVx_out, PVy_out, PVz_out, PVnchi2_out;
     float Bmass_out, Bpt_out, By_out, Bchi2Prob_out, Btrk1dR_out, Btrk2dR_out, BtrkPtimb_out, Btktkpt_out, Bujmass_out, Bnorm_svpvDistance_2D_out;
     float BQvalue_out, Bnorm_trk1Dxy_out, Bnorm_trk2Dxy_out, Balpha_out, Bdtheta_out, Bcos_dtheta_out, Btktkmass_out, Btrk1Pt_out, Btrk2Pt_out;
     float Bgen_out, BsvpvDistance_2D_out, BtktkvProb_out, BLxy_out;
+    float BvtxX_out, BvtxY_out, BsvpvDisErr_2D_out;
+    float Btrk1Eta_out, Btrk2Eta_out, Btrk1Phi_out, Btrk2Phi_out, Btrk1PtErr_out, Btrk2PtErr_out;
+    float BujvProb_out, Bmu1y_out, Bmu2y_out, Bmu1pt_out, Bmu2pt_out, Bnorm_trk1Dz_out, Bnorm_trk2Dz_out;
     int CentBin_out, nSelectedChargedTracks_out;
 
+    tout->Branch("PVx", &PVx_out, "PVx/F");
+    tout->Branch("PVy", &PVy_out, "PVy/F");
+    tout->Branch("PVz", &PVz_out, "PVz/F");
+    tout->Branch("PVnchi2", &PVnchi2_out, "PVnchi2/F");
     tout->Branch("nSelectedChargedTracks", &nSelectedChargedTracks_out, "nSelectedChargedTracks/I");
     tout->Branch("CentBin", &CentBin_out, "CentBin/I");
     tout->Branch("Bmass", &Bmass_out, "Bmass/F");
@@ -173,8 +208,10 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
     tout->Branch("BtrkPtimb", &BtrkPtimb_out, "BtrkPtimb/F");
     tout->Branch("Btktkpt", &Btktkpt_out, "Btktkpt/F");
     tout->Branch("Bujmass", &Bujmass_out, "Bujmass/F");
+    tout->Branch("BujvProb", &BujvProb_out, "BujvProb/F");
     tout->Branch("Bnorm_svpvDistance_2D", &Bnorm_svpvDistance_2D_out, "Bnorm_svpvDistance_2D/F");
     tout->Branch("BsvpvDistance_2D", &BsvpvDistance_2D_out, "BsvpvDistance_2D/F");
+    tout->Branch("BsvpvDisErr_2D", &BsvpvDisErr_2D_out, "BsvpvDisErr_2D/F");
     tout->Branch("BQvalue", &BQvalue_out, "BQvalue/F");
     tout->Branch("Bnorm_trk1Dxy", &Bnorm_trk1Dxy_out, "Bnorm_trk1Dxy/F");
     tout->Branch("Bnorm_trk2Dxy", &Bnorm_trk2Dxy_out, "Bnorm_trk2Dxy/F");
@@ -184,8 +221,22 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
     tout->Branch("Btktkmass", &Btktkmass_out, "Btktkmass/F");
     tout->Branch("Btrk1Pt", &Btrk1Pt_out, "Btrk1Pt/F");
     tout->Branch("Btrk2Pt", &Btrk2Pt_out, "Btrk2Pt/F");
+    tout->Branch("Btrk1Eta", &Btrk1Eta_out, "Btrk1Eta/F");
+    tout->Branch("Btrk2Eta", &Btrk2Eta_out, "Btrk2Eta/F");
+    tout->Branch("Btrk1Phi", &Btrk1Phi_out, "Btrk1Phi/F");
+    tout->Branch("Btrk2Phi", &Btrk2Phi_out, "Btrk2Phi/F");
+    tout->Branch("Btrk1PtErr", &Btrk1PtErr_out, "Btrk1PtErr/F");
+    tout->Branch("Btrk2PtErr", &Btrk2PtErr_out, "Btrk2PtErr/F");
     tout->Branch("BtktkvProb", &BtktkvProb_out, "BtktkvProb/F");
     tout->Branch("BLxy", &BLxy_out, "BLxy/F");
+    tout->Branch("BvtxX", &BvtxX_out, "BvtxX/F");
+    tout->Branch("BvtxY", &BvtxY_out, "BvtxY/F");
+    tout->Branch("Bmu1y", &Bmu1y_out, "Bmu1y/F");
+    tout->Branch("Bmu2y", &Bmu2y_out, "Bmu2y/F");
+    tout->Branch("Bmu1pt", &Bmu1pt_out, "Bmu1pt/F");
+    tout->Branch("Bmu2pt", &Bmu2pt_out, "Bmu2pt/F");
+    tout->Branch("Bnorm_trk1Dz", &Bnorm_trk1Dz_out, "Bnorm_trk1Dz/F");
+    tout->Branch("Bnorm_trk2Dz", &Bnorm_trk2Dz_out, "Bnorm_trk2Dz/F");
     if (isMC){
         tout->Branch("Bgen", &Bgen_out, "Bgen/F");
     }
@@ -205,6 +256,10 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
         tin->GetEntry(ev);
 
         // Event-level variables
+        PVx_out = PVx;
+        PVy_out = PVy;
+        PVz_out = PVz;
+        PVnchi2_out = PVnchi2;
         CentBin_out = CentBin;
         nSelectedChargedTracks_out = nSelectedChargedTracks;
 
@@ -260,8 +315,6 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
             // Fiducial Region
             if (Fid_region){
                 if (!((Bpt[i] >= 5) && abs(By[i]) <= 2.4)) continue;
-                if ( (TREENAME != "ntmix") && !( (Bpt[i] <= 10  && abs(By[i]) >= 1.5) || (Bpt[i] > 10  && Bpt[i] <= 50) ) ) continue;
-                if ( (TREENAME == "ntmix") && !( (Bpt[i] <= 7.5 && abs(By[i]) >= 1.4) || (Bpt[i] > 7.5 && Bpt[i] <= 50) ) ) continue;
             }
 
             // keep MC signal only
@@ -277,8 +330,10 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
             BtrkPtimb_out = BtrkPtimb[i];
             Btktkpt_out   = Btktkpt[i];
             Bujmass_out   = Bujmass[i];
+            BujvProb_out  = BujvProb[i];
             Bnorm_svpvDistance_2D_out = Bnorm_svpvDistance_2D[i];
             BsvpvDistance_2D_out = BsvpvDistance_2D[i];
+            BsvpvDisErr_2D_out = BsvpvDisErr_2D[i];
             BQvalue_out = BQvalue[i];
             Bnorm_trk1Dxy_out = Bnorm_trk1Dxy[i];
             Bnorm_trk2Dxy_out = Bnorm_trk2Dxy[i];
@@ -289,7 +344,21 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
             Btktkmass_out = Btktkmass[i];
             Btrk1Pt_out   = Btrk1Pt[i];
             Btrk2Pt_out   = Btrk2Pt[i];
-            BLxy_out      = BLxy[i];
+            Btrk1Eta_out = Btrk1Eta[i];
+            Btrk2Eta_out = Btrk2Eta[i];
+            Btrk1Phi_out = Btrk1Phi[i];
+            Btrk2Phi_out = Btrk2Phi[i];
+            Btrk1PtErr_out = Btrk1PtErr[i];
+            Btrk2PtErr_out = Btrk2PtErr[i];
+            BvtxX_out = BvtxX[i];
+            BvtxY_out = BvtxY[i];
+            Bmu1y_out = Bmu1y[i];
+            Bmu2y_out = Bmu2y[i];
+            BLxy_out  = BLxy[i];
+            Bmu1pt_out = Bmu1pt[i];
+            Bmu2pt_out = Bmu2pt[i];
+            Bnorm_trk1Dz_out = Bnorm_trk1Dz[i];
+            Bnorm_trk2Dz_out = Bnorm_trk2Dz[i];
 
             if(!std::isfinite(Bmass_out) || !std::isfinite(Bpt_out) || !std::isfinite(By_out) || !std::isfinite(Bnorm_trk1Dxy_out) ||
             !std::isfinite(CentBin_out) || !std::isfinite(Bchi2Prob_out) || !std::isfinite(Btrk1dR_out) || !std::isfinite(Bnorm_svpvDistance_2D_out)) continue;
@@ -305,18 +374,18 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
 
         // Gen-level input branches
         Int_t Gsize;
-        Int_t GpdgId[MAXCAND];
-        Float_t Gmu1eta[MAXCAND];
-        Float_t Gmu1pt[MAXCAND];
-        Float_t Gmu2eta[MAXCAND];
-        Float_t Gmu2pt[MAXCAND];
-        Float_t Gtk1pt[MAXCAND];
-        Float_t Gtk1eta[MAXCAND];
-        Float_t Gtk2pt[MAXCAND];
-        Float_t Gtk2eta[MAXCAND];
-        Float_t Gpt[MAXCAND];
-        Float_t Gy[MAXCAND];
-        Int_t GisSignal[MAXCAND];
+        static Int_t GpdgId[MAXCAND];
+        static Float_t Gmu1eta[MAXCAND];
+        static Float_t Gmu1pt[MAXCAND];
+        static Float_t Gmu2eta[MAXCAND];
+        static Float_t Gmu2pt[MAXCAND];
+        static Float_t Gtk1pt[MAXCAND];
+        static Float_t Gtk1eta[MAXCAND];
+        static Float_t Gtk2pt[MAXCAND];
+        static Float_t Gtk2eta[MAXCAND];
+        static Float_t Gpt[MAXCAND];
+        static Float_t Gy[MAXCAND];
+        static Int_t GisSignal[MAXCAND];
 
         tgen->SetBranchAddress("Gsize", &Gsize);
         tgen->SetBranchAddress("GisSignal", GisSignal);
@@ -362,8 +431,6 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
                 // Fiducial Region
                 if (Fid_region){
                     if ( !( (Gpt[i] >= 5) && abs(Gy[i]) <= 2.4) ) continue; 
-                    if ( (TREENAME != "ntmix") && !( (Gpt[i] <= 10  && abs(Gy[i]) >= 1.5) || (Gpt[i] > 10  && Gpt[i] <= 50) ) ) continue;
-                    if ( (TREENAME == "ntmix") && !( (Gpt[i] <= 7.5 && abs(Gy[i]) >= 1.4) || (Gpt[i] > 7.5 && Gpt[i] <= 50) ) ) continue;
                 }
 
                 GpdgId_out  = GpdgId[i];

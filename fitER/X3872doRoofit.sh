@@ -1,7 +1,7 @@
 DOANALYSISPbPb_FULL_X=1
 DOANALYSISPbPb_BINNED_PT_X=1
 DOANALYSISPbPb_BINNED_Y_X=0
-DOANALYSISPbPb_BINNED_MULT_X=1
+DOANALYSISPbPb_BINNED_MULT_X=0
 
 ##
 syst="ppRef"
@@ -9,12 +9,12 @@ syst="ppRef"
 #DATA and MC Samples
 MC="/eos/user/k/kprince/X3872_pp_new/MC_X3872_pp_AANN.root"
 DATA="/eos/user/k/kprince/X3872_pp_new/DATA_pp_AANN.root"
-#MC="/eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost/scored_samples/flat_ntmix_ppRef_scored_MC2S.root"
-#DATA="/eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost/scored_samples/flat_ntmix_ppRef_scored_DATA.root"
+
 #DATA and MC Samples
 
 ## SELECTION CUTs go here
-CUTs="Prediction > 0.59 && Bpt > 10 && abs(By) < 1.6 && BQvalue < 0.15"
+##CUTs="((Bpt > 5  && Bpt < 10 && Prediction > 0.11) || (Bpt > 10 && Bpt < 15 && Prediction > 0.45) || (Bpt > 15 && Bpt < 20 && Prediction > 0.56) || (Bpt > 20 && Bpt < 35 && Prediction > 0.71)) && BQvalue < 0.20  "
+CUTs=" BQvalue < 0.20  && Btrk1dR < 0.45 && Btrk2dR < 0.45 "
 
 mkdir -p ROOTfiles/
 

@@ -25,10 +25,10 @@ static TString inferOutputChannel(const TString& tree) {
 }
 
 // PDF VARIATION FOR SYST STUDIES
-int syst_study=1;
+int syst_study=0;
 
 // PROFILE LIKELIHOOD SIGNIFICANCE + INCLUSIVE SCAN
-int use_profile_likelihood=1;
+int use_profile_likelihood=0;
 
 void roofitB(TString TREE = "ntphi", int FULL = 0, TString INPUTDATA = "", TString INPUTMC = "", TString VAR = "", TString CUT = "", TString SYSTEM = "ppRef"){
 
@@ -43,10 +43,12 @@ void roofitB(TString TREE = "ntphi", int FULL = 0, TString INPUTDATA = "", TStri
 		: Form("ROOTfiles/%s/%s/%s", SYSTEM.Data(), CHANNEL.Data(), OUTPUT_TAG.Data());
 	TString TABLE_DIR = Form("%s/tables", RESULT_BASE.Data());
 	TString GRAPH_DIR = Form("%s/Graphs", RESULT_BASE.Data());
+	TString SYST_ROOT_DIR = Form("%s/systematicFILES", ROOT_BASE.Data());
 	TString OUTPLOTF = Form("%s/%s", RESULT_BASE.Data(), VAR.Data());
 	gSystem->mkdir(TABLE_DIR.Data(),true); 
 	gSystem->mkdir(GRAPH_DIR.Data(), true); 
 	gSystem->mkdir(ROOT_BASE.Data(), true);
+	gSystem->mkdir(SYST_ROOT_DIR.Data(), true);
 	gSystem->mkdir(Form("%s", OUTPLOTF.Data()),true); 
 	
 	// BINING DEFINITION
@@ -240,9 +242,9 @@ void roofitB(TString TREE = "ntphi", int FULL = 0, TString INPUTDATA = "", TStri
 		setupLABELS(chi_square);
 
 		// print var bin (& kinmetic info) 
-		TLatex* rapidityLabel = new TLatex(0.68, 0.50, "|y| < 1.6");
+		TLatex* rapidityLabel = new TLatex(0.68, 0.50, "|y| < 2.4");
 		setupLABELS(rapidityLabel);
-		TLatex* varBIN = new TLatex(0.68, 0.45, Form("%d < %s < %d", (int)_varBINS[i], FitVarLabel(VAR).Data(), (int)_varBINS[i+1]));
+		TLatex* varBIN = new TLatex(0.68, 0.45, Form("%.1f < %s < %.1f", (float)_varBINS[i], FitVarLabel(VAR).Data(), (float)_varBINS[i+1]));
 		setupLABELS(varBIN);
 
 		// print Nsig in plot
@@ -401,6 +403,18 @@ void roofitB(TString TREE = "ntphi", int FULL = 0, TString INPUTDATA = "", TStri
 			col_name_signal, col_name_back, col_name_general, labels_signal, labels_back, labels_general, sig_syst_rel_values,
 			back_syst_rel_values, BuildGeneralSystematicNumbers(general_syst, stat_error)
 		);
+
+		TH1D* hLeadingTotalUnc = new TH1D("hLeadingTotalUncPercent", ";" + FitVarLabel(VAR) + ";Leading total uncertainty (%)", _nBins, _varBINS.data());
+		hLeadingTotalUnc->SetStats(0);
+		for (int i=0;i<_nBins;i++){
+			hLeadingTotalUnc->SetBinContent(i+1, general_syst[i][2]);
+			hLeadingTotalUnc->SetBinError(i+1, 0.);
+		}
+		TFile* fLeadingTotalUnc = new TFile(Form("%s/fit_totalSystematic_leadingUnc_%s_%s_%s.root", SYST_ROOT_DIR.Data(), TREE.Data(), SYSTEM.Data(), VAR.Data()), "RECREATE");
+		hLeadingTotalUnc->Write("hLeadingTotalUncPercent");
+		fLeadingTotalUnc->Close();
+		delete fLeadingTotalUnc;
+		delete hLeadingTotalUnc;
 
 		double zero[_nBins];
 		for (int i=0;i<_nBins;i++){zero[i]=0.;}

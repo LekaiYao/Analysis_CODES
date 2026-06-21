@@ -39,7 +39,7 @@ static TString baseVarFromExpr(TString expr)
 static std::vector<VarCfgSignal> getSignalVars(TString treeName)
 {
     std::vector<VarCfgSignal> vars = {
-        {"Bpt", ";p_{T} [GeV/c];", kNBins, 10, 50, false},
+        {"Bpt", ";p_{T} [GeV/c];", kNBins, 7.5, 40, false},
         {"By", ";|y|;", kNBins, 0, 1.6, true},
         {"BtrkPtimb", ";BtrkPtimb;", kNBins, 0.0, 0.9, false},
         {"Bchi2Prob", ";Bchi2Prob;", kNBins, 0.0, 1.0, false},
@@ -52,13 +52,34 @@ static std::vector<VarCfgSignal> getSignalVars(TString treeName)
         {"Balpha", ";Balpha;", kNBins, 0.0, 3.14, false},
         {"BQvalue", ";BQvalue;", kNBins, 0.0, 0.15, false},
         {"BtktkvProb", ";BtktkvProb;", kNBins, 0.0, 1.0, false},
-        {"Btktkmass", ";Btktkmass;", kNBins, 0.5, 1., false},
+        {"Btktkmass", ";Btktkmass;", kNBins, 0.2, .8, false},
         {"Bcos_dtheta", ";Bcos_dtheta;", kNBins, 0.95, 1.0, false},
         {"BLxy", ";|BLxy|;", kNBins, 0.0, 0.5, true},
         {"BsvpvDistance_2D", ";BsvpvDistance_2D;", kNBins, 0.0, 0.25, false},
-        {"Bujmass", ";Bujmass [GeV/c^{2}];", kNBins, 2.9, 3.25, false}
+        {"Bujmass", ";Bujmass [GeV/c^{2}];", kNBins, 2.9, 3.25, false},
+        {"Btktkpt", ";Btktkpt;", kNBins, 0.0, 10.0, false},
+        {"PVnchi2", ";PVnchi2;", kNBins, 0.0, 1.0, false},
+        {"PVx", ";PVx;", kNBins, -0.1, 0.1, false},
+        {"PVy", ";PVy;", kNBins, -0.1, 0.1, false},
+        {"PVz", ";PVz;", kNBins, -25.0, 25.0, false},
+        {"BvtxX", ";BvtxX;", kNBins, -0.1, 0.1, false},
+        {"BvtxY", ";BvtxY;", kNBins, -0.1, 0.1, false},
+        {"BsvpvDisErr_2D", ";BsvpvDisErr_2D;", kNBins, 0.0, 0.05, false},
+        {"Btrk1Eta", ";Btrk1Eta;", kNBins, -2.4, 2.4, false},
+        {"Btrk2Eta", ";Btrk2Eta;", kNBins, -2.4, 2.4, false},
+        {"Btrk1Phi", ";Btrk1Phi;", kNBins, -3.2, 3.2, false},
+        {"Btrk2Phi", ";Btrk2Phi;", kNBins, -3.2, 3.2, false},
+        {"Btrk1PtErr", ";Btrk1PtErr;", kNBins, 0.0, 0.1, false},
+        {"Btrk2PtErr", ";Btrk2PtErr;", kNBins, 0.0, 0.1, false},
+        {"BujvProb", ";BujvProb;", kNBins, 0.0, 1.0, false},
+        {"Bmu1y", ";Bmu1y;", kNBins, -2.4, 2.4, false},
+        {"Bmu2y", ";Bmu2y;", kNBins, -2.4, 2.4, false},
+        {"Bmu1pt", ";Bmu1pt;", kNBins, 0.0, 17.5, false},
+        {"Bmu2pt", ";Bmu2pt;", kNBins, 0.0, 17.5, false},
+        {"Bnorm_trk1Dz", ";Bnorm_trk1Dz;", kNBins, -25.0, 25.0, false},
+        {"Bnorm_trk2Dz", ";Bnorm_trk2Dz;", kNBins, -25.0, 25.0, false}
     };
-    if (treeName.BeginsWith("ntmix")) vars.insert(vars.begin() + 3, {"Prediction", ";Prediction;", 25, 0.5, 1.0, false});
+    //if (treeName.BeginsWith("ntmix")) vars.insert(vars.begin() + 3, {"Prediction", ";Prediction;", kNBins, 0.5, 1.0, false});
     return vars;
 }
 

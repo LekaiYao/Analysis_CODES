@@ -40,6 +40,9 @@ Matching rules:
 
 Important details:
 
+- flattened outputs are written under `/eos/user/h/hmarques/RUN3_Data_MC_sharing`
+- `TREE=ntmix` writes to `X3872/<SYSTEM>`, with `ppRef` mapped to `X3872/ppRef24`
+- `TREE!=ntmix` writes to `Bmesons/<SYSTEM>`
 - `run_flat.sh` does not take a filelist path directly
 - it looks inside `flatER/filelists/DATA/` or `flatER/filelists/MC/`
 - your `.txt` files must be placed in the right subfolder, with names that match the requested case

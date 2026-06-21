@@ -32,15 +32,17 @@ TString getPlotParticleLabel(TString treeName){
     return treeName;
 }
 
-void plot_dataMC(TString TREE ="ntmix_X3872", TString systemNAME = "PbPb23")
+void plot_dataMC(TString TREE ="ntmix_X3872", TString systemNAME = "ppRef")
 {
     gSystem->Exec("mkdir -p ./presel_STUDY_vars/");
 
     //VARIABLES
     //VARIABLES
     //VARIABLES
-    const char * variables[] = {"Bmass", "abs(BLxy)",  "BsvpvDistance_2D",  "abs(By)",  "BtktkvProb",    "Bpt",     "BQvalue",   "Bcos_dtheta", "BtrkPtimb", "Bchi2Prob", "Btrk2dR", "Btrk1dR", "Btrk1Pt", "Btrk2Pt", "Bnorm_svpvDistance_2D", "Prediction" };
-    const double ranges[][2] = {{3.6,4},    {0,0.1},             {0,0.25},    {0,2.4},         {0,1},   {0,50},     {0.0,0.6},         {0.95,1},    {0,0.8},     {0.0,1},   {0,1.5},   {0,1.5},    {0.5,4.5},    {0.5,4.5},            {0,20},   {0,1}};    
+    const char * variables[] = {"Bmass", "PVnchi2", "Btktkpt", "BLxy",  "BsvpvDistance_2D",  "abs(By)",  "BtktkvProb",    "Bpt",     "BQvalue",   "Bcos_dtheta", "BtrkPtimb", "Bchi2Prob", "Btrk2dR", "Btrk1dR", "Btrk1Pt", "Btrk2Pt", "Bnorm_svpvDistance_2D", "Prediction",
+                                "PVx", "PVy", "PVz", "BvtxX", "BvtxY", "BsvpvDisErr_2D", "Btrk1Eta", "Btrk2Eta", "Btrk1Phi", "Btrk2Phi", "Btrk1PtErr", "Btrk2PtErr", "BujvProb", "Bmu1y", "Bmu2y", "Bmu1pt", "Bmu2pt", "Bnorm_trk1Dz", "Bnorm_trk2Dz"};
+    const double ranges[][2] = {{3.6,4},     {0,1},   {0,10},    {-0.1,0.1},           {0,0.25},    {0,2.4},         {0,1},   {0,50},     {0.0,0.6},         {0.95,1},    {0,1},     {0.0,1},   {0,1.5},   {0,1.5},    {0.5,4.5},    {0.5,4.5},            {0,20},   {0,1},
+                                {-0.1,0.1}, {-0.1,0.1}, {-25.0,25.0}, {-0.05,0.05}, {-0.05,0.05}, {0.0,0.05}, {-2.4,2.4}, {-2.4,2.4}, {-3.2,3.2}, {-3.2,3.2}, {0.0,.1}, {0.0,0.1}, {0.0,1.0}, {-2.4,2.4}, {-2.4,2.4}, {0.0,17.5}, {0.0,17.5}, {-35.0,35.0}, {-35.0,35.0}};    
     //const char * variables[] = {"BQvalue"};
     //const double ranges[][2] = {{0,0.6}};
     //const char * variables[] = {"Btrk1dR","Btrk2dR",};
@@ -77,12 +79,12 @@ void plot_dataMC(TString TREE ="ntmix_X3872", TString systemNAME = "PbPb23")
             path_to_MC_spec = Form("/eos/user/k/kprince/X3872_PbPb/MC_PSI2S_24b_PbPb_AANN.root");
             path_to_data    = Form("/eos/user/k/kprince/X3872_PbPb/DATA_24b_PbPb_AANN.root");
         } else {
-            path_to_data    = Form("/eos/user/k/kprince/X3872_pp_new/DATA_pp_AANN.root");
-            path_to_MC_spec = Form("/eos/user/k/kprince/X3872_pp_new/MC_PSI2S_pp_AANN.root");
-            path_to_MC      = Form("/eos/user/k/kprince/X3872_pp_new/MC_X3872_pp_AANN.root");
-            //path_to_MC = Form("/eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost/scored_samples/flat_ntmix_ppRef_scored_MC_X3872.root");
-            //path_to_MC_spec = Form("/eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost/scored_samples/flat_ntmix_ppRef_scored_MC_PSI2S.root");
-            //path_to_data = Form("/eos/user/h/hmarques/Analysis_CODES/selectionER/ML_xgboost/scored_samples/flat_ntmix_ppRef_scored_DATA.root");
+            //path_to_data    = Form("/eos/user/k/kprince/X3872_pp_new/DATA_pp_AANN.root");
+            //path_to_MC_spec = Form("/eos/user/k/kprince/X3872_pp_new/MC_PSI2S_pp_AANN.root");
+            //path_to_MC      = Form("/eos/user/k/kprince/X3872_pp_new/MC_X3872_pp_AANN.root");
+            path_to_MC = Form("/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_MC_X3872.root");
+            path_to_MC_spec = Form("/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_MC_PSI2S.root");
+            path_to_data = Form("/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_DATA.root");
         }
         mcTreeNameSpec = "ntmix_PSI2S";
     } else {
@@ -143,7 +145,7 @@ void plot_dataMC(TString TREE ="ntmix_X3872", TString systemNAME = "PbPb23")
         else {sideband = "(Bmass > 5.55)";}
 
         TString ANYsel = "1"; // Prediction > 0.59
-        TString ANA_region = "Bpt > 10 && abs(By) < 1.6"; // Bpt > 10 && abs(By) < 1.6
+        TString ANA_region = "Bpt > 7.5"; // Bpt > 10 && abs(By) < 1.6
         tree_MC->Draw(Form("%s >> hist_SIG", var.Data()), Form(" %s && %s", ANYsel.Data(), ANA_region.Data()));
         chain.Draw(Form("%s >> hist_BKG", var.Data()), Form(" %s && %s && %s", sideband.Data(), ANYsel.Data(), ANA_region.Data()));
 

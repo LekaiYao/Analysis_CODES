@@ -6,6 +6,8 @@
 #include "TH2D.h"
 #include "TLegend.h"
 #include "TLatex.h"
+#include "TLine.h"
+#include "TPad.h"
 #include "TString.h"
 #include "TSystem.h"
 #include "TTree.h"
@@ -321,8 +323,19 @@ inline EffResult BuildResult(const EffCase& method, const std::vector<double>& b
     return {method, hAvg, hCorr};
 }
 
+inline TString EffPlotAxisTitle(TString var)
+{
+    if (var == "Bpt") return "p_{T} [GeV]";
+    if (var == "By") return "|y|";
+    if (var == "nMult" || var == "nSelectedChargedTracks") return "N_{trk}";
+    return var;
+}
+
 inline void SaveResult(const EffResult& result, TH1D* hYield, TString stem, TString treename)
 {
+    gSystem->mkdir("output/ROOTs", true);
+    gSystem->mkdir("output/ACCxEFF_plots", true);
+
     TFile* fout = new TFile(Form("output/ROOTs/%s_CorrectedYields.root", stem.Data()), "RECREATE");
     result.hAvg->Write();
     result.hYield->Write();
@@ -348,50 +361,233 @@ inline void SaveResult(const EffResult& result, TH1D* hYield, TString stem, TStr
     label.SetTextSize(0.045);
     label.SetTextAlign(31);
     label.DrawLatex(0.88, 0.86, FitParticleLabel(treename, true));
-    cCorr->SaveAs(Form("output/%s_AvgInvEffxAcc.pdf", stem.Data()));
+    cCorr->SaveAs(Form("output/ACCxEFF_plots/%s_AvgInvEffxAcc.pdf", stem.Data()));
     delete cCorr;
 }
 
-inline void SaveComparison(const std::vector<EffResult>& results, TString treename, TString system, TString var,
-                           TString tag = "", TString comparisonName = "CorrectionFactorComparison")
+inline EffResult LoadEffResultFromRoot(TString path, TString suffix, TString label)
 {
-    if (results.size() < 2) return;
+    TFile* f = TFile::Open(path, "READ");
+    TH1D* hAvg = (TH1D*)((TH1D*)f->Get("hAvg_Inv_EffxAcc"))->Clone(Form("hAvg_Inv_EffxAcc_%s", suffix.Data()));
+    TH1D* hYield = (TH1D*)((TH1D*)f->Get("hYieldCorr"))->Clone(Form("hYieldCorr_%s", suffix.Data()));
+    hAvg->SetDirectory(nullptr);
+    hYield->SetDirectory(nullptr);
+    f->Close();
+    std::cout << "[effER] Loaded " << path << std::endl;
+    return {{suffix, label}, hAvg, hYield};
+}
 
-    TCanvas* c = new TCanvas("cEffCaseComparison", "Correction factor comparison", 760, 650);
-    c->SetLeftMargin(0.15);
-    TLegend* leg = new TLegend(0.58, 0.68, 0.88, 0.88);
+inline std::string EffLatexLabel(TString label)
+{
+    std::string out = label.Data();
+    size_t pos = out.find("#psi(2S)");
+    if (pos != std::string::npos) out.replace(pos, 8, "$\\psi(2S)$");
+    pos = out.find("#psi(2s)");
+    if (pos != std::string::npos) out.replace(pos, 8, "$\\psi(2S)$");
+    return out;
+}
+
+inline void SaveEffVariationSystematics(const std::vector<EffResult>& results,
+                                        TString nominalSuffix,
+                                        TString firstColumnTitle,
+                                        TString stem,
+                                        TString treename,
+                                        TString system,
+                                        TString var)
+{
+    if (results.empty()) return;
+    gSystem->mkdir("output/systematicFILES", true);
+
+    const EffResult* nominal = nullptr;
+    for (const auto& r : results) {
+        if (r.method.suffix == nominalSuffix) nominal = &r;
+    }
+    if (!nominal) nominal = &results[0];
+
+    const int colors[] = {kBlue + 1, kRed + 1, kBlack, kGreen + 2, kMagenta + 1};
+    const int markers[] = {21, 22, 20, 33, 34};
+    const int altStyles[] = {0, 1, 3, 4};
+    std::vector<int> styleIndices;
+    std::vector<size_t> drawOrder;
+    int altIndex = 0;
+    size_t nominalIndex = 0;
+    for (size_t i = 0; i < results.size(); ++i) {
+        if (results[i].method.suffix == nominal->method.suffix) {
+            styleIndices.push_back(2);
+            nominalIndex = i;
+        } else {
+            styleIndices.push_back(altStyles[(altIndex++) % 4]);
+        }
+    }
+    drawOrder.push_back(nominalIndex);
+    for (size_t i = 0; i < results.size(); ++i) {
+        if (i != nominalIndex) drawOrder.push_back(i);
+    }
+
+    TH1D* hFrameTop = (TH1D*)nominal->hAvg->Clone(Form("hFrameTop_%s", stem.Data()));
+    hFrameTop->SetDirectory(nullptr);
+    hFrameTop->Reset("ICES");
+    hFrameTop->SetTitle(Form(";%s;<#frac{1}{Acc#timesEff}>", EffPlotAxisTitle(var).Data()));
+    hFrameTop->SetStats(0);
+    hFrameTop->SetMinimum(0.0);
+    hFrameTop->SetMaximum(52.0);
+    hFrameTop->GetXaxis()->SetLabelSize(0.0);
+    hFrameTop->GetXaxis()->SetTitleSize(0.0);
+    hFrameTop->GetYaxis()->SetTitleOffset(1.55);
+    hFrameTop->GetYaxis()->SetTitleSize(0.040);
+    hFrameTop->GetYaxis()->SetLabelSize(0.038);
+
+    TH1D* hFrameRatio = (TH1D*)nominal->hAvg->Clone(Form("hFrameRatio_%s", stem.Data()));
+    hFrameRatio->SetDirectory(nullptr);
+    hFrameRatio->Reset("ICES");
+    hFrameRatio->SetTitle(Form(";%s;Variation/Nominal", EffPlotAxisTitle(var).Data()));
+    hFrameRatio->SetStats(0);
+    hFrameRatio->GetXaxis()->SetTitleSize(0.12);
+    hFrameRatio->GetXaxis()->SetTitleOffset(1.05);
+    hFrameRatio->GetXaxis()->SetLabelSize(0.10);
+    hFrameRatio->GetYaxis()->SetTitleSize(0.10);
+    hFrameRatio->GetYaxis()->SetTitleOffset(0.55);
+    hFrameRatio->GetYaxis()->SetLabelSize(0.09);
+    hFrameRatio->GetYaxis()->SetNdivisions(505);
+
+    std::vector<TH1D*> ratios;
+    double spread = 0.15;
+    for (const auto& r : results) {
+        TH1D* hRatio = (TH1D*)r.hAvg->Clone(Form("hRatio_%s_%s", stem.Data(), r.method.suffix.Data()));
+        hRatio->SetDirectory(nullptr);
+        hRatio->Divide(nominal->hAvg);
+        for (int ib = 1; ib <= hRatio->GetNbinsX(); ++ib) {
+            const double y = hRatio->GetBinContent(ib);
+            const double e = hRatio->GetBinError(ib);
+            if (std::isfinite(y)) spread = std::max(spread, std::abs(y - 1.0) + e);
+        }
+        ratios.push_back(hRatio);
+    }
+    hFrameRatio->SetMinimum(0.85);
+    hFrameRatio->SetMaximum(1.15);
+
+    TH1D* hLeading = (TH1D*)nominal->hAvg->Clone(Form("hLeadingUncPercent_%s", stem.Data()));
+    hLeading->SetDirectory(nullptr);
+    hLeading->Reset("ICES");
+    hLeading->SetTitle(Form(";%s;Leading variation (%%)", EffPlotAxisTitle(var).Data()));
+
+    std::vector<std::vector<double> > tableNumbers;
+    tableNumbers.resize(nominal->hAvg->GetNbinsX());
+    for (int ib = 1; ib <= nominal->hAvg->GetNbinsX(); ++ib) {
+        const double nom = nominal->hAvg->GetBinContent(ib);
+        double leading = 0.0;
+        for (const auto& r : results) {
+            double dev = 0.0;
+            if (nom != 0.0) dev = std::abs((r.hAvg->GetBinContent(ib) - nom) / nom) * 100.0;
+            if (r.method.suffix != nominal->method.suffix) tableNumbers[ib - 1].push_back(dev);
+            leading = std::max(leading, dev);
+        }
+        hLeading->SetBinContent(ib, leading);
+        hLeading->SetBinError(ib, 0.0);
+    }
+
+    TCanvas* c = new TCanvas(Form("c_%s", stem.Data()), "eff systematic comparison", 760, 720);
+    TPad* p1 = new TPad("p1", "p1", 0., 0.30, 1., 1.);
+    p1->SetBorderMode(1);
+    p1->SetFrameBorderMode(0);
+    p1->SetBorderSize(2);
+    p1->SetBottomMargin(0.015);
+    p1->SetLeftMargin(0.14);
+    p1->SetRightMargin(0.04);
+    p1->Draw();
+    TPad* p2 = new TPad("p2", "p2", 0., 0., 1., 0.30);
+    p2->SetTopMargin(0.0);
+    p2->SetBottomMargin(0.34);
+    p2->SetLeftMargin(0.14);
+    p2->SetRightMargin(0.04);
+    p2->SetBorderMode(0);
+    p2->SetBorderSize(2);
+    p2->SetFrameBorderMode(0);
+    p2->SetTicks(1, 1);
+    p2->Draw();
+
+    p1->cd();
+    hFrameTop->Draw("AXIS");
+    TLegend* leg = new TLegend(0.62, 0.66, 0.90, 0.88);
     leg->SetBorderSize(0);
     leg->SetFillStyle(0);
-
-    const int colors[] = {kBlack, kBlue + 1, kRed + 1};
-    const int markers[] = {20, 21, 22};
-    for (size_t i = 0; i < results.size(); ++i) {
-        TH1D* h = results[i].hAvg;
-        h->SetLineColor(colors[i % 3]);
-        h->SetMarkerColor(colors[i % 3]);
-        h->SetMarkerStyle(markers[i % 3]);
-        h->SetMarkerSize(1.0);
-        h->SetLineWidth(2);
-        h->SetMinimum(0.0);
-        h->SetMaximum(52.0);
-        h->GetYaxis()->SetTitleOffset(1.6);
-        h->Draw(i == 0 ? "E1" : "E1 SAME");
-        leg->AddEntry(h, results[i].method.label, "lep");
+    leg->SetTextFont(42);
+    leg->SetTextSize(0.040);
+    for (size_t idx : drawOrder) {
+        const int styleIndex = styleIndices[idx];
+        results[idx].hAvg->SetLineColor(colors[styleIndex]);
+        results[idx].hAvg->SetMarkerColor(colors[styleIndex]);
+        results[idx].hAvg->SetMarkerStyle(markers[styleIndex]);
+        results[idx].hAvg->SetMarkerSize(1.0);
+        results[idx].hAvg->SetLineWidth(2);
+        results[idx].hAvg->Draw("E1 SAME");
+        leg->AddEntry(results[idx].hAvg, results[idx].method.label, "lep");
     }
     leg->Draw();
 
     TLatex label;
     label.SetNDC();
-    label.SetTextSize(0.045);
-    label.SetTextAlign(31);
-    label.DrawLatex(0.88, 0.62, FitParticleLabel(treename, true));
+    label.SetTextFont(42);
+    label.SetTextSize(0.052);
+    label.SetTextAlign(33);
+    label.DrawLatex(0.90, 0.62, FitParticleLabel(treename, true));
+    label.SetTextSize(0.035);
+    label.DrawLatex(0.90, 0.56, system);
 
-    TString stem = Form("%s_%s_%s", treename.Data(), system.Data(), var.Data());
-    if (!tag.IsNull() && tag.Length() > 0) stem += "_" + tag;
-    stem += "_" + comparisonName;
-    c->SaveAs(Form("output/%s.pdf", stem.Data()));
-    TFile* fout = new TFile(Form("output/ROOTs/%s.root", stem.Data()), "RECREATE");
+    p2->cd();
+    hFrameRatio->Draw("AXIS");
+    TLine* line = new TLine(hFrameRatio->GetXaxis()->GetXmin(), 1.0, hFrameRatio->GetXaxis()->GetXmax(), 1.0);
+    line->SetLineColor(kBlack);
+    line->SetLineStyle(1);
+    line->SetLineWidth(2);
+    line->Draw("same");
+    for (size_t idx : drawOrder) {
+        if (idx == nominalIndex) continue;
+        const int styleIndex = styleIndices[idx];
+        ratios[idx]->SetLineColor(colors[styleIndex]);
+        ratios[idx]->SetMarkerColor(colors[styleIndex]);
+        ratios[idx]->SetMarkerStyle(markers[styleIndex]);
+        ratios[idx]->SetMarkerSize(0.9);
+        ratios[idx]->SetLineWidth(2);
+        ratios[idx]->Draw("E1 SAME");
+    }
+    hFrameRatio->Draw("AXIS SAME");
+
+    TString comparisonStem = stem;
+    comparisonStem.ReplaceAll("leadingUnc", "comparison");
+    c->SaveAs(Form("output/systematicFILES/%s.pdf", comparisonStem.Data()));
+
+    std::vector<std::string> colNames;
+    std::vector<std::string> rowLabels;
+    colNames.push_back(firstColumnTitle.Data());
+    for (int ib = 1; ib <= nominal->hAvg->GetNbinsX(); ++ib) {
+        colNames.push_back(GetSystematicColumnLabel(var,
+                                                    nominal->hAvg->GetXaxis()->GetBinLowEdge(ib),
+                                                    nominal->hAvg->GetXaxis()->GetBinUpEdge(ib)));
+    }
+    for (const auto& r : results) {
+        if (r.method.suffix != nominal->method.suffix) rowLabels.push_back(EffLatexLabel(r.method.label));
+    }
+
+    TString tableStem = stem;
+    tableStem.ReplaceAll("leadingUnc", "summary");
+    latex_tables_document(Form("output/systematicFILES/%s_table", tableStem.Data()),
+                          {static_cast<int>(colNames.size())},
+                          {static_cast<int>(rowLabels.size() + 1)},
+                          {colNames}, {rowLabels}, {tableNumbers});
+
+    TFile* fout = new TFile(Form("output/systematicFILES/%s.root", stem.Data()), "RECREATE");
+    hLeading->Write("hLeadingUncPercent");
     for (const auto& r : results) r.hAvg->Write();
     fout->Close();
+
+    for (TH1D* h : ratios) delete h;
+    delete hLeading;
+    delete hFrameTop;
+    delete hFrameRatio;
+    delete line;
+    delete leg;
+    delete p1;
+    delete p2;
     delete c;
 }
