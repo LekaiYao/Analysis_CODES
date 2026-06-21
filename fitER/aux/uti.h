@@ -20,7 +20,6 @@
 #include "RooPlot.h"
 #include "RooFitResult.h"
 #include "RooMinimizer.h"
-#include "RooChi2Var.h"
 #include "RooHist.h"
 #include "RooProdPdf.h"
 #include "RooAddition.h"

@@ -830,10 +830,10 @@ void read_samples(RooWorkspace& w, vector<TString> label, TString fName, TString
 	savedDir->cd();              
 
 	// Get the variables	
-	RooArgList arg_list("arg_list");
-	arg_list.add(*(w.var("Bmass")));
-	for(auto lab : label){arg_list.add(*(w.var(lab)));}
-	RooDataSet* data_s = new RooDataSet(sample, sample, t1, arg_list);
+	RooArgSet arg_set("arg_set");
+		arg_set.add(*(w.var("Bmass")));
+		for(auto lab : label){arg_set.add(*(w.var(lab)));}
+		RooDataSet* data_s = new RooDataSet(sample, sample, arg_set, RooFit::Import(*t1));
 	w.import(*data_s);
 }
 
