@@ -33,3 +33,16 @@ __pycache__/
 .envs/
 
 *_C_ACLiC_dict.cxx_tmp_*
+
+# ROOT ACLiC 自动生成的 dict 头文件（不应入库；合并 upstream 时忽略）
+*_ACLiC_dict*_dictContent.h
+*_ACLiC_dict*_dictUmbrella.h
+
+# coding agent 相关文件/目录，禁止上传（含 fork origin）。
+# 注意：docs/bootstrap.md 已被跟踪、属本仓库交接文档，保持入库，不在此忽略。
+CLAUDE.md
+AGENTS.md
+.codex/
+.claude/
+.cursor/
+.aider*
