@@ -1,5 +1,4 @@
 #pragma once
-
 #include "TCanvas.h"
 #include "TFile.h"
 #include "TH1D.h"
@@ -21,8 +20,8 @@
 #include <cmath>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <vector>
-
 #include "../../plotER/aux/masses.h"
 #include "../../fitER/aux/uti.h"
 
@@ -46,7 +45,7 @@ inline TString GetDataEffTreeName(TString treename)
 inline TString GetEffSelectionCut(TString treename, TString system)
 {
     if (treename == "ntmix_X3872" || treename == "ntmix_PSI2S") {
-        if (system == "ppRef") return "Prediction > 0.59 && Bpt > 10 && abs(By) < 1.6 && BQvalue < 0.15";
+        if (system == "ppRef") return "((Bpt > 7.5 && Bpt < 12.5 && Prediction > 0.24) || (Bpt > 12.5 && Bpt < 17.5 && Prediction > 0.38) || (Bpt > 17.5 && Bpt < 22.5 && Prediction > 0.44) || (Bpt > 22.5 && Bpt < 50 && Prediction > 0.10)) && BQvalue < 0.15";
         return "";
     }
     return "Bnorm_svpvDistance_2D > 4";
@@ -62,8 +61,8 @@ inline double EffWeightValue(TH1D* hWeight, double value)
 inline TString GetMCEffPath(TString treename, TString system)
 {
     if (system == "ppRef") {
-        if (treename == "ntmix_X3872") return "/eos/user/k/kprince/X3872_pp_new/MC_X3872_pp_AANN.root";
-        if (treename == "ntmix_PSI2S") return "/eos/user/k/kprince/X3872_pp_new/MC_PSI2S_pp_AANN.root";
+        if (treename == "ntmix_X3872") return "/eos/home-l/leyao/pbpb_work/X_analysis/XGBoost/output/selected/X_pp24_v3_fid2_4v1_xgb_v1/MC_with_score.root";
+        if (treename == "ntmix_PSI2S") return "/eos/home-l/leyao/pbpb_work/X_analysis/XGBoost/output/selected/X_pp24_v3_fid2_4v1_xgb_v1/MC_psi2s_with_score.root";
     }
     return "";
 }
@@ -83,7 +82,7 @@ inline TString GetGenEffPath(TString treename, TString system)
 
 inline TString GetDataEffPath(TString treename, TString system)
 {
-    if (treename == "ntmix_X3872" || treename == "ntmix_PSI2S") return "/eos/user/k/kprince/X3872_pp_new/DATA_pp_AANN.root";
+    if (treename == "ntmix_X3872" || treename == "ntmix_PSI2S") return "/eos/home-l/leyao/pbpb_work/X_analysis/XGBoost/output/selected/X_pp24_v3_fid2_4v1_xgb_v1/DATA_with_score.root";
     return "";
 }
 
@@ -136,12 +135,13 @@ inline std::vector<EffCase> RequestedCases(TString cases)
     return out;
 }
 
-inline void EnsureYieldRange(RooRealVar* y)
+inline void EnsureYieldRange(RooRealVar* y, double requiredMaximum = 0.0)
 {
+    if (!y) return;
     double ymin = y->getMin();
     double ymax = y->getMax();
     if (ymin > 0.0) ymin = 0.0;
-    if (ymax < 1.0) ymax = 1.0;
+    ymax = std::max(ymax, std::max(1.0, requiredMaximum));
     if (!(ymax > ymin)) ymax = ymin + 1.0;
     y->setRange(ymin, ymax);
 }
@@ -347,7 +347,7 @@ inline void SaveResult(const EffResult& result, TH1D* hYield, TString stem, TStr
     TCanvas* cCorr = new TCanvas(Form("cCorr_%s", result.method.suffix.Data()), "<1/ea>", 700, 600);
     cCorr->SetLeftMargin(0.15);
     result.hAvg->SetMinimum(0.0);
-    result.hAvg->SetMaximum(52.0);
+    result.hAvg->SetMaximum(150);
     result.hAvg->GetYaxis()->SetTitleOffset(1.6);
     result.hAvg->SetLineColor(kBlack);
     result.hAvg->SetMarkerColor(kBlack);
@@ -367,9 +367,18 @@ inline void SaveResult(const EffResult& result, TH1D* hYield, TString stem, TStr
 
 inline EffResult LoadEffResultFromRoot(TString path, TString suffix, TString label)
 {
-    TFile* f = TFile::Open(path, "READ");
-    TH1D* hAvg = (TH1D*)((TH1D*)f->Get("hAvg_Inv_EffxAcc"))->Clone(Form("hAvg_Inv_EffxAcc_%s", suffix.Data()));
-    TH1D* hYield = (TH1D*)((TH1D*)f->Get("hYieldCorr"))->Clone(Form("hYieldCorr_%s", suffix.Data()));
+    TFile* f = new TFile(path, "READ");
+    if (!f || f->IsZombie()) {
+        throw std::runtime_error(Form("[effER][ERROR] Cannot open corrected-yield file: %s", path.Data()));
+    }
+    TH1D* hAvgSource = (TH1D*)f->Get("hAvg_Inv_EffxAcc");
+    TH1D* hYieldSource = (TH1D*)f->Get("hYieldCorr");
+    if (!hAvgSource || !hYieldSource) {
+        f->Close();
+        throw std::runtime_error(Form("[effER][ERROR] Missing hAvg_Inv_EffxAcc or hYieldCorr in %s", path.Data()));
+    }
+    TH1D* hAvg = (TH1D*)hAvgSource->Clone(Form("hAvg_Inv_EffxAcc_%s", suffix.Data()));
+    TH1D* hYield = (TH1D*)hYieldSource->Clone(Form("hYieldCorr_%s", suffix.Data()));
     hAvg->SetDirectory(nullptr);
     hYield->SetDirectory(nullptr);
     f->Close();
@@ -393,7 +402,8 @@ inline void SaveEffVariationSystematics(const std::vector<EffResult>& results,
                                         TString stem,
                                         TString treename,
                                         TString system,
-                                        TString var)
+                                        TString var,
+                                        bool comparisonOnly = false)
 {
     if (results.empty()) return;
     gSystem->mkdir("output/systematicFILES", true);
@@ -430,7 +440,18 @@ inline void SaveEffVariationSystematics(const std::vector<EffResult>& results,
     hFrameTop->SetTitle(Form(";%s;<#frac{1}{Acc#timesEff}>", EffPlotAxisTitle(var).Data()));
     hFrameTop->SetStats(0);
     hFrameTop->SetMinimum(0.0);
-    hFrameTop->SetMaximum(52.0);
+    if (comparisonOnly) {
+        double maxCorrection = 0.0;
+        for (const auto& r : results) {
+            for (int ib = 1; ib <= r.hAvg->GetNbinsX(); ++ib) {
+                maxCorrection = std::max(maxCorrection,
+                                         r.hAvg->GetBinContent(ib) + r.hAvg->GetBinError(ib));
+            }
+        }
+        hFrameTop->SetMaximum(1.25 * maxCorrection);
+    } else {
+        hFrameTop->SetMaximum(150);
+    }
     hFrameTop->GetXaxis()->SetLabelSize(0.0);
     hFrameTop->GetXaxis()->SetTitleSize(0.0);
     hFrameTop->GetYaxis()->SetTitleOffset(1.55);
@@ -441,6 +462,9 @@ inline void SaveEffVariationSystematics(const std::vector<EffResult>& results,
     hFrameRatio->SetDirectory(nullptr);
     hFrameRatio->Reset("ICES");
     hFrameRatio->SetTitle(Form(";%s;Variation/Nominal", EffPlotAxisTitle(var).Data()));
+    if (comparisonOnly) {
+        hFrameRatio->SetTitle(Form(";%s;Method/sPlot", EffPlotAxisTitle(var).Data()));
+    }
     hFrameRatio->SetStats(0);
     hFrameRatio->GetXaxis()->SetTitleSize(0.12);
     hFrameRatio->GetXaxis()->SetTitleOffset(1.05);
@@ -451,7 +475,7 @@ inline void SaveEffVariationSystematics(const std::vector<EffResult>& results,
     hFrameRatio->GetYaxis()->SetNdivisions(505);
 
     std::vector<TH1D*> ratios;
-    double spread = 0.15;
+    double spread = comparisonOnly ? 0.0 : 0.15;
     for (const auto& r : results) {
         TH1D* hRatio = (TH1D*)r.hAvg->Clone(Form("hRatio_%s_%s", stem.Data(), r.method.suffix.Data()));
         hRatio->SetDirectory(nullptr);
@@ -463,8 +487,14 @@ inline void SaveEffVariationSystematics(const std::vector<EffResult>& results,
         }
         ratios.push_back(hRatio);
     }
-    hFrameRatio->SetMinimum(0.85);
-    hFrameRatio->SetMaximum(1.15);
+    if (comparisonOnly) {
+        spread = std::max(0.01, 1.25 * spread);
+        hFrameRatio->SetMinimum(1.0 - spread);
+        hFrameRatio->SetMaximum(1.0 + spread);
+    } else {
+        hFrameRatio->SetMinimum(0.85);
+        hFrameRatio->SetMaximum(1.15);
+    }
 
     TH1D* hLeading = (TH1D*)nominal->hAvg->Clone(Form("hLeadingUncPercent_%s", stem.Data()));
     hLeading->SetDirectory(nullptr);
@@ -556,6 +586,19 @@ inline void SaveEffVariationSystematics(const std::vector<EffResult>& results,
     TString comparisonStem = stem;
     comparisonStem.ReplaceAll("leadingUnc", "comparison");
     c->SaveAs(Form("output/systematicFILES/%s.pdf", comparisonStem.Data()));
+
+    if (comparisonOnly) {
+        for (TH1D* h : ratios) delete h;
+        delete hLeading;
+        delete hFrameTop;
+        delete hFrameRatio;
+        delete line;
+        delete leg;
+        delete p1;
+        delete p2;
+        delete c;
+        return;
+    }
 
     std::vector<std::string> colNames;
     std::vector<std::string> rowLabels;

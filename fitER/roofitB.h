@@ -14,15 +14,18 @@ RooFitResult *fit(TString system, TString variation, TString pdf, TString tree, 
 	else if (tree == "ntKstar") init_mean = Bd_MASS;
 	else if (tree == "ntmix_X3872") init_mean = X3872_MASS;
 	else if (tree == "ntmix_PSI2S") init_mean = PSI2S_MASS;
+	
+	double init_sigma1 = 0.01, init_sigma2 = 0.005, min_sigma1 = 0.001, max_sigma1 = 0.1, min_sigma2 = 0.001, max_sigma2 = 0.1;
+	if (system == "ppRef_nonPrompt") { init_sigma1 = 0.01; init_sigma2 = 0.005; min_sigma1 = 0.005; max_sigma1 = 0.1; min_sigma2 = 0.004; max_sigma2 = 0.01; }	
 
 	RooRealVar mean(Form("mean%d_%s", _count, pdf.Data()), "", init_mean, init_mean - 0.01, init_mean + 0.01);
-	RooRealVar sigma1(Form("sigma1%d_%s", _count, pdf.Data()), "", 0.01, 0.001, 0.1);
-	RooRealVar sigma2(Form("sigma2%d_%s", _count, pdf.Data()), "", 0.005, 0.001, 0.1);
+	RooRealVar sigma1(Form("sigma1%d_%s", _count, pdf.Data()), "", init_sigma1, min_sigma1, max_sigma1);
+	RooRealVar sigma2(Form("sigma2%d_%s", _count, pdf.Data()), "", init_sigma2, min_sigma2, max_sigma2);
 	RooRealVar sigma3(Form("sigma3%d_%s", _count, pdf.Data()), "", 0.01, 0.001, 0.03);
 	RooRealVar sigma4cb(Form("sigma4cb%d_%s", _count, pdf.Data()), "", 0.005, 0.001, 0.05);
 	RooRealVar alpha(Form("alpha%d_%s", _count, pdf.Data()), "", 4., 0, 15);
 	RooRealVar n(Form("n_%d_%s", _count, pdf.Data()), "", 10, -100, 200);
-	RooRealVar* scale = new RooRealVar("scale", "scale", 1, 0.95, 1.25);
+	RooRealVar* scale = new RooRealVar("scale", "scale", 1, 0.9, 1.15);
 	RooProduct scaled_sigma1(Form("scaled_sigma1%d_%s", _count, pdf.Data()), "scaled_sigma1", RooArgList(*scale, sigma1));
 	RooProduct scaled_sigma2(Form("scaled_sigma2%d_%s", _count, pdf.Data()), "scaled_sigma2", RooArgList(*scale, sigma2));
 	RooProduct scaled_sigma3(Form("scaled_sigma3%d_%s", _count, pdf.Data()), "scaled_sigma3", RooArgList(*scale, sigma3));

@@ -12,6 +12,8 @@
 #include "aux.h"
 
 // root -b -q 'ntmix_UNCpropagator.C("ntmix_X3872","ppRef","Bpt")'
+// root -b -q 'ntmix_UNCpropagator.C("ntmix_PSI2S","ppRef","Bpt")'
+// root -b -q 'ntmix_UNCpropagator.C("ntmix_X3872","ppRef","nSelectedChargedTracks")'
 // root -b -q 'ntmix_UNCpropagator.C("ntmix_PSI2S","ppRef","nSelectedChargedTracks")'
 
 static TH1D* LoadUncHist(TString path, TString histName, TString cloneName)

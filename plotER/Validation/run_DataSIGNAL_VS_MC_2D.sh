@@ -2,30 +2,25 @@
 set -euo pipefail
 
 # Usage:
-#   bash run_DataSIGNAL_VS_MC.sh [tree] [system] [custom_cut] [mode] [reweight_variable] [whichWeight]
+#   bash run_DataSIGNAL_VS_MC_2D.sh [tree] [system] [custom_cut] [reweight_variable] [whichWeight]
 #
-# mode:
-#   nominal   Run the nominal comparison and write sPlot + ML-discrepancy weights.
-#   reweight  Re-run the comparison with the existing ML-discrepancy weight.
+# The 2-D validation uses the sPlot dataset written by the nominal 1-D run:
+#   WEIGHTS/SignalWeight_sPlot_SYSTEM_TREE_PARTICLE.root
 #
 # Examples:
-#   bash run_DataSIGNAL_VS_MC.sh ntmix_X3872 ppRef
-#   bash run_DataSIGNAL_VS_MC.sh ntmix_PSI2S ppRef
+#   bash run_DataSIGNAL_VS_MC_2D.sh ntmix_X3872 ppRef
+#   bash run_DataSIGNAL_VS_MC_2D.sh ntmix_PSI2S ppRef
 
-#   bash run_DataSIGNAL_VS_MC.sh ntmix_X3872 ppRef '' reweight
-#   bash run_DataSIGNAL_VS_MC.sh ntmix_X3872 ppRef '' reweight Bchi2Prob
-#   bash run_DataSIGNAL_VS_MC.sh ntmix_X3872 ppRef '' reweight Btrk1PErr,Bchi2Prob
-#   bash run_DataSIGNAL_VS_MC.sh ntmix_X3872 ppRef '' reweight Prediction usePsi2s
+#   bash run_DataSIGNAL_VS_MC_2D.sh ntmix_X3872 ppRef '' Btktkpt, usePsi2s
+#   bash run_DataSIGNAL_VS_MC_2D.sh ntmix_X3872 ppRef '' Btktkpt,Bchi2Prob usePsi2s
+#   bash run_DataSIGNAL_VS_MC_2D.sh ntmix_X3872 ppRef '' Btktkpt,Bchi2Prob,Bmu1pt usePsi2s
 
 
-#   bash run_DataSIGNAL_VS_MC.sh ntphi ppRef "Bnorm_svpvDistance_2D > 4"
-
-TREE="${1:-ntphi}"
+TREE="${1:-ntmix_X3872}"
 SYSTEM="${2:-ppRef}"
 CUSTOM_CUT="${3:-}"
-MODE="${4:-nominal}"
-REWEIGHT_VARIABLE="${5:-Prediction}"
-WHICH_WEIGHT="${6:-self}"
+REWEIGHT_VARIABLE="${4:-}"
+WHICH_WEIGHT="${5:-self}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
@@ -35,12 +30,12 @@ BASE="/eos/user/h/hmarques/Analysis_CODES"
 
 cleanup_aclic() {
   rm -f \
-    DataSIGNAL_VS_MC_C.so \
-    DataSIGNAL_VS_MC_C.d \
-    DataSIGNAL_VS_MC_C_ACLiC_dict_rdict.pcm \
-    DataSIGNAL_VS_MC_C_ACLiC_dict.cxx \
-    DataSIGNAL_VS_MC_C_ACLiC_linkdef.h \
-    DataSIGNAL_VS_MC_C_ACLiC_map
+    DataSIGNAL_VS_MC_2D_C.so \
+    DataSIGNAL_VS_MC_2D_C.d \
+    DataSIGNAL_VS_MC_2D_C_ACLiC_dict_rdict.pcm \
+    DataSIGNAL_VS_MC_2D_C_ACLiC_dict.cxx \
+    DataSIGNAL_VS_MC_2D_C_ACLiC_linkdef.h \
+    DataSIGNAL_VS_MC_2D_C_ACLiC_map
 }
 trap cleanup_aclic EXIT
 
@@ -77,7 +72,6 @@ weight_particle_tag() {
   esac
 }
 
-
 case "$TREE" in
   ntmix|ntmix_X3872)
     TREE="ntmix_X3872"
@@ -99,8 +93,6 @@ case "$TREE" in
   ntKp)
     DATA="/eos/user/c/ctorresc/BmesonsHIN/PreXGBFiles/Data_2024ppRef_Bu.root"
     MC="/eos/user/c/ctorresc/BmesonsHIN/PreXGBFiles/MC_2024ppRef_Bu.root"
-    #DATA="./../../../RUN3_Data_MC_sharing/Bmesons/ppRef/flat_ntKp_ppRef_DATA.root"
-    #MC="./../../../RUN3_Data_MC_sharing/Bmesons/ppRef/flat_ntKp_ppRef_MC.root"
     CUTs="Bnorm_svpvDistance_2D > 4"
     ;;
   ntKstar)
@@ -119,45 +111,51 @@ CUT="${CUSTOM_CUT:-$CUTs}"
 PARTICLE="$(particle_tag "$TREE")"
 WEIGHT_PARTICLE="$(weight_particle_tag "$WHICH_WEIGHT")"
 WEIGHT_TREE="$(weight_tree_tag "$TREE")"
-MODEL="${BASE}/fitER/ROOTfiles/${SYSTEM}/nominalFitModel_${TREE}_${SYSTEM}.root"
-if [[ ! -f "$MODEL" && -f "${BASE}/fitER/ROOTfiles/nominalFitModel_${TREE}_${SYSTEM}.root" ]]; then
-  MODEL="${BASE}/fitER/ROOTfiles/nominalFitModel_${TREE}_${SYSTEM}.root"
+if [[ ! -f "$DATA" ]]; then
+  echo "[ERROR] Data sample not found: $DATA"
+  exit 1
+fi
+if [[ ! -f "$MC" ]]; then
+  echo "[ERROR] MC sample not found: $MC"
+  exit 1
+fi
+SPLOT_WEIGHTS="WEIGHTS/SignalWeight_sPlot_${SYSTEM}_${TREE}_${PARTICLE}.root"
+LEGACY_SPLOT_WEIGHTS="splot_weights_${TREE}_${SYSTEM}.root"
+if [[ ! -f "$SPLOT_WEIGHTS" && -f "$LEGACY_SPLOT_WEIGHTS" ]]; then
+  echo "[run_DataSIGNAL_VS_MC_2D] Using legacy sPlot file: $LEGACY_SPLOT_WEIGHTS"
+  SPLOT_WEIGHTS="$LEGACY_SPLOT_WEIGHTS"
+fi
+if [[ ! -f "$SPLOT_WEIGHTS" ]]; then
+  echo "[ERROR] sPlot weights file not found: $SPLOT_WEIGHTS"
+  echo "        Run the nominal 1-D validation first: bash run_DataSIGNAL_VS_MC.sh $TREE $SYSTEM"
+  exit 1
 fi
 
-MODE_LC="${MODE,,}"
-case "$MODE_LC" in
-  nominal|raw|0|false|no|"")
-    REWEIGHT_MC=0
-    ;;
-  reweight|reweighted|rw|1|true|yes)
-    REWEIGHT_MC=1
+WEIGHT_FILE=""
+REWEIGHT_LC="${REWEIGHT_VARIABLE,,}"
+case "$REWEIGHT_LC" in
+  ""|nominal|none|no|false|0)
+    REWEIGHT_VARIABLE=""
     ;;
   *)
-    echo "[ERROR] Unknown mode '$MODE'. Use 'nominal' or 'reweight'."
-    exit 1
+    WEIGHT_FILE="WEIGHTS/${WEIGHT_TREE}_${SYSTEM}_${WEIGHT_PARTICLE}_weight.root"
+    if [[ ! -f "$WEIGHT_FILE" ]]; then
+      echo "[ERROR] Reweight file not found: $WEIGHT_FILE"
+      echo "        Run the nominal 1-D validation first: bash run_DataSIGNAL_VS_MC.sh $TREE $SYSTEM"
+      exit 1
+    fi
     ;;
 esac
 
-WEIGHT_FILE=""
-if [[ "$REWEIGHT_MC" == "1" ]]; then
-  WEIGHT_FILE="WEIGHTS/${WEIGHT_TREE}_${SYSTEM}_${WEIGHT_PARTICLE}_weight.root"
-  if [[ ! -f "$WEIGHT_FILE" ]]; then
-    echo "[ERROR] Reweight file not found: $WEIGHT_FILE"
-    echo "        Run the nominal validation first to produce it."
-    exit 1
-  fi
-fi
+echo "Running DataSIGNAL_VS_MC_2D.C with:"
+echo "  TREE          = $TREE"
+echo "  SYSTEM        = $SYSTEM"
+echo "  CUT           = $CUT"
+echo "  DATA          = $DATA"
+echo "  MC            = $MC"
+echo "  SPLOT_WEIGHTS = $SPLOT_WEIGHTS"
+echo "  REW_VAR       = $REWEIGHT_VARIABLE"
+echo "  WHICH_WEIGHT  = $WHICH_WEIGHT -> $WEIGHT_PARTICLE"
+echo "  WEIGHT_FILE   = $WEIGHT_FILE"
 
-echo "Running DataSIGNAL_VS_MC.C with:"
-echo "  TREE        = $TREE"
-echo "  SYSTEM      = $SYSTEM"
-echo "  CUT         = $CUT"
-echo "  DATA        = $DATA"
-echo "  MC          = $MC"
-echo "  MODEL       = $MODEL"
-echo "  MODE        = $MODE_LC"
-echo "  REW_VAR     = $REWEIGHT_VARIABLE"
-echo "  WHICH_WEIGHT = $WHICH_WEIGHT -> $WEIGHT_PARTICLE"
-echo "  WEIGHT_FILE = $WEIGHT_FILE"
-
-root -l -b -q "DataSIGNAL_VS_MC.C(\"${DATA}\",\"${MC}\",\"${MODEL}\",\"${CUT}\",\"${TREE}\",\"${SYSTEM}\",${REWEIGHT_MC},\"${WEIGHT_FILE}\",\"${REWEIGHT_VARIABLE}\",\"${WHICH_WEIGHT}\")"
+root -l -b -q "DataSIGNAL_VS_MC_2D.C(\"${DATA}\",\"${MC}\",\"${CUT}\",\"${TREE}\",\"${SYSTEM}\",\"${SPLOT_WEIGHTS}\",\"${REWEIGHT_VARIABLE}\",\"${WEIGHT_FILE}\",\"${WHICH_WEIGHT}\")"

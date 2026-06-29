@@ -1,11 +1,11 @@
-DOANALYSISPbPb_FULL_Bp=0
-DOANALYSISPbPb_BINNED_PT_Bp=1
+DOANALYSISPbPb_FULL_Bp=1
+DOANALYSISPbPb_BINNED_PT_Bp=0
 DOANALYSISPbPb_BINNED_Y_Bp=0
 DOANALYSISPbPb_BINNED_MULT_Bp=0
 
 #Data and MC Samples
-Data_Bp="/eos/user/h/hmarques/Analysis_CODES/flatER/Bmeson/flat_ntKp_ppRef_DATA.root"
-MC_Bp="/eos/user/h/hmarques/Analysis_CODES/flatER/Bmeson/flat_ntKp_ppRef_MC.root"
+Data_Bp="/eos/user/c/ctorresc/BmesonsHIN/PreXGBFiles/Data_2024ppRef_Bu.root"
+MC_Bp="/eos/user/c/ctorresc/BmesonsHIN/PreXGBFiles/MC_2024ppRef_Bu.root"
 #Data and MC Samples
 
 ## NEW CUTS ? here 

@@ -19,7 +19,7 @@ std::pair<int, std::vector<double>> defineBinning(const TString& var, const TStr
 int syst_study=0;
 
 // PROFILE LIKELIHOOD SIGNIFICANCE + INCLUSIVE SCAN
-int use_profile_likelihood=0;
+int use_profile_likelihood = 0;
 
 void roofitB(TString TREE = "ntphi", int FULL = 0, TString INPUTDATA = "", TString INPUTMC = "", TString VAR = "", TString CUT = "", TString SYSTEM = "ppRef"){
 
@@ -217,7 +217,7 @@ void roofitB(TString TREE = "ntphi", int FULL = 0, TString INPUTDATA = "", TStri
 		TLatex* variationLabel = new TLatex(0.68, 0.35, "");
 		setupLABELS(variationLabel, 0.030, false);
 
-		if(TREE == "ntmix_X3872"){		//SIGNIFICANCE
+		if(TREE == "ntmix_X3872" && SYSTEM != "ppRef_nonPrompt"){		//SIGNIFICANCE
 			FitSignificanceResult signif = GetFitSignificanceForPlot(
 				ws, _count, mass, ith_DATA_bin, f_results,
 				use_profile_likelihood == 1, use_profile_likelihood == 1,

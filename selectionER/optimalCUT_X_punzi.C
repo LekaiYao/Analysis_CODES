@@ -31,7 +31,7 @@ struct PunziBin {
 struct PunziResult {
     PunziBin bin;
     double bestThreshold = 0.0;
-    double bestRatio = 1.e300;
+    double bestRatio = -1.0;
     double bestBkg = 0.0;
 };
 
@@ -102,11 +102,11 @@ PunziResult optimizeBin(TTree* data, TTree* mcX, const TString& system,
         double bLeft = 0.0, bRight = 0.0;
         const double bkg = estimateBkgInSignalRegion(data, preCut, thr, bLeft, bRight);
         const double smin = punziSmin(bkg, a, b);
-        const double fom = smin / sigEff;
+        const double fom = sigEff / smin;
         if (!std::isfinite(fom)) continue;
 
         graph.SetPoint(ip, thr, fom);
-        if (fom < result.bestRatio) {
+        if (fom > result.bestRatio) {
             result.bestRatio = fom;
             result.bestThreshold = thr;
             result.bestBkg = bkg;
@@ -114,10 +114,11 @@ PunziResult optimizeBin(TTree* data, TTree* mcX, const TString& system,
         ip++;
     }
 
-    const double yMin = 0.9 * result.bestRatio;
-    const double yMax = 2.0 * result.bestRatio;
+    const double yMin = 0.0;
+    const double yMax = 1.2 * result.bestRatio;
 
     TCanvas c(Form("c_%s", bin.fileTag.Data()), "", 800, 600);
+    c.SetLeftMargin(0.14);
     TH1F* frame = c.DrawFrame(0., yMin, 1., yMax);
     frame->SetTitle(" ; Prediction; FOM");
     graph.SetMarkerStyle(20);
@@ -156,9 +157,9 @@ void writeSummaryTable(const TString& outDir, const TString& system,
     out << "\\small\n";
     out << "\\begin{tabular}{c|c|c|c}\n";
     out << "\\toprule\n";
-    out << "Bin ($p_{T}$ [GeV/c]) & Best threshold & FOM & Bkg. estimate \\\\ \\midrule\n";
+    out << "Bin ($p_{T}$ [GeV/c]) & Best threshold & Punzi FOM & Bkg. estimate \\\\ \\midrule\n";
     for (const auto& result : results) {
-        out << Form("%.0f--%.0f%s", result.bin.low, result.bin.high, result.bin.inclusive ? " (incl.)" : "") << " & "
+        out << Form("%.1f--%.1f%s", result.bin.low, result.bin.high, result.bin.inclusive ? " (incl.)" : "") << " & "
             << result.bestThreshold << " & "
             << result.bestRatio << " & "
             << result.bestBkg << " \\\\\n";
@@ -171,24 +172,14 @@ void writeSummaryTable(const TString& outDir, const TString& system,
 
 
 // to run:
-// root -l -b -q 'selectionER/optimalCUT_X_punzi.C("ppRef")'
+// root -l -b -q 'optimalCUT_X_punzi.C("ppRef")'
 
 void optimalCUT_X_punzi(TString system = "ppRef", double a = 2.0, double b = 5.0)
 {
     gStyle->SetOptStat(0);
 
-    TString dataPath = "/eos/user/k/kprince/X3872_pp_new/DATA_pp_AANN.root";
-    TString mcXPath = "/eos/user/k/kprince/X3872_pp_new/MC_X3872_pp_AANN.root";
-
-    if (system == "PbPb23") {
-        dataPath = "/eos/user/k/kprince/X3872_PbPb/DATA_PbPb_AANN.root";
-        mcXPath = "/eos/user/k/kprince/X3872_PbPb/MC_X3872_PbPb_AANN.root";
-    }
-    if (system == "PbPb24") {
-        dataPath = "/eos/user/k/kprince/X3872_PbPb/DATA_24b_PbPb_AANN.root";
-        mcXPath = "/eos/user/k/kprince/X3872_PbPb/MC_X3872_24b_PbPb_AANN.root";
-    }
-
+    TString dataPath = "/eos/home-l/leyao/pbpb_work/X_analysis/XGBoost/output/selected/X_pp24_v3_fid2_4v1_xgb_v1/DATA_with_score.root";
+    TString mcXPath = "/eos/home-l/leyao/pbpb_work/X_analysis/XGBoost/output/selected/X_pp24_v3_fid2_4v1_xgb_v1/MC_with_score.root";
     std::cout << "Reading " << system << " data sample: " << dataPath << std::endl;
     std::cout << "Reading prompt X(3872) MC sample: " << mcXPath << std::endl;
 
@@ -199,7 +190,7 @@ void optimalCUT_X_punzi(TString system = "ppRef", double a = 2.0, double b = 5.0
     fileX->GetObject("ntmix_X3872", mcX);
 
     std::vector<PunziBin> bins;
-    const TString baseCut = "1";
+    const TString baseCut = "BQvalue < 0.15";
 
     const double pMin = ptbinsvec_X.front();
     const double pMax = ptbinsvec_X.back();
@@ -221,7 +212,7 @@ void optimalCUT_X_punzi(TString system = "ppRef", double a = 2.0, double b = 5.0
     const TString outDir = (macroDir == ".") ? "ntmix_optimalCUT" : Form("%s/ntmix_optimalCUT", macroDir.Data());
     gSystem->mkdir(outDir, true);
 
-    std::cout << Form("Using Punzi ratio = S_min(B) / signal_eff, with a = %.1f and b = %.1f", a, b) << std::endl;
+    std::cout << Form("Using Punzi FOM = signal_eff / S_min(B), with a = %.1f and b = %.1f", a, b) << std::endl;
     std::cout << Form("Using X3872 mass = %.2f GeV, signal window = +-2.0 MeV, sidebands = 5.0 MeV wide starting at +-3.0 MeV", X3872_MASS) << std::endl;
     std::cout << "Using base cut: " << baseCut << std::endl;
 

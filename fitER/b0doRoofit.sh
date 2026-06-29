@@ -4,8 +4,8 @@ DOANALYSISPbPb_BINNED_Y_B0=0
 DOANALYSISPbPb_BINNED_MULT_B0=0
 
 #Data and MC Samples
-Data_B0="/eos/user/h/hmarques/Analysis_CODES/flatER/Bmeson/flat_ntKstar_ppRef_DATA.root"
-MC_B0="/eos/user/h/hmarques/Analysis_CODES/flatER/Bmeson/flat_ntKstar_ppRef_MC.root"
+Data_B0="/eos/user/c/ctorresc/BmesonsHIN/PreXGBFiles/Data_2024ppRef_B0.root"
+MC_B0="/eos/user/c/ctorresc/BmesonsHIN/PreXGBFiles/MC_2024ppRef_B0.root"
 #Data and MC Samples
 
 ## CUTS (SELECTION ?) here 

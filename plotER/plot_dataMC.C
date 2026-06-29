@@ -32,6 +32,14 @@ TString getPlotParticleLabel(TString treeName){
     return treeName;
 }
 
+bool hasVariableForDraw(TTree *tree, TString var)
+{
+    if (!tree) return false;
+    if (tree->GetBranch(var)) return true;
+    if (var == "abs(By)") return tree->GetBranch("By") != nullptr;
+    return false;
+}
+
 void plot_dataMC(TString TREE ="ntmix_X3872", TString systemNAME = "ppRef")
 {
     gSystem->Exec("mkdir -p ./presel_STUDY_vars/");
@@ -39,10 +47,10 @@ void plot_dataMC(TString TREE ="ntmix_X3872", TString systemNAME = "ppRef")
     //VARIABLES
     //VARIABLES
     //VARIABLES
-    const char * variables[] = {"Bmass", "PVnchi2", "Btktkpt", "BLxy",  "BsvpvDistance_2D",  "abs(By)",  "BtktkvProb",    "Bpt",     "BQvalue",   "Bcos_dtheta", "BtrkPtimb", "Bchi2Prob", "Btrk2dR", "Btrk1dR", "Btrk1Pt", "Btrk2Pt", "Bnorm_svpvDistance_2D", "Prediction",
-                                "PVx", "PVy", "PVz", "BvtxX", "BvtxY", "BsvpvDisErr_2D", "Btrk1Eta", "Btrk2Eta", "Btrk1Phi", "Btrk2Phi", "Btrk1PtErr", "Btrk2PtErr", "BujvProb", "Bmu1y", "Bmu2y", "Bmu1pt", "Bmu2pt", "Bnorm_trk1Dz", "Bnorm_trk2Dz"};
-    const double ranges[][2] = {{3.6,4},     {0,1},   {0,10},    {-0.1,0.1},           {0,0.25},    {0,2.4},         {0,1},   {0,50},     {0.0,0.6},         {0.95,1},    {0,1},     {0.0,1},   {0,1.5},   {0,1.5},    {0.5,4.5},    {0.5,4.5},            {0,20},   {0,1},
-                                {-0.1,0.1}, {-0.1,0.1}, {-25.0,25.0}, {-0.05,0.05}, {-0.05,0.05}, {0.0,0.05}, {-2.4,2.4}, {-2.4,2.4}, {-3.2,3.2}, {-3.2,3.2}, {0.0,.1}, {0.0,0.1}, {0.0,1.0}, {-2.4,2.4}, {-2.4,2.4}, {0.0,17.5}, {0.0,17.5}, {-35.0,35.0}, {-35.0,35.0}};    
+    const char * variables[] = {"Bnorm_trk1Dz", "Bnorm_trk2Dz", "Bmass", "PVnchi2", "Btktkpt", "BLxy",  "BsvpvDistance_2D",  "abs(By)",  "BtktkvProb",    "Bpt",     "BQvalue",   "Bcos_dtheta", "BtrkPtimb", "Bchi2Prob", "Btrk2dR", "Btrk1dR", "Btrk1Pt", "Btrk2Pt", "Bnorm_svpvDistance_2D", "Prediction",
+                                "PVx", "PVy", "PVz", "BvtxX", "BvtxY", "BsvpvDisErr_2D", "Btrk1Eta", "Btrk2Eta", "Btrk1Phi", "Btrk2Phi", "Btrk1PtErr", "Btrk2PtErr", "BujvProb", "Bmu1y", "Bmu2y", "Bmu1pt", "Bmu2pt"};
+    const double ranges[][2] = {{-2000.0,2000.0}, {-2000.0,2000.0}, {3.6,4},     {0,1},   {0,10},    {-0.1,0.1},           {0,0.25},    {0,2.4},         {0,1},   {0,50},     {0.0,0.6},         {0.95,1},    {0,1},     {0.0,1},   {0,1.5},   {0,1.5},    {0.5,4.5},    {0.5,4.5},            {0,20},   {0,1},
+                                {-0.1,0.1}, {-0.1,0.1}, {-30.0,30.0}, {-0.05,0.05}, {-0.05,0.05}, {0.0,0.05}, {-2.4,2.4}, {-2.4,2.4}, {-3.2,3.2}, {-3.2,3.2}, {0.0,.1}, {0.0,0.1}, {0.0,1.0}, {-2.4,2.4}, {-2.4,2.4}, {0.0,17.5}, {0.0,17.5}};    
     //const char * variables[] = {"BQvalue"};
     //const double ranges[][2] = {{0,0.6}};
     //const char * variables[] = {"Btrk1dR","Btrk2dR",};
@@ -79,17 +87,17 @@ void plot_dataMC(TString TREE ="ntmix_X3872", TString systemNAME = "ppRef")
             path_to_MC_spec = Form("/eos/user/k/kprince/X3872_PbPb/MC_PSI2S_24b_PbPb_AANN.root");
             path_to_data    = Form("/eos/user/k/kprince/X3872_PbPb/DATA_24b_PbPb_AANN.root");
         } else {
-            //path_to_data    = Form("/eos/user/k/kprince/X3872_pp_new/DATA_pp_AANN.root");
-            //path_to_MC_spec = Form("/eos/user/k/kprince/X3872_pp_new/MC_PSI2S_pp_AANN.root");
-            //path_to_MC      = Form("/eos/user/k/kprince/X3872_pp_new/MC_X3872_pp_AANN.root");
-            path_to_MC = Form("/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_MC_X3872.root");
-            path_to_MC_spec = Form("/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_MC_PSI2S.root");
-            path_to_data = Form("/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_DATA.root");
+            path_to_data    = Form("/eos/user/k/kprince/X3872_pp_new/DATA_pp_VAANN.root");
+            path_to_MC_spec = Form("/eos/user/k/kprince/X3872_pp_new/MC_PSI2S_pp_VAANN.root");
+            path_to_MC      = Form("/eos/user/k/kprince/X3872_pp_new/MC_X3872_pp_VAANN.root");
+            //path_to_MC = Form("/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_MC_X3872.root");
+            //path_to_MC_spec = Form("/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_MC_PSI2S.root");
+            //path_to_data = Form("/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_DATA.root");
         }
         mcTreeNameSpec = "ntmix_PSI2S";
     } else {
-        path_to_MC = Form("./../flatER/Bmeson/flat_%s_%s_MC.root", TREE.Data(), systemNAME.Data());
-        path_to_data = Form("./../flatER/Bmeson/flat_%s_%s_DATA.root", dataTreeName.Data(), systemNAME.Data());
+        path_to_MC   = Form("/eos/user/h/hmarques/RUN3_Data_MC_sharing/Bmesons/%s/flat_%s_%s_MC.root",systemNAME.Data(), TREE.Data(), systemNAME.Data());
+        path_to_data = Form("/eos/user/h/hmarques/RUN3_Data_MC_sharing/Bmesons/%s/flat_%s_%s_DATA.root",systemNAME.Data(), dataTreeName.Data(), systemNAME.Data());
     }
     TChain chain(dataTreeName.Data());
     chain.Add(path_to_data);
@@ -107,6 +115,11 @@ void plot_dataMC(TString TREE ="ntmix_X3872", TString systemNAME = "ppRef")
     int nVars = sizeof(variables)/sizeof(variables[0]);
     for (int i = 0; i < nVars; ++i){
         TString var = variables[i];
+        if (!hasVariableForDraw(&chain, var) || !hasVariableForDraw(tree_MC, var) ||
+            (tree_MC_spec && !hasVariableForDraw(tree_MC_spec, var))) {
+            std::cout << "[plot_dataMC] Skipping missing variable: " << var << std::endl;
+            continue;
+        }
 
         // Create a canvas to draw the histograms
         TCanvas *canvas = new TCanvas("canvas", "", 600, 600);
@@ -194,10 +207,14 @@ void plot_dataMC(TString TREE ="ntmix_X3872", TString systemNAME = "ppRef")
         if (ANYsel == "1") { ANYsel = ""; }
         else {var += "_SELECTED";}
         sidebandLatex.ReplaceAll("B", "");
-        // Split sideband into two lines at the || operator
+        // Split sideband into two lines only when a || operator is present.
         TString sidebandLine1 = sidebandLatex;
-        sidebandLine1.Remove(sidebandLine1.First('|'));
-        TString sidebandLine2 = sidebandLatex(sidebandLatex.First('|'), sidebandLatex.Length());
+        TString sidebandLine2 = "";
+        Ssiz_t splitPos = sidebandLatex.First('|');
+        if (splitPos != kNPOS) {
+            sidebandLine1.Remove(splitPos);
+            sidebandLine2 = sidebandLatex(splitPos, sidebandLatex.Length() - splitPos);
+        }
         
         TLegend *leg = new TLegend(0.18, 0.62, 0.4, 0.93, NULL, "brNDC");
         leg->SetBorderSize(0);
@@ -211,7 +228,7 @@ void plot_dataMC(TString TREE ="ntmix_X3872", TString systemNAME = "ppRef")
         }
         leg->AddEntry(hist_BKG, "Data sideband", "f");
         leg->AddEntry((TObject*)0, sidebandLine1.Data(), "");
-        leg->AddEntry((TObject*)0, sidebandLine2.Data(), "");
+        if (!sidebandLine2.IsNull()) leg->AddEntry((TObject*)0, sidebandLine2.Data(), "");
         leg->Draw();
 
         // Save the canvas as an image

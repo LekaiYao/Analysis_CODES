@@ -100,13 +100,13 @@ void accXeff_2D(
     gROOT->ForceStyle();
 
     std::vector<double> ptBins = {
-        10, 10.5, 11, 11.5, 12, 12.5, 13, 13.5, 14, 14.5, 15, 15.5, 16, 16.5, 17, 17.5, 18, 18.5, 19, 19.5, 20,
+        7.5, 10, 10.5, 11, 11.5, 12, 12.5, 13, 13.5, 14, 14.5, 15, 15.5, 16, 16.5, 17, 17.5, 18, 18.5, 19, 19.5, 20,
         20.5, 21, 21.5, 22, 22.5, 23, 23.5, 24, 24.5, 25, 26, 27, 28, 29, 30,
         32, 34, 36, 38, 40,
         45, 50
     };
     const int nPtBins = ptBins.size() - 1;
-    std::vector<double> yBins = {0.0, 0.4, 0.8, 1.2, 1.6};
+    std::vector<double> yBins = {0.0, 0.6, 1.2, 1.6, 2.0, 2.4};
     const int nYBins = yBins.size() - 1;
 
     TFile *finReco = TFile::Open(path_to_MC, "READ");
@@ -161,7 +161,7 @@ void accXeff_2D(
     if(treename != "ntKp"){TRK_pT_ACC += Form(" && Gtk2pt >= %.1f", pTmin_TRK);}
     TString TRK_acc = "(" + TRK_y_ACC + " && " + TRK_pT_ACC + ")";
 
-    TString GENcut = "(Gpt > 10 && abs(Gy) < 1.6)";
+    TString GENcut = "(Gpt > 7.5 && abs(Gy) < 2.4)";
     TString ACCcut = "(" + GENcut + " && " + MUONacc + " && " + TRK_acc + ")";
     std::cout << "GEN phase space: " << GENcut << "\n" << std::endl;
     std::cout << "ACC cuts: " << ACCcut << "\n" << std::endl;
@@ -189,7 +189,7 @@ void accXeff_2D(
     cACC->SetRightMargin(0.15);
     hACC->SetMinimum(0.0);
     hACC->SetMaximum(1.0);
-    hACC->GetYaxis()->SetRangeUser(0.0, 1.6);
+    hACC->GetYaxis()->SetRangeUser(0.0, 2.4);
     hACC->SetContour(50);
     hACC->Draw("COLZ")  ;
 
@@ -240,7 +240,7 @@ void accXeff_2D(
     cEFF->SetRightMargin(0.15);
     hEFF->SetMinimum(0.0);
     hEFF->SetMaximum(1.0);
-    hEFF->GetYaxis()->SetRangeUser(0.0, 1.6);
+    hEFF->GetYaxis()->SetRangeUser(0.0, 2.4);
     hEFF->SetContour(50);
     hEFF->Draw("COLZ")  ;
 
@@ -273,7 +273,7 @@ void accXeff_2D(
     cACCxEFF->SetRightMargin(0.15);
     hACCxEFF->SetMinimum(0.0);
     hACCxEFF->SetMaximum(1.0);
-    hACCxEFF->GetYaxis()->SetRangeUser(0.0, 1.6);
+    hACCxEFF->GetYaxis()->SetRangeUser(0.0, 2.4);
     hACCxEFF->SetContour(50);
     hACCxEFF->Draw("COLZ");
 

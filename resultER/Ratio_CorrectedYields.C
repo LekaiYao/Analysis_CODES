@@ -1,11 +1,13 @@
 #include "TFile.h"
 #include "TH1D.h"
+#include "TGraphErrors.h"
 #include "TCanvas.h"
 #include "TLegend.h"
 #include "TBox.h"
 #include "TPad.h"
 #include "TSystem.h"
 #include "TStyle.h"
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
@@ -21,120 +23,101 @@
 // root -l -b -q 'Ratio_CorrectedYields.C("ppRef","Bpt")'
 // root -l -b -q 'Ratio_CorrectedYields.C("ppRef","nSelectedChargedTracks")'
 
-static constexpr double kRatioYmin = 0.04;
-static constexpr double kRatioYmax = 0.10;
-static const TString kNominalMapTag = "usePw";
-static const TString kNominalMethod = "splot";
+static const TString kPromptFractionFile = "../plotER/nonPrompt_STUDY_lxy/nonprompt_lxy_fraction_Bpt.root";
 
-static TH1D* LoadCorrectedYield(TString fileName, TString cloneName)
+
+
+struct PromptFractionHists {
+    TH1D* hPrompt = nullptr;
+    TH1D* hNonPromptFromData = nullptr;
+    TH1D* hBenrichedNonPromptMC = nullptr;
+};
+
+static PromptFractionHists LoadPromptFractions(TString treename, TString system, TString var)
 {
-    TFile* f = TFile::Open(fileName, "READ");
-    if (!f || f->IsZombie()) throw std::runtime_error(Form("Could not open corrected-yield file: %s", fileName.Data()));
 
-    TH1D* h = (TH1D*)f->Get("hYieldCorr");
-    if (!h) throw std::runtime_error(Form("Could not find hYieldCorr in: %s", fileName.Data()));
+    // FOR X3872 consider inclusive case; FOR PSI2S consider binned case
+    const bool isX3872 = (treename == "ntmix_X3872");
+    const TString tag = isX3872 ? "X3872" : "PSI2S";
+    const TString storedTag = isX3872 ? "X3872" : "Psi2S";
+    const TString fractionBinning = isX3872 ? "inclusive" : "Bpt";
+    const TString fracPrefix = (treename == "ntmix_X3872") ? "hX3872_nonprompt_lxy" : "hPsi2S_nonprompt_lxy";
 
-    TH1D* out = (TH1D*)h->Clone(cloneName);
-    out->SetDirectory(nullptr);
-    f->Close();
-    return out;
-}
+    TH1D* hFracMC = LoadHistFromFile( kPromptFractionFile,
+        fracPrefix + "_fraction_" + fractionBinning,
+        Form("hBenrichedNonPromptMCFraction_%s_%s", tag.Data(), fractionBinning.Data()));
+    TH1D* hNonPromptData = LoadHistFromFile(
+        kPromptFractionFile,
+        Form("h%s_dataDriven_nonprompt_fraction_%s", storedTag.Data(), fractionBinning.Data()),
+        Form("hNonPromptFractionFromBenriched_%s_%s", tag.Data(), fractionBinning.Data()));
+    TH1D* hPrompt = (TH1D*)hNonPromptData->Clone( Form("hPromptFraction_%s_%s", tag.Data(), fractionBinning.Data()));
 
-static TH1D* LoadParticleTotalUnc(TString treename, TString system, TString var)
-{
-    const TString path = Form("output_ntmix/systematicFILES/ntmix_totalUnc_%s_%s_%s.root",
-                              treename.Data(), system.Data(), var.Data());
-    TFile f(path, "READ");
-    if (f.IsZombie()) throw std::runtime_error(Form("Could not open propagated uncertainty file: %s", path.Data()));
+        hPrompt->SetDirectory(nullptr);
+    hPrompt->SetTitle(Form(";%s;f_{prompt}^{%s}", RatioAxisTitle(var).Data(), tag.Data()));
+    hNonPromptData->SetTitle(Form(";%s;1 - f_{prompt}^{%s}", RatioAxisTitle(var).Data(), tag.Data()));
+    hFracMC->SetTitle(Form(";%s;f_{B-enr}^{nonprompt, %s}", RatioAxisTitle(var).Data(), tag.Data()));
 
-    TH1D* h = (TH1D*)f.Get("hTotalUncPercent");
-    if (!h) throw std::runtime_error(Form("Could not find hTotalUncPercent in: %s", path.Data()));
-
-    TH1D* out = (TH1D*)h->Clone(Form("hTotalUncPercent_%s_%s", treename.Data(), var.Data()));
-    out->SetDirectory(nullptr);
-    f.Close();
-    return out;
-}
-
-static TH1D* BuildNominalRatio(TString system, TString var)
-{
-    const TString numFile = Form("../effER/output/ROOTs/ntmix_X3872_%s_%s_%s_%s_CorrectedYields.root",
-                                 system.Data(), var.Data(), kNominalMapTag.Data(), kNominalMethod.Data());
-    const TString denFile = Form("../effER/output/ROOTs/ntmix_PSI2S_%s_%s_%s_%s_CorrectedYields.root",
-                                 system.Data(), var.Data(), kNominalMapTag.Data(), kNominalMethod.Data());
-
-    TH1D* hNum = LoadCorrectedYield(numFile, Form("hYieldCorr_X3872_%s", var.Data()));
-    TH1D* hDen = LoadCorrectedYield(denFile, Form("hYieldCorr_PSI2S_%s", var.Data()));
-
-    TH1D* hRatio = (TH1D*)hNum->Clone(Form("hRatio_X3872_over_PSI2S_%s_%s", system.Data(), var.Data()));
-    hRatio->SetDirectory(nullptr);
-    hRatio->SetTitle(Form(";%s;X(3872) / #psi(2S)", RatioAxisTitle(var).Data()));
-    hRatio->Divide(hDen);
-
-    delete hNum;
-    delete hDen;
-    return hRatio;
-}
-
-static TH1D* BuildRatioSystematic(TH1D* hRatio, TString system, TString var)
-{
-    TH1D* hX = LoadParticleTotalUnc("ntmix_X3872", system, var);
-    TH1D* hPsi = LoadParticleTotalUnc("ntmix_PSI2S", system, var);
-    TH1D* hRatioSyst = (TH1D*)hRatio->Clone(Form("hRatioSyst_%s_%s", system.Data(), var.Data()));
-    hRatioSyst->SetDirectory(nullptr);
-    hRatioSyst->SetTitle(Form(";%s;X(3872) / #psi(2S)", RatioAxisTitle(var).Data()));
-
-    for (int i = 1; i <= hRatioSyst->GetNbinsX(); ++i) {
-        const double rel = std::sqrt(std::pow(hX->GetBinContent(i), 2) + std::pow(hPsi->GetBinContent(i), 2)) / 100.0;
-        hRatioSyst->SetBinContent(i, hRatio->GetBinContent(i));
-        hRatioSyst->SetBinError(i, hRatio->GetBinContent(i) * rel);
+    std::cout << "[Ratio_CorrectedYields] Stored prompt fractions for " << tag.Data() << std::endl;
+    for (int i = 1; i <= hPrompt->GetNbinsX(); ++i) {
+        const double nonprompt = hNonPromptData->GetBinContent(i);
+        const double prompt = 1.0 - nonprompt;
+        const double fracErr = hNonPromptData->GetBinError(i);
+        hPrompt->SetBinContent(i, prompt);
+        hPrompt->SetBinError(i, fracErr);
+        std::cout << "  bin " << i << " [" << hPrompt->GetXaxis()->GetBinLowEdge(i)
+                  << "," << hPrompt->GetXaxis()->GetBinUpEdge(i) << "]: f_prompt = "
+                  << prompt << " +- " << fracErr << std::endl;
     }
 
-    delete hX;
-    delete hPsi;
-    return hRatioSyst;
+    return {hPrompt, hNonPromptData, hFracMC};
 }
 
-static void StyleRatio(TH1D* hRatio)
+static TH1D* BuildPromptScaleFactor(PromptFractionHists& xPrompt, PromptFractionHists& psiPrompt, TString system, TString var)
 {
-    hRatio->SetLineColor(kBlack);
-    hRatio->SetMarkerColor(kBlack);
-    hRatio->SetMarkerStyle(20);
-    hRatio->SetLineWidth(2);
-    hRatio->SetStats(0);
-    hRatio->SetTitle("");
-    hRatio->GetYaxis()->SetRangeUser(kRatioYmin, kRatioYmax);
-    hRatio->GetYaxis()->SetTitleOffset(2.0);
-    hRatio->GetYaxis()->SetTitleSize(0.035);
-    hRatio->GetYaxis()->SetLabelSize(0.035);
-    hRatio->GetYaxis()->SetTitleFont(42);
-    hRatio->GetYaxis()->SetLabelFont(42);
-    hRatio->GetXaxis()->SetTitleSize(0.030);
-    hRatio->GetXaxis()->SetTitleOffset(1.3);
-    hRatio->GetXaxis()->CenterTitle();
-    hRatio->GetXaxis()->SetTitleFont(42);
-    hRatio->GetXaxis()->SetLabelFont(42);
-    hRatio->GetXaxis()->SetLabelOffset(0.012);
-    hRatio->GetXaxis()->SetLabelSize(0.031);
-    hRatio->GetXaxis()->SetTickLength(0.035);
-}
-
-static void DrawSystBoxes(TH1D* hSyst, Color_t fillColor = kGray + 1, double alpha = 0.25, Color_t lineColor = kGray + 2)
-{
-    for (int i = 1; i <= hSyst->GetNbinsX(); ++i) {
-        const double xLow = hSyst->GetXaxis()->GetBinLowEdge(i);
-        const double xHigh = hSyst->GetXaxis()->GetBinUpEdge(i);
-        const double y = hSyst->GetBinContent(i);
-        const double e = hSyst->GetBinError(i);
-        TBox* box = new TBox(xLow, y - e, xHigh, y + e);
-        box->SetFillColorAlpha(fillColor, alpha);
-        box->SetLineColor(lineColor);
-        box->SetLineWidth(1);
-        box->Draw("same");
+    if (xPrompt.hPrompt->GetNbinsX() != 1) {
+        throw std::runtime_error("The X(3872) prompt fraction must be the inclusive one-bin result.");
     }
+
+    TH1D* hScale = (TH1D*)psiPrompt.hPrompt->Clone(Form("hPromptRatioScaleFactor_%s_%s", system.Data(), var.Data()));
+    hScale->SetDirectory(nullptr);
+    hScale->Reset("ICES");
+    hScale->SetTitle(Form(";%s;f_{prompt}^{X(3872)} / f_{prompt}^{#psi(2S)}", RatioAxisTitle(var).Data()));
+
+    for (int i = 1; i <= hScale->GetNbinsX(); ++i) {
+        const double fx = xPrompt.hPrompt->GetBinContent(1);
+        const double fps = psiPrompt.hPrompt->GetBinContent(i);
+        if (fx <= 0.0 || fps <= 0.0) continue;
+        const double scale = fx / fps;
+        const double rel2 = std::pow(xPrompt.hPrompt->GetBinError(1) / fx, 2) + std::pow(psiPrompt.hPrompt->GetBinError(i) / fps, 2);
+        hScale->SetBinContent(i, scale);
+        hScale->SetBinError(i, scale * std::sqrt(rel2));
+    }
+    return hScale;
 }
 
-static void SaveNominalRatio(TH1D* hRatio, TH1D* hRatioSyst, TString outStem, TString system)
+static TH1D* BuildPromptCorrectedRatio(TH1D* hInclusiveRatio, TH1D* hPromptScale, TString system, TString var)
+{
+
+    TH1D* hPromptRatio = (TH1D*)hInclusiveRatio->Clone(Form("hPromptRatio_X3872_over_PSI2S_%s_%s", system.Data(), var.Data()));
+    hPromptRatio->SetDirectory(nullptr);
+    hPromptRatio->SetTitle(Form(";%s;Prompt X(3872) / #psi(2S)", RatioAxisTitle(var).Data()));
+    hPromptRatio->Reset("ICES");
+
+    for (int i = 1; i <= hPromptRatio->GetNbinsX(); ++i) {
+        const double rincl = hInclusiveRatio->GetBinContent(i);
+        const double scale = hPromptScale->GetBinContent(i);
+        if (rincl <= 0.0 || scale <= 0.0) continue;
+        const double rprompt = rincl * scale;
+        const double rel2 = std::pow(hInclusiveRatio->GetBinError(i) / rincl, 2) + std::pow(hPromptScale->GetBinError(i) / scale, 2);
+        hPromptRatio->SetBinContent(i, rprompt);
+        hPromptRatio->SetBinError(i, rprompt * std::sqrt(rel2));
+    }
+    return hPromptRatio;
+}
+
+
+
+static void SaveNominalRatio(TH1D* hRatio, TH1D* hRatioSyst, TString outStem, TString system, std::vector<TH1D*> extraHists = std::vector<TH1D*>())
 {
     TCanvas* c = new TCanvas(Form("c_%s", hRatio->GetName()), "ratio", 700, 700);
     c->cd();
@@ -149,7 +132,7 @@ static void SaveNominalRatio(TH1D* hRatio, TH1D* hRatioSyst, TString outStem, TS
     pad->Draw();
     pad->cd();
 
-    StyleRatio(hRatio);
+    StyleRatio(hRatio, hRatioSyst);
     hRatio->Draw("AXIS");
     DrawSystBoxes(hRatioSyst);
     hRatio->Draw("E1 SAME");
@@ -163,6 +146,7 @@ static void SaveNominalRatio(TH1D* hRatio, TH1D* hRatioSyst, TString outStem, TS
     TFile* fout = new TFile(Form("output_ntmix/root_files/%s.root", outStem.Data()), "RECREATE");
     hRatio->Write("hRatio");
     hRatioSyst->Write("hRatioSyst");
+    for (TH1D* h : extraHists) if (h) h->Write();
     fout->Close();
     delete pad;
     delete c;
@@ -177,10 +161,8 @@ static void SaveRun1Comparison(TH1D* hNominal, TH1D* hNominalSyst, TString syste
     double run1Stat[] = {0.0079, 0.0072, 0.0055, 0.0042, 0.0130};
     double run1Syst[] = {0.0097, 0.0044, 0.0051, 0.0042, 0.0040};
 
-    TH1D* hRun1 = new TH1D(Form("hRun1_R_%s_%s", system.Data(), var.Data()),
-                           ";p_{T} [GeV];X(3872) / #psi(2S)", 5, run1Bins);
-    TH1D* hRun1Syst = new TH1D(Form("hRun1_R_syst_%s_%s", system.Data(), var.Data()),
-                               ";p_{T} [GeV];X(3872) / #psi(2S)", 5, run1Bins);
+    TH1D* hRun1 = new TH1D(Form("hRun1_R_%s_%s", system.Data(), var.Data()), ";p_{T} [GeV];X(3872) / #psi(2S)", 5, run1Bins);
+    TH1D* hRun1Syst = new TH1D(Form("hRun1_R_syst_%s_%s", system.Data(), var.Data()), ";p_{T} [GeV];X(3872) / #psi(2S)", 5, run1Bins);
     hRun1->SetDirectory(nullptr);
     hRun1Syst->SetDirectory(nullptr);
     for (int i = 1; i <= 5; ++i) {
@@ -198,8 +180,7 @@ static void SaveRun1Comparison(TH1D* hNominal, TH1D* hNominalSyst, TString syste
 
     TCanvas* c = new TCanvas(Form("c_comparison_RUN1_%s_%s", system.Data(), var.Data()), "comparison_RUN1", 700, 700);
     c->cd();
-    TPad* pad = new TPad(Form("p_comparison_RUN1_%s_%s", system.Data(), var.Data()),
-                         Form("p_comparison_RUN1_%s_%s", system.Data(), var.Data()), 0., 0., 1., 1.);
+    TPad* pad = new TPad(Form("p_comparison_RUN1_%s_%s", system.Data(), var.Data()), Form("p_comparison_RUN1_%s_%s", system.Data(), var.Data()), 0., 0., 1., 1.);
     pad->SetBorderMode(1);
     pad->SetFrameBorderMode(0);
     pad->SetBorderSize(2);
@@ -248,7 +229,7 @@ static void SaveRun1Comparison(TH1D* hNominal, TH1D* hNominalSyst, TString syste
     leg->SetFillStyle(0);
     leg->SetTextSize(0.035);
     leg->SetTextFont(42);
-    leg->AddEntry(hNominalDraw, "Run3 CMS (|y|<1.6)", "lep");
+    leg->AddEntry(hNominalDraw, "Run3 CMS (|y|<2.4)", "lep");
     leg->AddEntry(hRun1, "Run1 CMS (|y|<1.2)", "lep");
     leg->Draw();
 
@@ -268,6 +249,109 @@ static void SaveRun1Comparison(TH1D* hNominal, TH1D* hNominalSyst, TString syste
     delete c;
 }
 
+static void SaveAtlasPromptComparison(TH1D* hPromptRatio, TH1D* hPromptRatioSyst, TString system, TString var)
+{
+    if (!hPromptRatio || !hPromptRatioSyst || var != "Bpt") return;
+
+    // https://www.hepdata.net/record/ins1495026?version=1&table=Table%204
+    constexpr int nAtlas = 5;
+    double atlasBins[] = {10.0, 12.0, 16.0, 22.0, 40.0, 70.0};
+    double atlasPt[]   = {10.9, 13.5, 18.2, 26.6, 47.6};
+    double atlasR[]    = {0.065, 0.098, 0.106, 0.107, 0.128};
+    double atlasStat[] = {0.014, 0.007, 0.008, 0.011, 0.044};
+    double atlasSyst[] = {0.004, 0.004, 0.004, 0.004, 0.012};
+    double zero[]      = {0.0, 0.0, 0.0, 0.0, 0.0};
+
+    TGraphErrors* gAtlas = new TGraphErrors(nAtlas, atlasPt, atlasR, zero, atlasStat);
+    gAtlas->SetName(Form("gAtlasPromptRatio_%s_%s", system.Data(), var.Data()));
+    gAtlas->SetLineColor(kRed + 1);
+    gAtlas->SetMarkerColor(kRed + 1);
+    gAtlas->SetMarkerStyle(20);
+    gAtlas->SetLineWidth(2);
+
+    TH1D* hFrame = new TH1D( Form("hAtlasPromptComparisonFrame_%s_%s", system.Data(), var.Data()), ";p_{T} [GeV];Prompt X(3872) / #psi(2S)", 1, 7.5, 70.0);
+    hFrame->SetDirectory(nullptr);
+    StyleRatio(hFrame);
+    hFrame->GetXaxis()->SetTitle("p_{T} [GeV]");
+    hFrame->GetYaxis()->SetTitle("Prompt X(3872) / #psi(2S)");
+
+    TCanvas* c = new TCanvas(Form("c_comparison_ATLAS_prompt_%s_%s", system.Data(), var.Data()),  "comparison_ATLAS_prompt", 700, 700);
+    c->cd();
+    TPad* pad = new TPad(Form("p_comparison_ATLAS_prompt_%s_%s", system.Data(), var.Data()),
+                         Form("p_comparison_ATLAS_prompt_%s_%s", system.Data(), var.Data()), 0., 0., 1., 1.);
+    pad->SetBorderMode(1);
+    pad->SetFrameBorderMode(0);
+    pad->SetBorderSize(2);
+    pad->SetTopMargin(0.08);
+    pad->SetBottomMargin(0.16);
+    pad->SetLeftMargin(0.14);
+    pad->SetRightMargin(0.04);
+    pad->Draw();
+    pad->cd();
+    hFrame->Draw("AXIS");
+
+    DrawSystBoxes(hPromptRatioSyst);
+
+    std::vector<TBox*> atlasSystBoxes;
+    atlasSystBoxes.reserve(nAtlas);
+    for (int i = 0; i < nAtlas; ++i) {
+        TBox* box = new TBox(atlasBins[i], atlasR[i] - atlasSyst[i], atlasBins[i + 1], atlasR[i] + atlasSyst[i]);
+        box->SetFillColorAlpha(kRed - 9, 0.25);
+        box->SetLineColor(kRed - 7);
+        box->SetLineWidth(1);
+        box->Draw("same");
+        atlasSystBoxes.push_back(box);
+    }
+
+    gAtlas->Draw("P SAME");
+
+    TH1D* hPromptRatioDraw = (TH1D*)hPromptRatio->Clone( Form("hPromptRatioDraw_%s_%s", system.Data(), var.Data()));
+    hPromptRatioDraw->SetDirectory(nullptr);
+    hPromptRatioDraw->SetLineColor(kBlack);
+    hPromptRatioDraw->SetMarkerColor(kBlack);
+    hPromptRatioDraw->SetMarkerStyle(20);
+    hPromptRatioDraw->SetLineWidth(2);
+    hPromptRatioDraw->Draw("E1 SAME");
+    hFrame->Draw("AXIS SAME");
+
+    TLegend* leg = new TLegend(0.48, 0.68, 0.88, 0.88);
+    leg->SetBorderSize(0);
+    leg->SetFillStyle(0);
+    leg->SetTextSize(0.028);
+    leg->SetTextFont(42);
+    leg->AddEntry(hPromptRatioDraw, "CMS prompt, |y|<2.4", "lep");
+    leg->AddEntry(gAtlas, "ATLAS prompt (8 TeV), |y|<0.75", "lep");
+    leg->Draw();
+    pad->RedrawAxis();
+    c->cd();
+    DrawCmsHeader(c, system);
+    c->Update();
+    c->SaveAs(Form("output_ntmix/comparison_ATLAS_prompt_%s_%s.pdf", system.Data(), var.Data()));
+
+    for (TBox* box : atlasSystBoxes) delete box;
+    delete hFrame;
+    delete hPromptRatioDraw;
+    delete gAtlas;
+    delete leg;
+    delete pad;
+    delete c;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void Ratio_CorrectedYields(
     TString SYSTEM = "ppRef",
     TString VAR = "Bpt"
@@ -286,11 +370,45 @@ void Ratio_CorrectedYields(
     SaveNominalRatio(hRatio, hRatioSyst, outStem, SYSTEM);
     SaveRun1Comparison(hRatio, hRatioSyst, SYSTEM, VAR);
 
+    std::cout << "[Ratio_CorrectedYields] Inclusive ratio" << std::endl;
     for (int i = 1; i <= hRatio->GetNbinsX(); ++i) {
         std::cout << "  bin " << i << " [" << hRatio->GetXaxis()->GetBinLowEdge(i)
                   << "," << hRatio->GetXaxis()->GetBinUpEdge(i) << "] = "
                   << hRatio->GetBinContent(i) << " +- " << hRatio->GetBinError(i)
                   << " (stat) +- " << hRatioSyst->GetBinError(i) << " (syst)" << std::endl;
+    }
+
+    if (VAR == "Bpt") {
+        PromptFractionHists xPrompt = LoadPromptFractions("ntmix_X3872", SYSTEM, VAR);
+        PromptFractionHists psiPrompt = LoadPromptFractions("ntmix_PSI2S", SYSTEM, VAR);
+        TH1D* hPromptScale = BuildPromptScaleFactor(xPrompt, psiPrompt, SYSTEM, VAR);
+        TH1D* hPromptRatio = BuildPromptCorrectedRatio(hRatio, hPromptScale, SYSTEM, VAR);
+        TH1D* hPromptRatioSyst = BuildRatioSystematic(hPromptRatio, SYSTEM, VAR);
+        const TString promptStem = Form("ntmix_X3872_OVER_ntmix_PSI2S_%s_%s_prompt_Ratio", SYSTEM.Data(), VAR.Data());
+        SaveNominalRatio(hPromptRatio, hPromptRatioSyst, promptStem, SYSTEM,
+                         {xPrompt.hPrompt, xPrompt.hNonPromptFromData, xPrompt.hBenrichedNonPromptMC,
+                          psiPrompt.hPrompt, psiPrompt.hNonPromptFromData, psiPrompt.hBenrichedNonPromptMC,
+                          hPromptScale});
+        SaveAtlasPromptComparison(hPromptRatio, hPromptRatioSyst, SYSTEM, VAR);
+
+        std::cout << "[Ratio_CorrectedYields] Prompt ratio = inclusive ratio * f_prompt(X) / f_prompt(psi2S)" << std::endl;
+        for (int i = 1; i <= hPromptRatio->GetNbinsX(); ++i) {
+            std::cout << "  bin " << i << " [" << hPromptRatio->GetXaxis()->GetBinLowEdge(i)
+                      << "," << hPromptRatio->GetXaxis()->GetBinUpEdge(i) << "] = "
+                      << hPromptRatio->GetBinContent(i) << " +- " << hPromptRatio->GetBinError(i)
+                      << " (stat + prompt-fraction stat) +- " << hPromptRatioSyst->GetBinError(i)
+                      << " (inclusive syst)" << std::endl;
+        }
+
+        delete xPrompt.hPrompt;
+        delete xPrompt.hNonPromptFromData;
+        delete xPrompt.hBenrichedNonPromptMC;
+        delete psiPrompt.hPrompt;
+        delete psiPrompt.hNonPromptFromData;
+        delete psiPrompt.hBenrichedNonPromptMC;
+        delete hPromptScale;
+        delete hPromptRatio;
+        delete hPromptRatioSyst;
     }
 
     delete hRatio;
@@ -303,9 +421,5 @@ void Ratio_CorrectedYields(
     TString SYSTEM,
     TString VAR
 ) {
-    if (treenameN != "ntmix_X3872" || treenameD != "ntmix_PSI2S") {
-        std::cerr << "[Ratio_CorrectedYields] This macro is dedicated to ntmix_X3872 / ntmix_PSI2S; ignoring requested trees "
-                  << treenameN << " / " << treenameD << std::endl;
-    }
     Ratio_CorrectedYields(SYSTEM, VAR);
 }

@@ -135,7 +135,9 @@ static EffResult Run1DMethod(const EffCase& method, TTree* tree, TH2D* h2D, TH1D
 
 static EffResult RunSPlotMethod(const EffCase& method, TTree* tree, TH2D* h2D, TH1D* hPt,
                                  TH1D* hYield, const std::vector<double>& bins,
-                                 TString treename, TString system, TString var)
+                                 TString treename, TString system, TString var,
+                                 bool saveDiagnostics = true,
+                                 bool mcClosure = false)
 {
     const int nBins = (int)bins.size() - 1;
     std::vector<double> sum(nBins, 0.0), err2(nBins, 0.0), norm(nBins, 0.0);
@@ -190,15 +192,28 @@ static EffResult RunSPlotMethod(const EffCase& method, TTree* tree, TH2D* h2D, T
         TString dataCut = Form("(%s) && (Bmass>%f && Bmass<%f)", fitSelection.Data(), massMin, massMax);
         std::unique_ptr<RooDataSet> data(new RooDataSet("data_splot", "data_splot", tree, obs, dataCut.Data()));
 
-        TFile* fModel = TFile::Open(nominalModelPath, "READ");
+        TFile* fModel = new TFile(nominalModelPath, "READ");
         RooWorkspace* ws = (RooWorkspace*)fModel->Get("ws_nominal");
         RooAbsPdf* model = ws ? ws->pdf("model1_") : nullptr;
         RooRealVar* nsig = ws ? ws->var("nsig1_") : nullptr;
         RooRealVar* nbkg = ws ? ws->var("nbkg1_") : nullptr;
         RooRealVar* nbkgPartR = (treename == "ntKp" && ws) ? ws->var("nbkg_part_r1_") : nullptr;
-        EnsureYieldRange(nsig);
-        EnsureYieldRange(nbkg);
-        if (nbkgPartR) EnsureYieldRange(nbkgPartR);
+        const double nEntries = data->sumEntries();
+        const double yieldMax = std::max(1.0, 2.0 * nEntries);
+        if (mcClosure) {
+            nsig->setRange(0.0, yieldMax);
+            nsig->setVal(0.95 * nEntries);
+            nbkg->setRange(0.0, yieldMax);
+            nbkg->setVal(0.05 * nEntries);
+            if (nbkgPartR) {
+                nbkgPartR->setRange(0.0, yieldMax);
+                nbkgPartR->setVal(0.0);
+            }
+        } else {
+            EnsureYieldRange(nsig, yieldMax);
+            EnsureYieldRange(nbkg, yieldMax);
+            if (nbkgPartR) EnsureYieldRange(nbkgPartR, yieldMax);
+        }
 
         std::unique_ptr<RooArgSet> allPars(model->getParameters(*data));
         std::unique_ptr<TIterator> it(allPars->createIterator());
@@ -212,7 +227,10 @@ static EffResult RunSPlotMethod(const EffCase& method, TTree* tree, TH2D* h2D, T
         if (nbkgPartR) nbkgPartR->setConstant(false);
 
         RooFitResult* fitRes = model->fitTo(*data, Extended(true), Save(true), PrintLevel(-1));
-        SaveMassFitDiagnostic(treename, system, var, binTag, binLabel, Bmass, data.get(), model, fitRes, nsig, nbkg, nbkgPartR);
+        if (saveDiagnostics) {
+            SaveMassFitDiagnostic(treename, system, var, binTag, binLabel,
+                                  Bmass, data.get(), model, fitRes, nsig, nbkg, nbkgPartR);
+        }
 
         RooArgList yields;
         yields.add(*nsig);
@@ -278,10 +296,10 @@ void Apply_EffxAcc(
     gSystem->mkdir("output/ACCxEFF_plots", true);
     gStyle->SetOptStat(0);
 
-    TFile* fData = TFile::Open(dataFilePath, "READ");
+    TFile* fData = new TFile(dataFilePath, "READ");
     TTree* tReco = (TTree*)fData->Get(GetDataEffTreeName(treename));
 
-    TFile* fYield = TFile::Open(yieldsFilePath, "READ");
+    TFile* fYield = new TFile(yieldsFilePath, "READ");
     TH1D* hYield = (TH1D*)fYield->Get("hPt");
 
     std::vector<double> bins;
@@ -310,7 +328,7 @@ void Apply_EffxAcc(
     std::vector<EffCase> methods = RequestedCases(CASES);
     for (const auto& mapTag : mapTags) {
         const TString accEffFilePath = Form("./output/ROOTs/%s_%s2Dmap_ACCxEFF_%s.root", treename.Data(), SYSTEM.Data(), mapTag.Data());
-        TFile* fAccEff = TFile::Open(accEffFilePath, "READ");
+        TFile* fAccEff = new TFile(accEffFilePath, "READ");
         TH2D* hACCxEFF = (TH2D*)fAccEff->Get("hACCxEFF");
         TH1D* hACCxEFF_1D = (TH1D*)fAccEff->Get("hACCxEFF_1D");
         std::cout << "[Apply_EffxAcc] Using ACCxEFF map: " << accEffFilePath << std::endl;
