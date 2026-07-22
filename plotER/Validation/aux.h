@@ -79,7 +79,8 @@ static std::vector<VarCfgSignal> getSignalVars(TString treeName)
         {"Bnorm_trk1Dz", ";Bnorm_trk1Dz;", kNBins, -25.0, 25.0, false},
         {"Bnorm_trk2Dz", ";Bnorm_trk2Dz;", kNBins, -25.0, 25.0, false}
     };
-    //if (treeName.BeginsWith("ntmix")) vars.insert(vars.begin() + 3, {"Prediction", ";Prediction;", kNBins, 0.5, 1.0, false});
+    if (treeName.BeginsWith("ntmix") || treeName == "ntKp" || treeName == "ntKstar" || treeName == "ntphi")
+        vars.insert(vars.begin() + 3, {"Prediction", ";Prediction;", kNBins, 0.5, 1.0, false});
     return vars;
 }
 

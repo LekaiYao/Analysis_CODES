@@ -403,10 +403,17 @@ void DataSIGNAL_VS_MC(
     }
 
     TFile* fWeights = nullptr;
-    if (!REWEIGHT_MC && treeName.BeginsWith("ntmix")) {
+    TString weightTag = "";
+    const bool isBMeson = (treeName == "ntKp" || treeName == "ntKstar" || treeName == "ntphi");
+    if (!REWEIGHT_MC && (treeName.BeginsWith("ntmix") || isBMeson)) {
         gSystem->mkdir("WEIGHTS", true);
-        TString particleTag = (treeName == "ntmix_PSI2S" || treeName == "ntmix_psi2s") ? "PSI2S" : "X3872";
-        fWeights = TFile::Open(Form("file:WEIGHTS/ntmix_%s_%s_weight.root", systemName.Data(), particleTag.Data()), "RECREATE");
+        if (treeName.BeginsWith("ntmix")) {
+            TString particleTag = (treeName == "ntmix_PSI2S" || treeName == "ntmix_psi2s") ? "PSI2S" : "X3872";
+            weightTag = Form("ntmix_%s_%s", systemName.Data(), particleTag.Data());
+        } else {
+            weightTag = Form("%s_%s", treeName.Data(), systemName.Data());
+        }
+        fWeights = TFile::Open(Form("file:WEIGHTS/%s_weight.root", weightTag.Data()), "RECREATE");
     }
 
     for (auto& h : hists) {
@@ -539,8 +546,7 @@ void DataSIGNAL_VS_MC(
     if (REWEIGHT_MC) {
         std::cout << "Done. Outputs: " << outDir << "/*.pdf" << std::endl;
     } else {
-        TString particleTag = (treeName == "ntmix_PSI2S" || treeName == "ntmix_psi2s") ? "PSI2S" : "X3872";
-        std::cout << "Done. Outputs: COMPARE/" << treeName << "/*.pdf and WEIGHTS/ntmix_"
-                  << systemName << "_" << particleTag << "_weight.root" << std::endl;
+        std::cout << "Done. Outputs: COMPARE/" << treeName << "/*.pdf and WEIGHTS/"
+                  << weightTag << "_weight.root" << std::endl;
     }
 }

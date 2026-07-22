@@ -27,9 +27,9 @@ if [[ ! -f "$CONF_PATH" ]]; then
 fi
 
 case "$CUT_MODE" in
-  punzi|fom|both) ;;
+  punzi|fom|both|precut) ;;
   *)
-    echo "ERROR: unsupported cut_mode '$CUT_MODE'. Expected punzi, fom, or both." >&2
+    echo "ERROR: unsupported cut_mode '$CUT_MODE'. Expected punzi, fom, both, or precut." >&2
     exit 1
     ;;
 esac
@@ -67,6 +67,7 @@ SCORE_VAR="$(get_conf_value scoreVar)"
 PRE_CUT="$(get_conf_value preCut)"
 OPT_CUT_PUNZI="$(get_conf_value optimalCUT_punzi)"
 OPT_CUT_FOM="$(get_conf_value optimalCUT_fom)"
+OPT_CUT_PRECUT="$(get_conf_value optimalCUT_precut)"
 CHANNEL="$(get_conf_value channel)"
 MASS_RANGE_EXPR="$(get_conf_value mass_range)"
 BIN_WIDTH="$(get_conf_value bin_width)"
@@ -170,6 +171,9 @@ case "$CUT_MODE" in
   both)
     run_fit punzi "$OPT_CUT_PUNZI"
     run_fit fom "$OPT_CUT_FOM"
+    ;;
+  precut)
+    run_fit precut "$OPT_CUT_PRECUT"
     ;;
 esac
 
