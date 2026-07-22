@@ -31,3 +31,5 @@ __pycache__/
 *_C.so
 *_C_ACLiC_dict_rdict.pcm
 .envs/
+selectionER/optimalCUT.local.conf
+.manifest_runs/
