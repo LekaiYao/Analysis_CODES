@@ -79,7 +79,8 @@ void ExportSWeightTree(
     const char* softwareRoot = "",
     const char* gitCommit = "",
     const char* sourceMCPath = "",
-    const char* sourceMCTree = "")
+    const char* sourceMCTree = "",
+    const char* physicsStatus = "")
 {
     const std::vector<std::string> variables = {
         "Bchi2Prob",
@@ -198,6 +199,7 @@ void ExportSWeightTree(
     manifest << "  \"fit_range\": [" << massMin << ", " << massMax << "],\n";
     manifest << "  \"source_nominal_fit\": \"" << jsonEscape(sourceFitPath) << "\",\n";
     manifest << "  \"fit_model\": \"" << jsonEscape(fitModelDescription) << "\",\n";
+    manifest << "  \"physics_status\": \"" << jsonEscape(physicsStatus) << "\",\n";
     manifest << "  \"software\": {\"ROOT\": \"" << jsonEscape(softwareRoot)
              << "\", \"git_commit\": \"" << jsonEscape(gitCommit) << "\"},\n";
     manifest << "  \"entries\": " << entries << ",\n";

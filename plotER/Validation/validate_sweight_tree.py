@@ -29,6 +29,10 @@ def main():
     args = parser.parse_args()
 
     manifest = json.loads(Path(args.manifest).read_text())
+    if manifest.get("physics_status") != "preliminary_nominal_splot_for_r5_transfer_closure":
+        raise RuntimeError("missing or unexpected physics_status")
+    if not manifest.get("implicit_flat_selection"):
+        raise RuntimeError("implicit_flat_selection is empty")
     with uproot.open(args.root) as source:
         tree = source[manifest["tree"]]
         missing = sorted(set(REQUIRED) - set(tree.keys()))
