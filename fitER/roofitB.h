@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdlib>
+
 #include "aux/uti.h"
 #include "RooWorkspace.h"
 #include "TString.h"
@@ -18,7 +20,13 @@ RooFitResult *fit(TString system, TString variation, TString pdf, TString tree, 
 	double init_sigma1 = 0.01, init_sigma2 = 0.005, min_sigma1 = 0.001, max_sigma1 = 0.1, min_sigma2 = 0.001, max_sigma2 = 0.1;
 	if (system == "ppRef_nonPrompt") { init_sigma1 = 0.01; init_sigma2 = 0.005; min_sigma1 = 0.005; max_sigma1 = 0.1; min_sigma2 = 0.004; max_sigma2 = 0.01; }	
 
-	RooRealVar mean(Form("mean%d_%s", _count, pdf.Data()), "", init_mean, init_mean - 0.01, init_mean + 0.01);
+	double meanHalfRange = 0.01;
+	if (const char* overrideValue = std::getenv("ROOFIT_MEAN_HALF_RANGE")) {
+		const double requested = std::atof(overrideValue);
+		if (requested > 0.0) meanHalfRange = requested;
+	}
+	RooRealVar mean(Form("mean%d_%s", _count, pdf.Data()), "", init_mean,
+	                init_mean - meanHalfRange, init_mean + meanHalfRange);
 	RooRealVar sigma1(Form("sigma1%d_%s", _count, pdf.Data()), "", init_sigma1, min_sigma1, max_sigma1);
 	RooRealVar sigma2(Form("sigma2%d_%s", _count, pdf.Data()), "", init_sigma2, min_sigma2, max_sigma2);
 	RooRealVar sigma3(Form("sigma3%d_%s", _count, pdf.Data()), "", 0.01, 0.001, 0.03);
@@ -125,8 +133,15 @@ RooFitResult *fit(TString system, TString variation, TString pdf, TString tree, 
 	RooRealVar nsig(Form("nsig%d_%s", _count, pdf.Data()), "", nsigInit, 0.0, nsigMax);
 
 	RooRealVar nbkg(Form("nbkg%d_%s", _count, pdf.Data()), "", ds->sumEntries() * 0.7, ds->sumEntries() * 0.1, ds->sumEntries());
-	RooRealVar a0(Form("a0%d_%s", _count, pdf.Data()), "", -0.35, -2, 2);
-	RooRealVar a1(Form("a1%d_%s", _count, pdf.Data()), "", -0.05, -2, 2);
+	double chebCoefficientLimit = 2.0;
+	if (const char* overrideValue = std::getenv("ROOFIT_CHEB_COEFF_LIMIT")) {
+		const double requested = std::atof(overrideValue);
+		if (requested > 0.0) chebCoefficientLimit = requested;
+	}
+	RooRealVar a0(Form("a0%d_%s", _count, pdf.Data()), "", -0.35,
+	              -chebCoefficientLimit, chebCoefficientLimit);
+	RooRealVar a1(Form("a1%d_%s", _count, pdf.Data()), "", -0.05,
+	              -chebCoefficientLimit, chebCoefficientLimit);
 	RooRealVar a2(Form("a2%d_%s", _count, pdf.Data()), "", 0.01, -2, 2);
 	RooRealVar a3(Form("a3%d_%s", _count, pdf.Data()), "", 0, -2, 2);
 	RooChebychev bkg_2nd(Form("bkg%d_%s", _count, pdf.Data()), "", *mass, RooArgList(a0, a1));
@@ -183,7 +198,36 @@ RooFitResult *fit(TString system, TString variation, TString pdf, TString tree, 
 
 	TString fitRange = (pdf == "mass_range") ? "m_rangeB" : "all";
 	RooFitResult* fitResult = model->fitTo(*ds, Save(), Extended(kTRUE), Range(fitRange));
+	const char* stabilityRefit = std::getenv("ROOFIT_STABILITY_REFIT");
+	if (stabilityRefit && TString(stabilityRefit) == "1") {
+		cout << "ROOFIT_STABILITY_REFIT: repeating DATA fit from the first-fit endpoint "
+		     << "with Minuit2 strategy 2 and explicit HESSE" << endl;
+		fitResult = model->fitTo(
+			*ds,
+			Save(),
+			Extended(kTRUE),
+			Range(fitRange),
+			Minimizer("Minuit2", "migrad"),
+			Strategy(2),
+			Hesse(kTRUE)
+		);
+	}
 	fitResult->Print("v");
+	RooRealVar fitStatusMeta(
+		Form("fit_status_data%d_", _count), "nominal data fit status",
+		fitResult->status());
+	RooRealVar fitCovQualMeta(
+		Form("fit_cov_qual_data%d_", _count), "nominal data fit covariance quality",
+		fitResult->covQual());
+	RooRealVar fitEdmMeta(
+		Form("fit_edm_data%d_", _count), "nominal data fit EDM",
+		fitResult->edm());
+	fitStatusMeta.setConstant(kTRUE);
+	fitCovQualMeta.setConstant(kTRUE);
+	fitEdmMeta.setConstant(kTRUE);
+	w.import(fitStatusMeta);
+	w.import(fitCovQualMeta);
+	w.import(fitEdmMeta);
 	w.import(*model);
 
 	c->cd();

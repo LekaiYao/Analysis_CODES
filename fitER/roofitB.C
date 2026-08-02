@@ -60,6 +60,22 @@ void roofitB(TString TREE = "ntphi", int FULL = 0, TString INPUTDATA = "", TStri
 	if (TREE == "ntmix_X3872"){ minhisto = 3.8; maxhisto = 4.0;}
 	else if (TREE == "ntmix_PSI2S"){ minhisto = 3.6; maxhisto = 3.8;}
 	else { minhisto = minhisto_B, maxhisto = maxhisto_B; }
+	const char* massMinOverride = std::getenv("ROOFIT_MASS_MIN");
+	const char* massMaxOverride = std::getenv("ROOFIT_MASS_MAX");
+	if (massMinOverride && massMaxOverride) {
+		const double requestedMin = std::atof(massMinOverride);
+		const double requestedMax = std::atof(massMaxOverride);
+		if (requestedMin < requestedMax) {
+			minhisto = requestedMin;
+			maxhisto = requestedMax;
+			cout << "ROOFIT mass range override: [" << minhisto
+			     << ", " << maxhisto << "]" << endl;
+		} else {
+			cerr << "Invalid ROOFIT mass range override: ["
+			     << requestedMin << ", " << requestedMax << "]" << endl;
+			return;
+		}
+	}
 	int fitMassBins = nbinsmasshisto;
 	if (TREE == "ntmix_X3872" || TREE == "ntmix_PSI2S") fitMassBins = nbinsmasshisto/2;
 	mass = new RooRealVar("Bmass", "Bmass", minhisto, maxhisto);
