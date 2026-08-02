@@ -94,9 +94,15 @@ void DiagnoseXLooseFiducialFit(
   auto* fitResult = results[1];
   w->allVars().assignValueOnly(fitResult->floatParsFinal());
 
-  TFile machine((std::string(outputDir)+"/fit_result.root").c_str(), "RECREATE");
+  const std::string machinePath = std::string(outputDir)+"/fit_result.root";
+  const std::string machineTmp = std::string("/tmp/x_loose_fit_result_")+
+                                 std::to_string(gSystem->GetPid())+".root";
+  TFile machine(machineTmp.c_str(), "RECREATE");
   for (auto* fr : results) fr->Write();
   machine.Close();
+  if (gSystem->CopyFile(machineTmp.c_str(), machinePath.c_str(), true) != 0)
+    std::cerr << "Failed to copy machine-readable ROOT result to " << machinePath << std::endl;
+  gSystem->Unlink(machineTmp.c_str());
 
   RooPlot* frame = mass->frame(Bins(40));
   data->plotOn(frame, Name("data"), MarkerSize(0.6));

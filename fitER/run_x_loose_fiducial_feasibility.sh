@@ -6,8 +6,8 @@ cd "${script_dir}"
 
 data=/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_DATA.root
 mc=/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_MC_X3872.root
-system=ppRef_X_loose_fiducial_feasibility
-selection='(Bpt > 7.5) && (Bpt < 50) && (abs(By) < 2.4) && (BQvalue < 0.15) && (Btrk1dR < 0.6)'
+system=ppRef_X_r5_fiducial_feasibility
+selection='(Bpt > 7.5) && (Bpt < 50) && (abs(By) < 2.4) && (BQvalue < 0.15)'
 output_dir="results/${system}/diagnostics"
 root_file="ROOTfiles/${system}/nominalFitModel_ntmix_X3872_${system}.root"
 mkdir -p "${output_dir}"
@@ -22,7 +22,7 @@ root_version=$(root-config --version)
 head_commit=$(git rev-parse HEAD)
 cat > "${output_dir}/manifest.json" <<EOF
 {
-  "study": "ppRef_X_loose_fiducial_mass_fit_feasibility",
+  "study": "ppRef_X_r5_aligned_fiducial_mass_fit_feasibility",
   "data_root": "${data}",
   "data_tree": "ntmix",
   "mc_root": "${mc}",
