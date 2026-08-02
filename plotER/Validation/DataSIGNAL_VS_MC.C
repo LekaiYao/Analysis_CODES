@@ -24,6 +24,8 @@
 #include <RooStats/SPlot.h>
 
 #include <iostream>
+#include <fstream>
+#include <iomanip>
 #include <vector>
 #include <cmath>
 #include <memory>
@@ -40,6 +42,8 @@ struct ValidationHist {
     TH1D* sideband;
     TH1D* splot;
     TH1D* mc;
+    double mcIntegral;
+    double splotIntegral;
 };
 
 static void fillMCHistFromTree(TTree* tree, TH1D* hist, const TString& expr, const TString& cut,
@@ -361,10 +365,13 @@ void DataSIGNAL_VS_MC(
         if (REWEIGHT_MC && !reweightInputs.empty()) { fillMCHistFromTree(tMC, hMC, expr, cutMC, reweightInputs); }
         else { tMC->Draw(Form("%s>>%s", expr.Data(), hMC->GetName()), cutMC, "goff"); }
 
-        if (hSideband->Integral() > 0) hSideband->Scale(1.0 / hSideband->Integral());
-        if (hMC->Integral() > 0) hMC->Scale(1.0 / hMC->Integral());
+        const double sidebandIntegral = hSideband->Integral();
+        const double mcIntegral = hMC->Integral();
+        if (sidebandIntegral > 0) hSideband->Scale(1.0 / sidebandIntegral);
+        if (mcIntegral > 0) hMC->Scale(1.0 / mcIntegral);
 
-        hists.push_back({v, tag, baseVarFromExpr(v.expr), hSideband, hSPlot, hMC});
+        hists.push_back({v, tag, baseVarFromExpr(v.expr), hSideband, hSPlot, hMC,
+                         mcIntegral, 0.0});
         delete hDataSR;
         delete hDataSB;
     }
@@ -416,7 +423,7 @@ void DataSIGNAL_VS_MC(
     splotYields.add(*nbkg);
     RooStats::SPlot sData("sData", "An SPlot", data, model, splotYields);
 
-    double swMin = 1e9, swMax = -1e9, swMean = 0.0;
+    double swMin = 1e9, swMax = -1e9, swMean = 0.0, swSum = 0.0, swSum2 = 0.0;
     int negWeights = 0, totalWeights = 0;
     TString swVarName = Form("%s_sw", nsig->GetName());
     for (int i = 0; i < data.numEntries(); ++i) {
@@ -425,12 +432,38 @@ void DataSIGNAL_VS_MC(
         if (w < 0) negWeights++;
         swMin = std::min(swMin, w);
         swMax = std::max(swMax, w);
-        swMean += w;
+        swSum += w;
+        swSum2 += w * w;
         totalWeights++;
     }
-    if (totalWeights > 0) swMean /= totalWeights;
+    if (totalWeights > 0) swMean = swSum / totalWeights;
+    const double swNeff = (swSum2 > 0.0) ? swSum * swSum / swSum2 : 0.0;
+    const double negativeFraction = (totalWeights > 0)
+        ? static_cast<double>(negWeights) / totalWeights : 0.0;
     std::cout << "[sPlot] sWeight stats: min=" << swMin << ", max=" << swMax << ", mean=" << swMean
               << ", negative=" << negWeights << "/" << totalWeights << std::endl;
+
+    const TString qualitySummaryPath = Form("%s/validation_quality.csv", outDir.Data());
+    std::ofstream qualitySummary(qualitySummaryPath.Data());
+    qualitySummary << std::setprecision(12);
+    qualitySummary
+        << "system,tree,base_cut,mass_min,mass_max,fit_status,cov_qual,edm,"
+        << "signal_yield,signal_yield_error,background_yield,background_yield_error,"
+        << "entries,sumw,sumw2,neff,negative_weights,negative_fraction,"
+        << "weight_min,weight_max,weight_mean\n";
+    qualitySummary
+        << systemName << "," << treeName << ",\"" << baseCut << "\","
+        << massMin << "," << massMax << ","
+        << (fitRes ? fitRes->status() : -1) << ","
+        << (fitRes ? fitRes->covQual() : -1) << ","
+        << (fitRes ? fitRes->edm() : -1.0) << ","
+        << nsig->getVal() << "," << nsig->getError() << ","
+        << nbkg->getVal() << "," << nbkg->getError() << ","
+        << totalWeights << "," << swSum << "," << swSum2 << "," << swNeff << ","
+        << negWeights << "," << negativeFraction << ","
+        << swMin << "," << swMax << "," << swMean << "\n";
+    qualitySummary.close();
+    std::cout << "[summary] Saved " << qualitySummaryPath << std::endl;
 
     TCanvas* cMass = new TCanvas(Form("cMass_%s", treeName.Data()), "", 760, 680);
     cMass->SetLeftMargin(0.14);
@@ -508,7 +541,8 @@ void DataSIGNAL_VS_MC(
             double w = row->getRealValue(swVarName.Data());
             h.splot->Fill(val, w);
         }
-        if (h.splot->Integral() > 0) h.splot->Scale(1.0 / h.splot->Integral());
+        h.splotIntegral = h.splot->Integral();
+        if (h.splotIntegral > 0) h.splot->Scale(1.0 / h.splotIntegral);
     }
 
     TFile* fWeights = nullptr;
@@ -525,6 +559,13 @@ void DataSIGNAL_VS_MC(
             fWeights = nullptr;
         }
     }
+
+    const TString discrepancySummaryPath = Form("%s/validation_discrepancy.csv", outDir.Data());
+    std::ofstream discrepancySummary(discrepancySummaryPath.Data());
+    discrepancySummary << std::setprecision(12);
+    discrepancySummary
+        << "variable,expression,nbins,xmin,xmax,splot_integral,mc_integral,"
+        << "ks_distance,ks_pvalue,chi2,ndf,chi2_ndf,chi2_pvalue,bins_used\n";
 
     for (auto& h : hists) {
         if (h.baseVar == "Bnorm_trk1Dxy" || h.baseVar == "Balpha") continue;
@@ -557,6 +598,13 @@ void DataSIGNAL_VS_MC(
 
         const AgreementMetrics agreement = computeAgreementMetrics1D(h.splot, h.mc);
         const double reducedChi2 = (agreement.ndf > 0) ? agreement.chi2 / agreement.ndf : -1.0;
+        discrepancySummary
+            << h.baseVar << "," << signalVarExpr(h.var) << ","
+            << h.var.nbins << "," << h.var.xmin << "," << h.var.xmax << ","
+            << h.splotIntegral << "," << h.mcIntegral << ","
+            << agreement.ksDistance << "," << agreement.ksPValue << ","
+            << agreement.chi2 << "," << agreement.ndf << "," << reducedChi2 << ","
+            << agreement.chi2PValue << "," << agreement.binsUsed << "\n";
 
         TH1D* hRatioSP = makeWeightHist(h.splot, h.mc, Form("hDataOverMCSP_%s", h.tag.Data()));
         hRatioSP->SetLineColor(kRed + 1);
@@ -663,6 +711,8 @@ void DataSIGNAL_VS_MC(
         delete hWeight;
         delete hMCBand;
     }
+    discrepancySummary.close();
+    std::cout << "[summary] Saved " << discrepancySummaryPath << std::endl;
 
     if (fWeights) fWeights->Close();
     for (auto& h : hists) {
