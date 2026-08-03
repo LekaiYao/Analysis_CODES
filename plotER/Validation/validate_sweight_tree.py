@@ -137,7 +137,7 @@ def main():
     report = {
         "status": "passed",
         "root_file": manifest["root_file"],
-        "manifest": str(Path(args.manifest).resolve()),
+        "manifest": str(Path(manifest["root_file"]).with_suffix(".json")),
         "tree": manifest["tree"],
         "required_branches": REQUIRED,
         "statistics": calculated,
