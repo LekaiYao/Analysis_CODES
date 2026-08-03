@@ -80,11 +80,13 @@ void ExportSWeightTree(
     const char* gitCommit = "",
     const char* sourceMCPath = "",
     const char* sourceMCTree = "",
-    const char* physicsStatus = "")
+    const char* physicsStatus = "",
+    const char* publishedOutputPath = "")
 {
     const std::vector<std::string> variables = {
         "Bchi2Prob",
         "Btrk1dR",
+        "Btrk2dR",
         "BtrkPtimb",
         "Btrk1Pt",
         "Btrk2Pt",
@@ -183,7 +185,9 @@ void ExportSWeightTree(
     manifest << std::setprecision(17);
     manifest << "{\n";
     manifest << "  \"schema_version\": 1,\n";
-    manifest << "  \"root_file\": \"" << jsonEscape(outputPath) << "\",\n";
+    const std::string manifestRootPath =
+        (publishedOutputPath && publishedOutputPath[0]) ? publishedOutputPath : outputPath;
+    manifest << "  \"root_file\": \"" << jsonEscape(manifestRootPath) << "\",\n";
     manifest << "  \"tree\": \"" << jsonEscape(outputTreeName) << "\",\n";
     manifest << "  \"weight_branch\": \"signal_sWeight\",\n";
     manifest << "  \"source_weight_column\": \""

@@ -11,7 +11,7 @@ import uproot
 
 
 REQUIRED = [
-    "Bchi2Prob", "Btrk1dR", "BtrkPtimb", "Btrk1Pt", "Btrk2Pt",
+    "Bchi2Prob", "Btrk1dR", "Btrk2dR", "BtrkPtimb", "Btrk1Pt", "Btrk2Pt",
     "BtktkvProb", "Bcos_dtheta", "Btktkpt", "BQvalue", "By", "Bpt",
     "Bmass", "signal_sWeight",
 ]
@@ -26,6 +26,8 @@ def main():
     parser.add_argument("--root", required=True)
     parser.add_argument("--manifest", required=True)
     parser.add_argument("--report", required=True)
+    parser.add_argument("--baseline-root")
+    parser.add_argument("--baseline-manifest")
     args = parser.parse_args()
 
     manifest = json.loads(Path(args.manifest).read_text())
@@ -35,6 +37,7 @@ def main():
         raise RuntimeError("implicit_flat_selection is empty")
     with uproot.open(args.root) as source:
         tree = source[manifest["tree"]]
+        branch_types = tree.typenames()
         missing = sorted(set(REQUIRED) - set(tree.keys()))
         if missing:
             raise RuntimeError(f"missing branches: {missing}")
@@ -71,6 +74,46 @@ def main():
         if not ok:
             raise RuntimeError(f"manifest mismatch for {key}: {value} != {expected}")
 
+    baseline_comparison = None
+    if bool(args.baseline_root) != bool(args.baseline_manifest):
+        raise RuntimeError("--baseline-root and --baseline-manifest must be provided together")
+    if args.baseline_root:
+        baseline_manifest = json.loads(Path(args.baseline_manifest).read_text())
+        if baseline_manifest["tree"] != manifest["tree"]:
+            raise RuntimeError("tree name changed relative to baseline")
+        with uproot.open(args.baseline_root) as source:
+            baseline_tree = source[baseline_manifest["tree"]]
+            baseline_types = baseline_tree.typenames()
+            baseline_names = list(baseline_tree.keys())
+            baseline_arrays = baseline_tree.arrays(baseline_names, library="np")
+        new_names = list(arrays)
+        if set(new_names) != set(baseline_names) | {"Btrk2dR"}:
+            raise RuntimeError(
+                f"branch set is not baseline + Btrk2dR: baseline={baseline_names}, new={new_names}"
+            )
+        if branch_types["Btrk2dR"] != "double":
+            raise RuntimeError(f"unexpected Btrk2dR type: {branch_types['Btrk2dR']}")
+        for name in baseline_names:
+            if branch_types[name] != baseline_types[name]:
+                raise RuntimeError(
+                    f"branch type changed for {name}: {baseline_types[name]} -> {branch_types[name]}"
+                )
+            if not np.array_equal(arrays[name], baseline_arrays[name]):
+                mismatch = int(np.flatnonzero(arrays[name] != baseline_arrays[name])[0])
+                raise RuntimeError(f"baseline mismatch for {name} at entry {mismatch}")
+        baseline_comparison = {
+            "status": "passed",
+            "baseline_root": str(Path(args.baseline_root).resolve()),
+            "baseline_manifest": str(Path(args.baseline_manifest).resolve()),
+            "new_branch": "Btrk2dR",
+            "new_branch_type": branch_types["Btrk2dR"],
+            "new_branch_finite": True,
+            "entries_unchanged": True,
+            "existing_branch_types_unchanged": True,
+            "existing_branch_values_and_order_unchanged": True,
+            "signal_sWeight_exactly_unchanged": True,
+        }
+
     report = {
         "status": "passed",
         "root_file": str(Path(args.root).resolve()),
@@ -79,6 +122,8 @@ def main():
         "required_branches": REQUIRED,
         "statistics": calculated,
     }
+    if baseline_comparison is not None:
+        report["baseline_comparison"] = baseline_comparison
     Path(args.report).write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report, indent=2))
 
