@@ -35,33 +35,39 @@ def main():
         raise RuntimeError("missing or unexpected physics_status")
     if not manifest.get("implicit_flat_selection"):
         raise RuntimeError("implicit_flat_selection is empty")
+    sumw = 0.0
+    sumw2 = 0.0
+    negative_weights = 0
+    weight_min = math.inf
+    weight_max = -math.inf
     with uproot.open(args.root) as source:
         tree = source[manifest["tree"]]
         branch_types = tree.typenames()
         missing = sorted(set(REQUIRED) - set(tree.keys()))
         if missing:
             raise RuntimeError(f"missing branches: {missing}")
-        arrays = tree.arrays(REQUIRED, library="np")
+        entries = tree.num_entries
+        for arrays in tree.iterate(REQUIRED, step_size=20000, library="np"):
+            for name, values in arrays.items():
+                if not np.all(np.isfinite(values)):
+                    raise RuntimeError(f"non-finite values in {name}")
+            weights = arrays["signal_sWeight"].astype(np.float64)
+            sumw += float(weights.sum(dtype=np.float64))
+            sumw2 += float(np.square(weights).sum(dtype=np.float64))
+            negative_weights += int(np.count_nonzero(weights < 0))
+            if len(weights):
+                weight_min = min(weight_min, float(weights.min()))
+                weight_max = max(weight_max, float(weights.max()))
 
-    entries = len(arrays["signal_sWeight"])
-    for name, values in arrays.items():
-        if len(values) != entries:
-            raise RuntimeError(f"length mismatch for {name}")
-        if not np.all(np.isfinite(values)):
-            raise RuntimeError(f"non-finite values in {name}")
-
-    weights = arrays["signal_sWeight"].astype(np.float64)
-    sumw = float(weights.sum(dtype=np.float64))
-    sumw2 = float(np.square(weights).sum(dtype=np.float64))
     calculated = {
         "entries": entries,
         "sumw": sumw,
         "sumw2": sumw2,
         "N_eff": sumw * sumw / sumw2 if sumw2 else 0.0,
-        "negative_weights": int(np.count_nonzero(weights < 0)),
-        "negative_fraction": float(np.mean(weights < 0)) if entries else 0.0,
-        "weight_min": float(weights.min()) if entries else None,
-        "weight_max": float(weights.max()) if entries else None,
+        "negative_weights": negative_weights,
+        "negative_fraction": negative_weights / entries if entries else 0.0,
+        "weight_min": weight_min if entries else None,
+        "weight_max": weight_max if entries else None,
     }
     for key, value in calculated.items():
         expected = manifest[key]
@@ -85,22 +91,36 @@ def main():
             baseline_tree = source[baseline_manifest["tree"]]
             baseline_types = baseline_tree.typenames()
             baseline_names = list(baseline_tree.keys())
-            baseline_arrays = baseline_tree.arrays(baseline_names, library="np")
-        new_names = list(arrays)
-        if set(new_names) != set(baseline_names) | {"Btrk2dR"}:
-            raise RuntimeError(
-                f"branch set is not baseline + Btrk2dR: baseline={baseline_names}, new={new_names}"
-            )
-        if branch_types["Btrk2dR"] != "double":
-            raise RuntimeError(f"unexpected Btrk2dR type: {branch_types['Btrk2dR']}")
-        for name in baseline_names:
-            if branch_types[name] != baseline_types[name]:
-                raise RuntimeError(
-                    f"branch type changed for {name}: {baseline_types[name]} -> {branch_types[name]}"
-                )
-            if not np.array_equal(arrays[name], baseline_arrays[name]):
-                mismatch = int(np.flatnonzero(arrays[name] != baseline_arrays[name])[0])
-                raise RuntimeError(f"baseline mismatch for {name} at entry {mismatch}")
+            baseline_entries = baseline_tree.num_entries
+            with uproot.open(args.root) as new_source:
+                new_tree = new_source[manifest["tree"]]
+                new_names = list(new_tree.keys())
+                if set(new_names) != set(baseline_names) | {"Btrk2dR"}:
+                    raise RuntimeError(
+                        f"branch set is not baseline + Btrk2dR: baseline={baseline_names}, new={new_names}"
+                    )
+                if baseline_entries != entries:
+                    raise RuntimeError(f"entry count changed: {baseline_entries} -> {entries}")
+                if branch_types["Btrk2dR"] != "double":
+                    raise RuntimeError(f"unexpected Btrk2dR type: {branch_types['Btrk2dR']}")
+                for name in baseline_names:
+                    if branch_types[name] != baseline_types[name]:
+                        raise RuntimeError(
+                            f"branch type changed for {name}: {baseline_types[name]} -> {branch_types[name]}"
+                        )
+                for start in range(0, entries, 20000):
+                    stop = min(start + 20000, entries)
+                    old_chunk = baseline_tree.arrays(
+                        baseline_names, entry_start=start, entry_stop=stop, library="np"
+                    )
+                    new_chunk = new_tree.arrays(
+                        baseline_names, entry_start=start, entry_stop=stop, library="np"
+                    )
+                    for name in baseline_names:
+                        if not np.array_equal(new_chunk[name], old_chunk[name]):
+                            local = int(np.flatnonzero(new_chunk[name] != old_chunk[name])[0])
+                            raise RuntimeError(f"baseline mismatch for {name} at entry {start + local}")
+                    print(f"baseline comparison: entries {start}-{stop} passed", flush=True)
         baseline_comparison = {
             "status": "passed",
             "baseline_root": str(Path(args.baseline_root).resolve()),
