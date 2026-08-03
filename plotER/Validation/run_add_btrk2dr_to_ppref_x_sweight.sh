@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
 
 root_setup=/cvmfs/sft.cern.ch/lcg/views/LCG_106/x86_64-el9-gcc13-opt/setup.sh
 source "${root_setup}"
+set -u
 if [[ "$(root-config --version)" != "6.32.02" ]]; then
     echo "ERROR: expected ROOT 6.32.02, got $(root-config --version)" >&2
     exit 1
