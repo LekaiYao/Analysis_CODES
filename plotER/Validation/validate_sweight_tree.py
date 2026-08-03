@@ -123,7 +123,7 @@ def main():
                     print(f"baseline comparison: entries {start}-{stop} passed", flush=True)
         baseline_comparison = {
             "status": "passed",
-            "baseline_root": str(Path(args.baseline_root).resolve()),
+            "baseline_root": baseline_manifest["root_file"],
             "baseline_manifest": str(Path(args.baseline_manifest).resolve()),
             "new_branch": "Btrk2dR",
             "new_branch_type": branch_types["Btrk2dR"],
@@ -136,7 +136,7 @@ def main():
 
     report = {
         "status": "passed",
-        "root_file": str(Path(args.root).resolve()),
+        "root_file": manifest["root_file"],
         "manifest": str(Path(args.manifest).resolve()),
         "tree": manifest["tree"],
         "required_branches": REQUIRED,

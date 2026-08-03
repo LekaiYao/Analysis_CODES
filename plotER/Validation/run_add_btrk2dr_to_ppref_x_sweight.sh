@@ -28,23 +28,29 @@ for required in "${baseline_root}" "${baseline_manifest}" "${weighted}"; do
 done
 
 stage=$(mktemp -d "${run_dir}/.btrk2dr_update.XXXXXX")
-trap 'rm -rf -- "${stage}"' EXIT
+local_stage=$(mktemp -d /tmp/ppref_x_btrk2dr_validation.XXXXXX)
+trap 'rm -rf -- "${stage}" "${local_stage}"' EXIT
 temp_root="${stage}/${base}.root"
 temp_manifest="${stage}/${base}.json"
 temp_report="${stage}/uproot_validation.json"
+local_new_root="${local_stage}/new.root"
+local_baseline_root="${local_stage}/baseline.root"
 root_version=$(root-config --version)
 git_commit=$(git -C "${repo_dir}" rev-parse HEAD)
 
 root -l -b -q \
   "${script_dir}/ExportSWeightTree.C+(\"${weighted}\",\"${temp_root}\",\"${temp_manifest}\",\"${data}\",\"ntmix\",\"${fit}\",\"${analysis_tree}_sWeight\",\"nsig1__sw\",\"${analysis_tree}\",\"${implicit_flat_selection}\",\"accepted nominal ppRef X R5-aligned feasibility model; shapes fixed and nsig/nbkg floated in the sPlot refit\",\"${root_version}\",\"${git_commit}\",\"${mc}\",\"${analysis_tree}\",\"preliminary_nominal_splot_for_r5_transfer_closure\",\"${baseline_root}\")"
 
+cp -- "${temp_root}" "${local_new_root}"
+cp -- "${baseline_root}" "${local_baseline_root}"
+
 python_cmd=python3
 if ! "${python_cmd}" -c 'import uproot, numpy' >/dev/null 2>&1; then
     python_cmd="${repo_dir}/../XGBoost/.venv/bin/python"
 fi
 "${python_cmd}" "${script_dir}/validate_sweight_tree.py" \
-    --root "${temp_root}" --manifest "${temp_manifest}" --report "${temp_report}" \
-    --baseline-root "${baseline_root}" --baseline-manifest "${baseline_manifest}"
+    --root "${local_new_root}" --manifest "${temp_manifest}" --report "${temp_report}" \
+    --baseline-root "${local_baseline_root}" --baseline-manifest "${baseline_manifest}"
 
 mv -f -- "${temp_root}" "${baseline_root}"
 mv -f -- "${temp_manifest}" "${baseline_manifest}"
