@@ -124,7 +124,7 @@ def main():
         baseline_comparison = {
             "status": "passed",
             "baseline_root": baseline_manifest["root_file"],
-            "baseline_manifest": str(Path(args.baseline_manifest).resolve()),
+            "baseline_manifest": str(Path(baseline_manifest["root_file"]).with_suffix(".json")),
             "new_branch": "Btrk2dR",
             "new_branch_type": branch_types["Btrk2dR"],
             "new_branch_finite": True,
