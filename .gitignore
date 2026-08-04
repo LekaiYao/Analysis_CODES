@@ -69,6 +69,7 @@ __pycache__/
 *_C_ACLiC_dict.cxx_tmp_*
 .envs/
 selectionER/optimalCUT.local.conf
+/selectionER/optimalCUT.conf.bak*
 .manifest_runs/
 
 /plotER/Validation/results/ppRef_X_r5_splot/

@@ -12,7 +12,7 @@ DATA="/eos/home-l/leyao/pbpb_work/X_analysis/XGBoost/output/selected/X_pp24_v3_f
 
 ## SELECTION CUTs go here
 CUTs_INC="(Prediction > 0.58) && BQvalue < 0.15"
-CUTs="((Bpt > 7.5  && Bpt < 12.5 && Prediction > 0.24) || (Bpt > 12.5 && Bpt < 17.5 && Prediction > 0.38) || (Bpt > 17.5 && Bpt < 22.5 && Prediction > 0.44) || (Bpt > 22.5 && Bpt < 50 && Prediction > 0.10)) && BQvalue < 0.15  "
+CUTs="((Bpt > 7.5  && Bpt < 12.5 && Prediction > 0.24) || (Bpt > 12.5 && Bpt < 17.5 && Prediction > 0.38) || (Bpt > 17.5 && Bpt < 22.5 && Prediction > 0.44) || (Bpt > 22.5 && Bpt < 50 && Prediction > 0.00)) && BQvalue < 0.15  "
 
 ##CUTs=" BQvalue < 0.20  && Btrk1dR < 0.45 && Btrk2dR < 0.45 "
 
