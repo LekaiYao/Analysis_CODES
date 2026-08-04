@@ -153,7 +153,7 @@ void ExportPsi2SH004Summary(const char* modelPath, const char* selection,
     std::ofstream out(outputPath);
     out << std::setprecision(12);
     out << "label,selection,data_entries,mc_entries,mass,mass_error,"
-           "sigma1_mc,sigma2_mc,fraction_mc,scale_data,effective_sigma,"
+           "sigma1_mc,sigma2_mc,fraction_mc,scale_data,scale_data_error,effective_sigma,"
            "signal_window_low,signal_window_high,signal_yield,"
            "signal_yield_error,background_total,background_window,"
            "signal_over_background,significance,chi2_ndf,parameter_boundary,"
@@ -163,7 +163,8 @@ void ExportPsi2SH004Summary(const char* modelPath, const char* selection,
     out << label << "," << csvQuote(selection) << "," << data->numEntries() << ","
         << mc->numEntries() << "," << mean->getVal() << "," << mean->getError()
         << "," << sigma1->getVal() << "," << sigma2->getVal() << ","
-        << fraction->getVal() << "," << scale->getVal() << "," << effSigma
+        << fraction->getVal() << "," << scale->getVal() << ","
+        << scale->getError() << "," << effSigma
         << "," << lo << "," << hi << "," << nsig->getVal() << ","
         << nsig->getError() << "," << nbkg->getVal() << "," << bWindow
         << "," << signalOverBackground << "," << significance << ","

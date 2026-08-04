@@ -43,6 +43,8 @@
 /fitER/ROOTfiles/ppRef_X_loose_fiducial_feasibility/
 /fitER/results/ppRef_X_r5_fiducial_feasibility/
 /fitER/ROOTfiles/ppRef_X_r5_fiducial_feasibility/
+/fitER/results/PbPb_H010*/
+/fitER/ROOTfiles/PbPb_H010*/
 
 selectionER/.venv*/
 selectionER/.envs/
@@ -61,6 +63,8 @@ __pycache__/
 *_C.d
 *_C.so
 *_C_ACLiC_dict_rdict.pcm
+*_C_ACLiC_dict*.h
+*_C_ACLiC_dict.cxx_tmp_*
 .envs/
 selectionER/optimalCUT.local.conf
 .manifest_runs/
