@@ -44,10 +44,10 @@ using namespace RooFit;
 
 namespace {
 
-constexpr double kMassMin = 3.8;
-constexpr double kMassMax = 4.0;
+double gMassMin = 3.8;
+double gMassMax = 4.0;
 constexpr double kXMass = 3.87164;
-constexpr int kMassBins = 40;
+int gMassBins = 40;
 
 struct FitRecord {
     double fittedYield = 0.0;
@@ -79,8 +79,8 @@ bool atBoundary(const RooRealVar& value)
 
 double binProbability(RooAbsPdf& pdf, RooRealVar& mass, int bin)
 {
-    const double width = (kMassMax - kMassMin) / kMassBins;
-    const double low = kMassMin + bin * width;
+    const double width = (gMassMax - gMassMin) / gMassBins;
+    const double low = gMassMin + bin * width;
     const double high = low + width;
     const TString rangeName = Form("h011_bin_%d", bin);
     mass.setRange(rangeName, low, high);
@@ -94,11 +94,11 @@ std::unique_ptr<RooDataHist> makeBinnedData(
     const std::vector<double>& sigProb, double nbkg, double nsig,
     bool poisson, TRandom3& random, double& generatedTotal)
 {
-    auto hist = std::make_unique<TH1D>(Form("h_%s", name), "", kMassBins,
-                                       kMassMin, kMassMax);
+    auto hist = std::make_unique<TH1D>(Form("h_%s", name), "", gMassBins,
+                                       gMassMin, gMassMax);
     hist->SetDirectory(nullptr);
     generatedTotal = 0.0;
-    for (int bin = 0; bin < kMassBins; ++bin) {
+    for (int bin = 0; bin < gMassBins; ++bin) {
         const double expectation = std::max(
             0.0, nbkg * bkgProb.at(bin) + nsig * sigProb.at(bin));
         const double count = poisson ? random.PoissonD(expectation) : expectation;
@@ -190,7 +190,7 @@ void drawFit(const char* outputPath, const char* title, RooAbsData& data,
     mainPad.Draw(); pullPad.Draw();
 
     mainPad.cd();
-    std::unique_ptr<RooPlot> frame(mass.frame(Bins(kMassBins)));
+    std::unique_ptr<RooPlot> frame(mass.frame(Bins(gMassBins)));
     data.plotOn(frame.get(), Name("data"), DataError(RooAbsData::SumW2));
     model.plotOn(frame.get(), Name("model"), LineColor(kRed + 1), LineWidth(2));
     model.plotOn(frame.get(), Name("bkg"), Components(background),
@@ -231,7 +231,7 @@ void drawFit(const char* outputPath, const char* title, RooAbsData& data,
 
     pullPad.cd();
     RooHist* pull = frame->pullHist("data", "model");
-    std::unique_ptr<RooPlot> pullFrame(mass.frame(Bins(kMassBins)));
+    std::unique_ptr<RooPlot> pullFrame(mass.frame(Bins(gMassBins)));
     pullFrame->addPlotable(pull, "P");
     pullFrame->SetTitle("");
     pullFrame->GetYaxis()->SetTitle("Pull");
@@ -244,7 +244,7 @@ void drawFit(const char* outputPath, const char* title, RooAbsData& data,
     pullFrame->GetXaxis()->SetTitleSize(0.12);
     pullFrame->GetXaxis()->SetLabelSize(0.10);
     pullFrame->Draw();
-    TLine zero(kMassMin, 0.0, kMassMax, 0.0);
+    TLine zero(gMassMin, 0.0, gMassMax, 0.0);
     zero.SetLineColor(kRed + 1); zero.Draw("same");
     canvas.SaveAs(outputPath);
 }
@@ -275,18 +275,29 @@ void PbPbH011InjectionToys(
     const char* dataTree, const char* referencePath, const char* referenceTree,
     const char* selection, double yieldMinus, double yieldCentral,
     double yieldPlus, int toysPerEnsemble, int seedBase,
-    const char* outputDirectory, bool runAsimov = true, bool runToys = true)
+    const char* outputDirectory, bool runAsimov = true, bool runToys = true,
+    const char* templateEventWeight = "Reweight", double massMax = 4.0,
+    int massBins = 40)
 {
+    gMassMin = 3.8;
+    gMassMax = massMax;
+    gMassBins = massBins;
+    const bool useReweight = std::string(templateEventWeight) == "Reweight";
+    if ((!useReweight && std::string(templateEventWeight) != "unit") ||
+        !(gMassMax > gMassMin) || gMassBins <= 0) {
+        std::cerr << "[H011 ERROR] Invalid template weight or mass binning" << std::endl;
+        return;
+    }
     gSystem->mkdir(outputDirectory, true);
     const TString fullSelection = Form(
-        "(%s) && Bmass > %.17g && Bmass < %.17g", selection, kMassMin, kMassMax);
+        "(%s) && Bmass > %.17g && Bmass < %.17g", selection, gMassMin, gMassMax);
 
     TFile dataFile(dataPath, "READ");
     TFile referenceFile(referencePath, "READ");
     auto* sourceData = dynamic_cast<TTree*>(dataFile.Get(dataTree));
     auto* sourceReference = dynamic_cast<TTree*>(referenceFile.Get(referenceTree));
     if (!sourceData || !sourceReference ||
-        !sourceReference->GetBranch("Reweight") ||
+        (useReweight && !sourceReference->GetBranch("Reweight")) ||
         !sourceReference->GetBranch("Prediction")) {
         std::cerr << "[H011 ERROR] Missing tree or required reference branch" << std::endl;
         return;
@@ -303,12 +314,13 @@ void PbPbH011InjectionToys(
     Float_t referenceMass = 0.0f;
     Double_t referenceWeight = 0.0;
     selectedReference->SetBranchAddress("Bmass", &referenceMass);
-    selectedReference->SetBranchAddress("Reweight", &referenceWeight);
+    if (useReweight) selectedReference->SetBranchAddress("Reweight", &referenceWeight);
     double sumw = 0.0, sumw2 = 0.0;
     double weightMin = 1.e100, weightMax = -1.e100;
     Long64_t finiteWeights = 0;
     for (Long64_t i = 0; i < selectedReference->GetEntries(); ++i) {
         selectedReference->GetEntry(i);
+        if (!useReweight) referenceWeight = 1.0;
         if (!std::isfinite(referenceWeight)) continue;
         ++finiteWeights;
         sumw += referenceWeight;
@@ -318,12 +330,19 @@ void PbPbH011InjectionToys(
     }
     const double neff = sumw2 > 0.0 ? sumw * sumw / sumw2 : 0.0;
 
-    RooRealVar mass("Bmass", "Bmass", kMassMin, kMassMax);
+    RooRealVar mass("Bmass", "Bmass", gMassMin, gMassMax);
     mass.setRange("signal", kXMass - 0.035, kXMass + 0.035);
     RooRealVar weight("Reweight", "Reweight", -1.e6, 1.e6);
     RooDataSet data("data", "data", selectedData.get(), RooArgSet(mass));
-    RooDataSet reference("reference", "reference", selectedReference.get(),
-                         RooArgSet(mass, weight), nullptr, "Reweight");
+    std::unique_ptr<RooDataSet> reference;
+    if (useReweight) {
+        reference = std::make_unique<RooDataSet>(
+            "reference", "reference", selectedReference.get(),
+            RooArgSet(mass, weight), nullptr, "Reweight");
+    } else {
+        reference = std::make_unique<RooDataSet>(
+            "reference", "reference", selectedReference.get(), RooArgSet(mass));
+    }
 
     RooRealVar mean("mean", "mean", kXMass, kXMass - 0.010, kXMass + 0.010);
     RooRealVar sigma1("sigma1", "sigma1", 0.010, 0.001, 0.1);
@@ -337,7 +356,7 @@ void PbPbH011InjectionToys(
     RooAddPdf signal("signalPdf", "signalPdf", RooArgList(gauss1, gauss2), fraction);
     scale.setConstant(true);
     std::unique_ptr<RooFitResult> referenceFit(signal.fitTo(
-        reference, Save(), Range("signal"), SumW2Error(false),
+        *reference, Save(), Range("signal"), SumW2Error(false),
         PrintLevel(-1), Warnings(false), Verbose(false), Strategy(2), Hesse(true)));
     const int referenceFitStatus = referenceFit ? referenceFit->status() : -99;
     const int referenceCovQual = referenceFit ? referenceFit->covQual() : -99;
@@ -363,8 +382,8 @@ void PbPbH011InjectionToys(
 
     mean.setVal(generationMean);
     scale.setVal(1.0);
-    std::vector<double> signalProb(kMassBins), backgroundProb(kMassBins);
-    for (int bin = 0; bin < kMassBins; ++bin) {
+    std::vector<double> signalProb(gMassBins), backgroundProb(gMassBins);
+    for (int bin = 0; bin < gMassBins; ++bin) {
         signalProb[bin] = binProbability(signal, mass, bin);
         backgroundProb[bin] = binProbability(background, mass, bin);
     }
@@ -385,7 +404,7 @@ void PbPbH011InjectionToys(
            "generation_mean,sigma1,sigma2,fraction,background_fit_status,background_cov_qual,"
            "background_edm,background_yield,a0,a1\n"
         << key << ',' << modelType << ',' << data.numEntries() << ','
-        << reference.numEntries() << ',' << finiteWeights << ',' << sumw << ','
+        << reference->numEntries() << ',' << finiteWeights << ',' << sumw << ','
         << sumw2 << ',' << neff << ',' << weightMin << ',' << weightMax << ','
         << referenceFitStatus << ',' << referenceCovQual << ',' << referenceEdm << ','
         << generationMean << ',' << sigma1.getVal() << ',' << sigma2.getVal() << ','
@@ -452,6 +471,6 @@ void PbPbH011InjectionToys(
         toyOut.close();
     }
     std::cout << "[H011] completed " << key << " DATA=" << data.numEntries()
-              << " reference=" << reference.numEntries() << " sumw=" << sumw
+              << " reference=" << reference->numEntries() << " sumw=" << sumw
               << " Neff=" << neff << std::endl;
 }
