@@ -70,6 +70,7 @@ __pycache__/
 .envs/
 selectionER/optimalCUT.local.conf
 /selectionER/optimalCUT.conf.bak*
+/docs/
 .manifest_runs/
 
 /plotER/Validation/results/ppRef_X_r5_splot/
