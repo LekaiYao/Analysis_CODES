@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "implicit_flat_selection": "ppRef ntmix flatER/Flat_TREEs.C: Bmu1isTriggered && Bmu2isTriggered; Bmu1SoftMuID && Bmu2SoftMuID; Bmu1isAcc && Bmu2isAcc; abs(Bujmass-3.096916)<0.15; BujvProb>0.01; abs(Btrk1Eta)<=2.4; Btrk1Pt>0.5; Btrk1PtErr/Btrk1Pt<0.1; Btrk1nPixelLayer+Btrk1nStripLayer>10; Btrk1Chi2ndf/(Btrk1nPixelLayer+Btrk1nStripLayer)<0.18; Btrk1highPurity; abs(Btrk2Eta)<=2.4; Btrk2Pt>0.5; Btrk2PtErr/Btrk2Pt<0.1; Btrk2nPixelLayer+Btrk2nStripLayer>10; Btrk2Chi2ndf/(Btrk2nPixelLayer+Btrk2nStripLayer)<0.18; Btrk2highPurity; 3.6<=Bmass<=4.0; Bchi2Prob>=0.005; effective flat fiducial Bpt>=5 and abs(By)<=2.4; finite Bmass, Bpt, By, Bnorm_trk1Dxy, CentBin, Bchi2Prob, Btrk1dR and Bnorm_svpvDistance_2D. Every passing reconstructed candidate is written; no best-candidate or event-level duplicate removal.",
+  "targets": {
+    "ppref_psi2s": {
+      "label": "ppRef psi(2S) reweighting target",
+      "root_file": "plotER/Validation/WEIGHTS/SignalWeight_TTree_ppRef_ntmix_PSI2S_PSI2S.root",
+      "source_manifest": "plotER/Validation/WEIGHTS/SignalWeight_TTree_ppRef_ntmix_PSI2S_PSI2S.json",
+      "tree": "ntmix_PSI2S_sWeight",
+      "weight_branch": "signal_sWeight",
+      "source_data_root": "/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_DATA.root",
+      "source_data_tree": "ntmix",
+      "source_mc_root": "/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_MC_PSI2S.root",
+      "source_mc_tree": "ntmix_PSI2S",
+      "selection": "BQvalue < 0.15 && abs(By) < 2.4 && Bpt > 7.5",
+      "mass_variable": "Bmass",
+      "fit_range_gev": [3.6, 3.8],
+      "source_nominal_fit": "fitER/ROOTfiles/ppRef/nominalFitModel_ntmix_PSI2S_ppRef.root",
+      "fit_plot": "plotER/Validation/COMPARE/ntmix_PSI2S/massFit_splot_ntmix_PSI2S.pdf",
+      "quality_csv": "plotER/Validation/COMPARE/ntmix_PSI2S/validation_quality.csv",
+      "fit_model": {
+        "fit_type": "extended unbinned maximum likelihood",
+        "signal": "two Gaussians with common mean; MC-fixed component widths and fraction; common DATA/MC width scale",
+        "background": "second-order RooChebychev",
+        "nominal_data_fit_floating": ["mean1_", "scale", "a01_", "a11_", "nsig1_", "nbkg1_"],
+        "nominal_data_fit_fixed_from_mc": ["sig1frac1_", "sigma11_", "sigma21_"],
+        "splot_refit_floating_yields": ["nsig1_", "nbkg1_"],
+        "splot_refit_fixed_shapes": ["mean1_", "scale", "a01_", "a11_", "sig1frac1_", "sigma11_", "sigma21_"],
+        "splot_shape_values": {
+          "mean1_": 3.686,
+          "scale": 1.14343,
+          "a01_": 0.0389812,
+          "a11_": -0.0380603,
+          "sig1frac1_": 0.327906,
+          "sigma11_": 0.00832567,
+          "sigma21_": 0.00378668
+        },
+        "parameter_ranges": {
+          "mean1_": [3.6761, 3.6961],
+          "scale": [0.9, 1.15],
+          "a01_": [-2.0, 2.0],
+          "a11_": [-2.0, 2.0],
+          "sig1frac1_": [0.01, 1.0],
+          "sigma11_": [0.001, 0.1],
+          "sigma21_": [0.001, 0.1],
+          "nsig1_": [0.0, 75126.0],
+          "nbkg1_": [25393.9, 253939.0]
+        }
+      },
+      "generation_command": "source /cvmfs/sft.cern.ch/lcg/views/LCG_106/x86_64-el9-gcc13-opt/setup.sh && bash plotER/Validation/run_export_ppref_psi2s_sweight_tree.sh",
+      "provenance": {
+        "root_version": "6.32.02",
+        "artifact_generation_commit": null,
+        "export_script_first_committed_as": "161ba3b7c093eed1b2bb01b16445a6b0030eb8f2",
+        "limitation": "The artifact and schema-v1 manifest predate the script commit and do not record the execution commit; exact generation HEAD is not recoverable from the artifact."
+      }
+    },
+    "ppref_x": {
+      "label": "ppRef X transfer-closure target",
+      "root_file": "plotER/Validation/results/ppRef_X_r5_splot/SignalWeight_TTree_ppRef_X_r5_fiducial_splot_ntmix_X3872.root",
+      "source_manifest": "plotER/Validation/results/ppRef_X_r5_splot/SignalWeight_TTree_ppRef_X_r5_fiducial_splot_ntmix_X3872.json",
+      "tree": "ntmix_X3872_sWeight",
+      "weight_branch": "signal_sWeight",
+      "source_data_root": "/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_DATA.root",
+      "source_data_tree": "ntmix",
+      "source_mc_root": "/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_MC_X3872.root",
+      "source_mc_tree": "ntmix_X3872",
+      "selection": "Bpt > 7.5 && Bpt < 50 && abs(By) < 2.4 && BQvalue < 0.15",
+      "mass_variable": "Bmass",
+      "fit_range_gev": [3.8, 4.0],
+      "source_nominal_fit": "fitER/ROOTfiles/ppRef_X_r5_fiducial_feasibility/nominalFitModel_ntmix_X3872_ppRef_X_r5_fiducial_feasibility.root",
+      "fit_plot": "plotER/Validation/results/ppRef_X_r5_splot/COMPARE/ntmix_X3872/massFit_splot_ntmix_X3872.pdf",
+      "quality_csv": "plotER/Validation/results/ppRef_X_r5_splot/COMPARE/ntmix_X3872/validation_quality.csv",
+      "fit_model": {
+        "fit_type": "extended unbinned maximum likelihood",
+        "signal": "two Gaussians with common mean; MC-fixed component widths and fraction; common DATA/MC width scale",
+        "background": "second-order RooChebychev",
+        "nominal_data_fit_floating": ["mean1_", "scale", "a01_", "a11_", "nsig1_", "nbkg1_"],
+        "nominal_data_fit_fixed_from_mc": ["sig1frac1_", "sigma11_", "sigma21_"],
+        "splot_refit_floating_yields": ["nsig1_", "nbkg1_"],
+        "splot_refit_fixed_shapes": ["mean1_", "scale", "a01_", "a11_", "sig1frac1_", "sigma11_", "sigma21_"],
+        "splot_shape_values": {
+          "mean1_": 3.87104,
+          "scale": 1.13643,
+          "a01_": -0.136853,
+          "a11_": -0.0259332,
+          "sig1frac1_": 0.37405,
+          "sigma11_": 0.0106773,
+          "sigma21_": 0.00492119
+        },
+        "parameter_ranges": {
+          "mean1_": [3.86164, 3.88164],
+          "scale": [0.9, 1.15],
+          "a01_": [-2.0, 2.0],
+          "a11_": [-2.0, 2.0],
+          "sig1frac1_": [0.01, 1.0],
+          "sigma11_": [0.001, 0.1],
+          "sigma21_": [0.001, 0.1],
+          "nsig1_": [0.0, 23880.0],
+          "nbkg1_": [19488.6, 194886.0]
+        }
+      },
+      "generation_command": "bash plotER/Validation/run_export_ppref_x_r5_sweight_tree.sh",
+      "provenance": {
+        "root_version": "6.32.02",
+        "fit_artifact_execution_head": "9168339a81b25ec5abba44412c0bcc5db957afe6",
+        "r5_alignment_changes_committed_as": "bdd21610a09804d960ae96959059f620a9bbbd37",
+        "nominal_splot_commit": "926c67bbf610b8c0236638603b3ed6a2c8a7d6bf",
+        "metadata_commit": "3342e37cbdb6d1c1fc591e11611469f4b9ee0a6f",
+        "final_manifest_recorded_commit": "6d40460ee78bd857fab18a9260314c732f520472",
+        "final_cleanup_commit": "55f30692d518dea52fb276aa1ed3b0a50cb1c9f6",
+        "limitation": "The R5-aligned fit files record execution HEAD 9168339; the alignment changes present at generation were committed immediately afterward as bdd2161."
+      }
+    }
+  }
+}
