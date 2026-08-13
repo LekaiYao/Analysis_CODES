@@ -49,6 +49,8 @@
 /fitER/results/PbPb_H012*/
 /fitER/results/H019_manifest_fit_scans/
 /fitER/results/
+/fitER/run_x_data_gaussian_scan.py
+/tests/test_x_data_gaussian_scan.py
 
 selectionER/.venv*/
 selectionER/.envs/
