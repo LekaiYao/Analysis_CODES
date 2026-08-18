@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "decision": "promote_to_nominal",
+  "channel": "Psi2S",
+  "system": "PbPb",
+  "dataset": "pb24",
+  "train_tag": "Psi2S_pb24_v1_fid1_6v1_rwr6range4v1_xgb_v1",
+  "analysis_variant": "data_only_single_gaussian_pdg_floating_nominal",
+  "supersedes_analysis_variant": "double_gaussian_weighted_mc_shape",
+  "decision_date": "2026-08-18",
+  "decision_authority": "user_confirmed",
+  "source_result_manifest": "fitER/results/manifest_driven_psi2s_data_gaussian/Psi2S_pb24_v1_fid1_6v1_rwr6range4v1_xgb_v1/data_gaussian_pdgfloat_v1/result_manifest.json",
+  "fit_contract": {
+    "fit_type": "extended_unbinned",
+    "data_event_weight": "unit",
+    "mass_range_gev": [3.6, 3.8],
+    "signal": {
+      "model": "single_gaussian",
+      "mean_initial_gev": 3.686097,
+      "mean_range_gev": [3.681097, 3.691097],
+      "sigma_initial_gev": 0.004,
+      "sigma_range_gev": [0.001, 0.008]
+    },
+    "background": {
+      "model": "chebyshev",
+      "order": 2,
+      "coefficient_ranges": {
+        "a0": [-0.8, 0.8],
+        "a1": [-0.8, 0.8]
+      }
+    }
+  },
+  "splot_working_point": {
+    "key": "psi2seff30",
+    "threshold_operator": ">",
+    "threshold": 0.8984240889549255
+  }
+}
