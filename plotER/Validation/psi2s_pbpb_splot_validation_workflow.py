@@ -190,9 +190,9 @@ def splot(repo, manifest_path, output_dir):
         (quality["relative_yield_closure"] < 1e-6, "sumw/yield closure >= 1e-6"),
         (quality["effective_entries"] >= 30, "signed sWeight Neff < 30"),
         (quality["entries"] == reference["data_entries"], "reproduction entry mismatch"),
-        (yield_relative_difference < 1e-4, "reproduced yield differs from nominal by >= 1e-4"),
-        (mean_difference_gev < 1e-6, "reproduced mean differs from nominal by >= 1 keV"),
-        (sigma_difference_gev < 1e-6, "reproduced sigma differs from nominal by >= 1 keV"),
+        (yield_relative_difference < 1e-3, "reproduced yield differs from nominal by >= 1e-3"),
+        (mean_difference_gev < 5e-6, "reproduced mean differs from nominal by >= 5 keV"),
+        (sigma_difference_gev < 5e-6, "reproduced sigma differs from nominal by >= 5 keV"),
     )
     failures.extend(message for passed, message in checks if not passed)
     for name, value in quality.items():

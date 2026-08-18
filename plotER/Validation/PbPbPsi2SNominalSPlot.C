@@ -157,11 +157,13 @@ void PbPbPsi2SNominalSPlot(
         data, Save(), Extended(true), PrintLevel(-1), Warnings(false),
         Verbose(false), Strategy(1), Hesse(true)));
     if (!yieldFit) throw std::runtime_error("yield-only sPlot refit failed");
+    RooArgList yields(*nsig, *nbkg);
+    RooStats::SPlot sData("sData", "Psi2S nominal sWeights", data, model, yields);
+    // SPlot performs its own yield fit.  Use its final yields for the exact
+    // sum-of-sWeights closure rather than the immediately preceding fit values.
     const double yield = nsig->getVal();
     const double yieldError = nsig->getError();
     const double backgroundYield = nbkg->getVal();
-    RooArgList yields(*nsig, *nbkg);
-    RooStats::SPlot sData("sData", "Psi2S nominal sWeights", data, model, yields);
 
     const std::string signalWeightName = std::string(nsig->GetName()) + "_sw";
     double sumw = 0.0, sumw2 = 0.0, positiveSum = 0.0, negativeSum = 0.0;
