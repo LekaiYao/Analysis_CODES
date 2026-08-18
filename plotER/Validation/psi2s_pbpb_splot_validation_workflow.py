@@ -367,6 +367,24 @@ def aggregate(repo, manifest_path, output_dir, input_dir=None,
         "source_mc_cache": str(mc_path),
         "low_neff_override": allow_low_neff,
         "effective_entries": quality["effective_entries"],
+        "analysis_codes": {
+            "branch": subprocess.check_output(
+                ["git", "-C", str(repo), "branch", "--show-current"], text=True
+            ).strip(),
+            "commit": subprocess.check_output(
+                ["git", "-C", str(repo), "rev-parse", "HEAD"], text=True
+            ).strip(),
+            "dirty": bool(subprocess.check_output(
+                ["git", "-C", str(repo), "status", "--porcelain"], text=True
+            ).strip()),
+        },
+        "root_version": subprocess.check_output(
+            [str(ROOT_BASE / "bin/root-config"), "--version"], text=True
+        ).strip(),
+        "source_artifact_sha256": {
+            "sweighted_data": sha256(sweighted_path),
+            "mc_cache": sha256(mc_path),
+        },
         "artifacts": {
             "sweight_quality": str(input_dir / splot_subdir / "sweight_quality.json"),
             "variable_results_csv": str(output_dir / "variable_results.csv"),
