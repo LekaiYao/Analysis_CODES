@@ -208,7 +208,10 @@ void AnalyzePbPbPsi2SVariable(
         if (dataMass > 3.75 && dataMass < 3.80) rightSideband.Fill(value);
     }
 
-    double mcValue = 0.0, mcMass = 0.0, reweight = 0.0;
+    // Snapshot preserves the production Float_t physics branches, while
+    // Reweight is Double_t.  Bind each branch with its actual stored type.
+    float mcValue = 0.0f, mcMass = 0.0f;
+    double reweight = 0.0;
     mcTree->SetBranchAddress(variable.name.c_str(), &mcValue);
     mcTree->SetBranchAddress("Bmass", &mcMass);
     mcTree->SetBranchAddress("Reweight", &reweight);
