@@ -105,12 +105,78 @@ def create_submission(manifest_path, label):
     return task
 
 
+def create_low_neff_resume_submission(manifest_path, label, input_dir):
+    manifest_path = manifest_path.resolve()
+    input_dir = input_dir.resolve()
+    manifest, _, _, _, _, _ = workflow.load_inputs(REPO, manifest_path)
+    tag = manifest["train_tag"]
+    if not re.fullmatch(r"[A-Za-z0-9_.-]+", label):
+        raise RuntimeError(f"unsafe label: {label!r}")
+    quality, _, _ = workflow.validate_sweight_input(
+        input_dir, "splot_corrected_v2", True
+    )
+    if quality["effective_entries"] >= 30:
+        raise RuntimeError("low-Neff resume requested but Neff is not below 30")
+    run_name = f"{tag}_{label}"
+    submission_dir = AFS_ROOT / run_name
+    output_dir = EOS_RESULTS_ROOT / tag / label
+    if submission_dir.exists():
+        raise RuntimeError(f"refusing to reuse submission directory: {submission_dir}")
+    if output_dir.exists():
+        raise RuntimeError(f"refusing to overwrite output directory: {output_dir}")
+    (submission_dir / "logs").mkdir(parents=True)
+    output_dir.mkdir(parents=True)
+    wrapper = submission_dir / "run_node.sh"
+    wrapper.write_text(
+        "#!/usr/bin/env bash\nset -euo pipefail\n"
+        f"exec python3 {workflow.__file__} \"$@\"\n"
+    )
+    common = (
+        f"--input-dir {input_dir} --splot-subdir splot_corrected_v2 "
+        "--allow-low-neff"
+    )
+    (submission_dir / "analyze.sub").write_text(submit_text(
+        submission_dir,
+        f"analyze {manifest_path} {output_dir} $(variable) {common}",
+        "analyze_$(variable)", "2GB", "2GB", "espresso",
+    ))
+    (submission_dir / "aggregate.sub").write_text(submit_text(
+        submission_dir, f"aggregate {manifest_path} {output_dir} {common}",
+        "aggregate", "1GB", "1GB", "espresso",
+    ))
+    nodes, lines = [], []
+    for index, variable in enumerate(VARIABLES):
+        node = f"ANALYZE_{index:02d}_{variable.upper()}"
+        nodes.append(node)
+        lines.extend((
+            f"JOB {node} analyze.sub",
+            f'VARS {node} variable="{variable}"',
+            f"CATEGORY {node} ANALYZE",
+        ))
+    lines.extend(("", "MAXJOBS ANALYZE 12", "", "FINAL AGGREGATE aggregate.sub"))
+    (submission_dir / "validation.dag").write_text("\n".join(lines) + "\n")
+    task = {
+        "schema_version": 1, "contract": workflow.CONTRACT,
+        "train_tag": tag, "input_manifest": str(manifest_path),
+        "source_run": str(input_dir), "output_dir": str(output_dir),
+        "submission_dir": str(submission_dir), "variables": list(VARIABLES),
+        "bootstrap": False, "ranking": "none", "allow_low_neff": True,
+        "effective_entries": quality["effective_entries"],
+        "dag": "12 ANALYZE -> FINAL AGGREGATE",
+        "io_plan": "read existing compact MC and corrected sWeighted DATA only; no production ROOT I/O",
+    }
+    (submission_dir / "task.json").write_text(json.dumps(task, indent=2) + "\n")
+    return task
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("manifest", type=Path)
     parser.add_argument("--label", default="xeff30_nominal_v2")
     parser.add_argument("--validate-only", action="store_true")
     parser.add_argument("--submit", action="store_true")
+    parser.add_argument("--resume-input", type=Path)
+    parser.add_argument("--allow-low-neff", action="store_true")
     args = parser.parse_args(argv)
     if args.validate_only and args.submit:
         parser.error("--validate-only and --submit are mutually exclusive")
@@ -127,7 +193,14 @@ def main(argv=None):
             "variables": list(VARIABLES), "bootstrap": False,
         }, indent=2))
         return 0
-    task = create_submission(manifest_path, args.label)
+    if args.resume_input and not args.allow_low_neff:
+        parser.error("--resume-input requires explicit --allow-low-neff")
+    if args.allow_low_neff and not args.resume_input:
+        parser.error("--allow-low-neff requires --resume-input")
+    task = (
+        create_low_neff_resume_submission(manifest_path, args.label, args.resume_input)
+        if args.resume_input else create_submission(manifest_path, args.label)
+    )
     if args.submit:
         result = subprocess.run(
             ["condor_submit_dag", "-batch-name", "Psi2SSPlotPbPb",

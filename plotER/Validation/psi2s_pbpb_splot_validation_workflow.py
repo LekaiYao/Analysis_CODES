@@ -226,17 +226,42 @@ def splot(repo, manifest_path, output_dir):
     print(json.dumps(validation, indent=2))
 
 
-def analyze(repo, manifest_path, output_dir, variable):
+def validate_sweight_input(input_dir, splot_subdir, allow_low_neff):
+    quality_path = input_dir / splot_subdir / "sweight_quality.json"
+    sweighted_path = input_dir / splot_subdir / "sweighted_data.root"
+    mc_path = input_dir / "cache/MC_xeff30.root"
+    if not quality_path.is_file() or not sweighted_path.is_file() or not mc_path.is_file():
+        raise RuntimeError("compact MC or corrected sWeight input is missing")
+    quality = json.loads(quality_path.read_text())
+    failures = []
+    for passed, message in (
+        (quality["yield_fit_status"] == 0, "yield fit status != 0"),
+        (quality["yield_fit_cov_qual"] == 3, "yield fit covQual != 3"),
+        (quality["yield_fit_edm"] < 1e-3, "yield fit EDM >= 1e-3"),
+        (quality["relative_yield_closure"] < 1e-6, "sumw/yield closure >= 1e-6"),
+        (quality["effective_entries"] >= 30 or allow_low_neff,
+         "signed sWeight Neff < 30 without explicit override"),
+    ):
+        if not passed:
+            failures.append(message)
+    if failures:
+        raise RuntimeError("sWeight input gate failed: " + "; ".join(failures))
+    return quality, sweighted_path, mc_path
+
+
+def analyze(repo, manifest_path, output_dir, variable, input_dir=None,
+            splot_subdir="splot", allow_low_neff=False):
     load_inputs(repo, manifest_path)
     if variable not in VARIABLES:
         raise RuntimeError(f"unsupported variable: {variable}")
-    if json.loads((output_dir / "splot/validation.json").read_text())["status"] != "passed":
-        raise RuntimeError("sPlot validation did not pass")
+    input_dir = input_dir or output_dir
+    quality, sweighted_path, mc_path = validate_sweight_input(
+        input_dir, splot_subdir, allow_low_neff
+    )
     variable_dir = output_dir / "variables" / variable
     variable_dir.mkdir(parents=True, exist_ok=False)
     values = (
-        variable, output_dir / "splot/sweighted_data.root",
-        output_dir / "cache/MC_xeff30.root", variable_dir,
+        variable, sweighted_path, mc_path, variable_dir,
     )
     expression = "AnalyzePbPbPsi2SVariable.C++(" + ",".join(
         f'"{root_string(value)}"' for value in values
@@ -248,11 +273,23 @@ def analyze(repo, manifest_path, output_dir, variable):
     metrics = variable_dir / "metrics.json"
     if status or not metrics.is_file():
         raise RuntimeError(f"ANALYZE {variable} failed; see analyze.log")
+    provenance = {
+        "source_run": str(input_dir), "splot_subdir": splot_subdir,
+        "allow_low_neff": allow_low_neff,
+        "effective_entries": quality["effective_entries"],
+        "interpretation": "exploratory per-variable result; no ranking",
+    }
+    (variable_dir / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
     print(metrics.read_text())
 
 
-def aggregate(repo, manifest_path, output_dir):
+def aggregate(repo, manifest_path, output_dir, input_dir=None,
+              splot_subdir="splot", allow_low_neff=False):
     manifest, config, config_path, result, result_path, _ = load_inputs(repo, manifest_path)
+    input_dir = input_dir or output_dir
+    quality, sweighted_path, mc_path = validate_sweight_input(
+        input_dir, splot_subdir, allow_low_neff
+    )
     rows, failures, warnings = [], [], []
     for variable in VARIABLES:
         path = output_dir / "variables" / variable / "metrics.json"
@@ -267,29 +304,52 @@ def aggregate(repo, manifest_path, output_dir):
         if row["splot_sensitive"]:
             warnings.append(f"{variable}: splot_sensitive")
         rows.append(row)
-    ordered = sorted(rows, key=lambda item: (item["category"], item["agreement_score"]))
-    category_rank = {}
-    for row in ordered:
-        category_rank[row["category"]] = category_rank.get(row["category"], 0) + 1
-        row["rank_within_category"] = category_rank[row["category"]]
     fields = (
-        "category", "rank_within_category", "variable", "expression",
-        "agreement_score", "unit_agreement_score",
-        "delta_discrepancy_unit_minus_weighted", "splot_sensitive",
+        "category", "variable", "expression",
+        "weighted_cdf_10bin", "weighted_cdf_5bin",
+        "unit_cdf_10bin", "unit_cdf_5bin",
+        "weighted_l1_10bin", "weighted_l1_5bin",
+        "weighted_chi2_ndf_10bin", "weighted_chi2_ndf_5bin",
+        "splot_sensitive",
         "weighted_mass_pearson", "weighted_mass_spearman",
         "weighted_mass_slice_max_l1", "weighted_mass_slice_max_cdf",
     )
-    with (output_dir / "agreement_summary.csv").open("w", newline="") as stream:
+    flat_rows = []
+    for row in rows:
+        flat = {name: row.get(name) for name in fields}
+        flat.update({
+            "weighted_cdf_10bin": row["weighted_10bin"]["cdf"],
+            "weighted_cdf_5bin": row["weighted_5bin"]["cdf"],
+            "unit_cdf_10bin": row["unit_10bin"]["cdf"],
+            "unit_cdf_5bin": row["unit_5bin"]["cdf"],
+            "weighted_l1_10bin": row["weighted_10bin"]["l1"],
+            "weighted_l1_5bin": row["weighted_5bin"]["l1"],
+            "weighted_chi2_ndf_10bin": (
+                row["weighted_10bin"]["chi2"] / row["weighted_10bin"]["ndf"]
+                if row["weighted_10bin"]["ndf"] else None
+            ),
+            "weighted_chi2_ndf_5bin": (
+                row["weighted_5bin"]["chi2"] / row["weighted_5bin"]["ndf"]
+                if row["weighted_5bin"]["ndf"] else None
+            ),
+        })
+        flat_rows.append(flat)
+    with (output_dir / "variable_results.csv").open("w", newline="") as stream:
         writer = csv.DictWriter(stream, fields, extrasaction="ignore", lineterminator="\n")
-        writer.writeheader(); writer.writerows(ordered)
-    (output_dir / "agreement_summary.json").write_text(json.dumps(ordered, indent=2) + "\n")
+        writer.writeheader(); writer.writerows(flat_rows)
+    (output_dir / "variable_results.json").write_text(json.dumps(rows, indent=2) + "\n")
     status = "failed" if failures else ("passed_with_warnings" if warnings else "passed")
     validation = {
         "status": status, "expected_variables": len(VARIABLES),
         "completed_variables": len(rows), "failures": failures, "warnings": warnings,
         "bootstrap": False,
-        "ranking_scope": "descriptive 1D ranking within in-model R6 and held-out transfer categories",
-        "interpretation": "signed-sWeight metrics are descriptive; chi2 is not assigned a strict p-value",
+        "low_neff_override": allow_low_neff,
+        "effective_entries": quality["effective_entries"],
+        "ranking": "none",
+        "interpretation": (
+            "exploratory signed-sWeight per-variable results only; no ranking or shortlist; "
+            "chi2 is not assigned a strict p-value"
+        ),
     }
     (output_dir / "validation.json").write_text(json.dumps(validation, indent=2) + "\n")
     result_manifest = {
@@ -302,15 +362,18 @@ def aggregate(repo, manifest_path, output_dir):
         "promoted_result_manifest": str(result_path),
         "promoted_result_manifest_sha256": sha256(result_path),
         "output_dir": str(output_dir),
+        "source_run": str(input_dir),
+        "source_sweighted_data": str(sweighted_path),
+        "source_mc_cache": str(mc_path),
+        "low_neff_override": allow_low_neff,
+        "effective_entries": quality["effective_entries"],
         "artifacts": {
-            "run_context": str(output_dir / "run_context.json"),
-            "sweight_manifest": str(output_dir / "splot/sweight_manifest.json"),
-            "sweight_quality": str(output_dir / "splot/sweight_quality.json"),
-            "agreement_summary_csv": str(output_dir / "agreement_summary.csv"),
-            "agreement_summary_json": str(output_dir / "agreement_summary.json"),
+            "sweight_quality": str(input_dir / splot_subdir / "sweight_quality.json"),
+            "variable_results_csv": str(output_dir / "variable_results.csv"),
+            "variable_results_json": str(output_dir / "variable_results.json"),
             "validation": str(output_dir / "validation.json"),
         },
-        "variables": list(VARIABLES), "bootstrap": False,
+        "variables": list(VARIABLES), "bootstrap": False, "ranking": "none",
     }
     (output_dir / "result_manifest.json").write_text(json.dumps(result_manifest, indent=2) + "\n")
     print(json.dumps(validation, indent=2))
@@ -324,6 +387,9 @@ def main(argv=None):
     parser.add_argument("manifest", type=Path)
     parser.add_argument("output_dir", type=Path)
     parser.add_argument("variable", nargs="?")
+    parser.add_argument("--input-dir", type=Path)
+    parser.add_argument("--splot-subdir", default="splot")
+    parser.add_argument("--allow-low-neff", action="store_true")
     args = parser.parse_args(argv)
     repo = Path(__file__).resolve().parents[2]
     manifest_path = args.manifest.resolve()
@@ -334,9 +400,11 @@ def main(argv=None):
     elif args.mode == "analyze":
         if not args.variable:
             parser.error("analyze requires variable")
-        analyze(repo, manifest_path, args.output_dir, args.variable)
+        analyze(repo, manifest_path, args.output_dir, args.variable,
+                args.input_dir, args.splot_subdir, args.allow_low_neff)
     else:
-        aggregate(repo, manifest_path, args.output_dir)
+        aggregate(repo, manifest_path, args.output_dir, args.input_dir,
+                  args.splot_subdir, args.allow_low_neff)
     return 0
 
 
