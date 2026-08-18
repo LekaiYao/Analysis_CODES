@@ -41,7 +41,8 @@ const std::vector<std::string> kSPlotPhysicsBranches = {
 
 double drawFit(const char* path, RooDataSet& data, RooAbsPdf& model,
                RooAbsPdf& signal, RooAbsPdf& background, RooRealVar& mass,
-               const RooFitResult& fit, double yield, double yieldError) {
+               const RooFitResult& fit, double yield, double yieldError,
+               const char* pointLabel) {
     TCanvas canvas("cPsi2SSPlot", "", 900, 760);
     TPad top("top", "", 0, .28, 1, 1), bottom("bottom", "", 0, 0, 1, .28);
     top.SetLeftMargin(.13); top.SetBottomMargin(.02);
@@ -66,7 +67,7 @@ double drawFit(const char* path, RooDataSet& data, RooAbsPdf& model,
     legend.Draw();
     TPaveText stats(.58, .15, .94, .42, "NDC");
     stats.SetFillStyle(0); stats.SetBorderSize(0); stats.SetTextAlign(12);
-    stats.AddText("psi2seff30 nominal sPlot");
+    stats.AddText(Form("%s nominal sPlot", pointLabel));
     stats.AddText(Form("N_{#psi(2S)}=%.1f #pm %.1f", yield, yieldError));
     stats.AddText(Form("status/covQual=%d/%d", fit.status(), fit.covQual()));
     stats.AddText(Form("EDM=%.3g", fit.edm()));
@@ -91,7 +92,8 @@ double drawFit(const char* path, RooDataSet& data, RooAbsPdf& model,
 
 void PbPbPsi2SNominalSPlot(
     const char* dataCachePath, const char* dataTreeName,
-    const char* nominalWorkspacePath, const char* outputDirectory) {
+    const char* nominalWorkspacePath, const char* outputDirectory,
+    const char* pointLabel = "psi2seff30") {
     gSystem->mkdir(outputDirectory, true);
     TFile cacheFile(dataCachePath, "READ");
     auto* tree = dynamic_cast<TTree*>(cacheFile.Get(dataTreeName));
@@ -184,10 +186,11 @@ void PbPbPsi2SNominalSPlot(
     const double relativeClosure = yield != 0.0 ? std::abs(sumw - yield) / std::abs(yield) : 0.0;
     const double chi2 = drawFit(
         Form("%s/yield_only_fit.pdf", outputDirectory), data, *model, *signal,
-        *background, *mass, *yieldFit, yield, yieldError);
+        *background, *mass, *yieldFit, yield, yieldError, pointLabel);
 
     TFile eventOutput(Form("%s/sweighted_data.root", outputDirectory), "RECREATE");
-    TTree outputTree("ntmix_PSI2S_sWeight", "PbPb24 Psi2S xeff30 nominal sWeights");
+    TTree outputTree("ntmix_PSI2S_sWeight",
+                     Form("PbPb24 Psi2S %s nominal sWeights", pointLabel));
     double massValue = 0.0, predictionValue = 0.0, signalWeight = 0.0;
     ULong64_t sourceEntry = 0;
     std::vector<double> physicsValues(kSPlotPhysicsBranches.size(), 0.0);
