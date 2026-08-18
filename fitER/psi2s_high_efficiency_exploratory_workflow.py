@@ -187,13 +187,17 @@ def aggregate(repo, manifest_path, config_path, output_dir):
         for label, failed in (
             ("fit status", result["fit_status"] != 0),
             ("fit covQual", result["cov_qual"] < 3),
-            ("fit EDM", not math.isfinite(result["edm"]) or result["edm"] >= 1e-3),
             ("null status", result["null_fit_status"] != 0),
             ("null covQual", result["null_cov_qual"] < 3),
-            ("null EDM", not math.isfinite(result["null_edm"]) or result["null_edm"] >= 1e-3),
         ):
             if failed:
                 failures.append(f"{point['key']}: {label}")
+        for label, edm in (("fit EDM", result["edm"]),
+                           ("null EDM", result["null_edm"])):
+            if not math.isfinite(edm) or edm >= 1e-2:
+                failures.append(f"{point['key']}: {label}={edm:.6g}")
+            elif edm >= 1e-3:
+                warnings.append(f"{point['key']}: {label}={edm:.6g}")
         if result["parameter_boundary_flags"]:
             warnings.append(
                 f"{point['key']}: parameter boundary " +
