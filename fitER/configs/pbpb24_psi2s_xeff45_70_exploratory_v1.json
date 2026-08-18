@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "scope": "one_off_exploratory",
+  "excluded_from_regular_workflow": true,
+  "channel": "Psi2S",
+  "system": "PbPb",
+  "dataset": "pb24",
+  "train_tag": "Psi2S_pb24_v1_fid1_6v1_rwr6range4v1_xgb_v1",
+  "source_manifest_sha256": "bfff9be7bf19f0f68bcf3d049d16069fe8cbacaa15b17dc2388dd3cf56fac0de",
+  "threshold_derivation": {
+    "definition": "Reweight-weighted signal efficiency within the source manifest fiducial selection",
+    "comparison_operator": ">",
+    "threshold_boundary": "exclusive",
+    "source_tree": "ntmix_PSI2S",
+    "score_branch": "Prediction",
+    "weight_branch": "Reweight",
+    "validation": "same algorithm exactly reproduced all source-manifest xeff10--40 thresholds and achieved efficiencies"
+  },
+  "fit_contract": {
+    "fit_type": "extended_unbinned",
+    "data_event_weight": "unit",
+    "mass_range_gev": [3.6, 3.8],
+    "signal": {
+      "model": "single_gaussian",
+      "mean_initial_gev": 3.686097,
+      "mean_range_gev": [3.681097, 3.691097],
+      "sigma_initial_gev": 0.004,
+      "sigma_range_gev": [0.001, 0.008]
+    },
+    "background": {
+      "model": "chebyshev",
+      "order": 2,
+      "coefficient_ranges": {"a0": [-0.8, 0.8], "a1": [-0.8, 0.8]}
+    }
+  },
+  "working_points": [
+    {"key": "psi2seff45", "target_weighted_efficiency": 0.45, "threshold": 0.79401105642318726, "achieved_weighted_efficiency": 0.44999624620522494},
+    {"key": "psi2seff50", "target_weighted_efficiency": 0.50, "threshold": 0.75414574146270752, "achieved_weighted_efficiency": 0.49984143037436896},
+    {"key": "psi2seff55", "target_weighted_efficiency": 0.55, "threshold": 0.71500641107559204, "achieved_weighted_efficiency": 0.54992407715873648},
+    {"key": "psi2seff60", "target_weighted_efficiency": 0.60, "threshold": 0.68108558654785156, "achieved_weighted_efficiency": 0.59999262138987453},
+    {"key": "psi2seff65", "target_weighted_efficiency": 0.65, "threshold": 0.64862853288650513, "achieved_weighted_efficiency": 0.64998808265728647},
+    {"key": "psi2seff70", "target_weighted_efficiency": 0.70, "threshold": 0.61614137887954712, "achieved_weighted_efficiency": 0.69987362098037775}
+  ]
+}
