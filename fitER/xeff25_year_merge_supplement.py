@@ -9,19 +9,19 @@ from pathlib import Path
 from x_fit_scan_workflow import ROOT_BASE, root_string, run_root
 
 
-def run(base, output):
+def run(base, output, resume=False):
     repo = Path(__file__).resolve().parents[1]
     base = base.resolve()
     output = output.resolve()
-    if output.exists():
+    if output.exists() and not resume:
         raise RuntimeError(f"refusing to overwrite {output}")
     context = json.loads((base / "run_context.json").read_text())
     point = json.loads((base / "xeff25/point_manifest.json").read_text())
     if point.get("point") != "xeff25" or point.get("target_weighted_efficiency") != 0.25:
         raise RuntimeError("input point is not xeff25")
-    output.mkdir(parents=True)
+    output.mkdir(parents=True, exist_ok=resume)
     cache_dir = output / "cache"
-    cache_dir.mkdir()
+    cache_dir.mkdir(exist_ok=resume)
     paths = {category: Path(context["categories"][category]["cache_path"]) for category in ("pb23", "pb24")}
     trees = {category: context["categories"][category]["tree"] for category in ("pb23", "pb24")}
     selections = {
@@ -36,9 +36,10 @@ def run(base, output):
         f'"{root_string(paths["pb24"])}","{root_string(trees["pb24"])}","{root_string(selections["pb24"])}",'
         f'"{root_string(merged_root)}","ntmix","{root_string(merged_json)}")'
     )
-    status = run_root(repo / "fitER/PrepareXMergedFitCache.C", expression, output / "prepare_merged.log")
-    if status != 0 or not merged_json.is_file():
-        raise RuntimeError("merged cache preparation failed")
+    if not (resume and merged_root.is_file() and merged_json.is_file()):
+        status = run_root(repo / "fitER/PrepareXMergedFitCache.C", expression, output / "prepare_merged.log")
+        if status != 0 or not merged_json.is_file():
+            raise RuntimeError("merged cache preparation failed")
 
     fit_specs = {
         "pb23_only": (paths["pb23"], trees["pb23"], selections["pb23"]),
@@ -47,14 +48,17 @@ def run(base, output):
     results = {}
     for key, (data_path, tree, selection) in fit_specs.items():
         fit_dir = output / key
-        fit_dir.mkdir()
+        fit_dir.mkdir(exist_ok=resume)
+        result_path = fit_dir / "fit_result.json"
+        if resume and result_path.is_file():
+            results[key] = json.loads(result_path.read_text())
+            continue
         fit_expression = (
             'PbPbXDataGaussianFit.C++('
             f'"xeff25_{key}","{root_string(data_path)}","{root_string(tree)}","{root_string(selection)}",'
             f'3.8,3.94,3.86,3.88,0.002,0.008,2,28,"{root_string(fit_dir)}")'
         )
         status = run_root(repo / "fitER/PbPbXDataGaussianFit.C", fit_expression, fit_dir / "fit.log")
-        result_path = fit_dir / "fit_result.json"
         if status != 0 or not result_path.is_file():
             raise RuntimeError(f"{key} fit failed")
         results[key] = json.loads(result_path.read_text())
@@ -98,8 +102,9 @@ def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("simultaneous_result", type=Path)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--resume", action="store_true")
     args = parser.parse_args(argv)
-    run(args.simultaneous_result, args.output)
+    run(args.simultaneous_result, args.output, args.resume)
     return 0
 
 
