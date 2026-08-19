@@ -160,8 +160,8 @@ void PbPbXSimultaneousYearFit(const char* key,
 
     TH1D merged("merged","PbPb23 + PbPb24 mass display (not a merged fit);m_{J/#psi#pi^{+}#pi^{-}} [GeV];Candidates / 5 MeV",massBins,massMin,massMax);
     d23.fillHistogram(&merged,RooArgList(mass)); d24.fillHistogram(&merged,RooArgList(mass));
-    TCanvas cm("merged_display","",900,650); merged.SetMarkerStyle(20); merged.SetLineColor(kBlack); merged.Draw("E1");
-    TPaveText note(.55,.76,.91,.89,"NDC"); note.SetFillStyle(0);note.SetBorderSize(0);note.AddText(key);note.AddText("Display only: no merged likelihood");note.Draw();
+    TCanvas cm("merged_display","",900,650); merged.SetStats(false); merged.SetMarkerStyle(20); merged.SetLineColor(kBlack); merged.Draw("E1");
+    TPaveText note(.55,.76,.91,.89,"NDC"); note.SetFillColor(kWhite);note.SetFillStyle(1001);note.SetBorderSize(0);note.AddText(key);note.AddText("Display only: no merged likelihood");note.Draw();
     cm.SaveAs(Form("%s/merged_mass_display.pdf",outputDirectory));
 
     TFile out(Form("%s/fit_workspace.root",outputDirectory),"RECREATE"); RooWorkspace ws("ws_simultaneous_years","ws_simultaneous_years");
