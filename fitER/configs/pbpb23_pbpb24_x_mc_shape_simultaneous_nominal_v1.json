@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "decision": "promote_to_nominal",
+  "decision_date": "2026-08-24",
+  "decision_authority": "user_confirmed",
+  "channel": "X",
+  "system": "PbPb23+PbPb24",
+  "anchor_train_tag": "X_pb23_v3_fid3_6v5_rwr6range5v1_xgb_v1",
+  "paired_train_tag": "X_pb24_v19_fid19_6v5_rwr6range5v1_xgb_v1",
+  "analysis_variant": "category_specific_reweighted_mc_double_gaussian_simultaneous_nominal_v1",
+  "supersedes_analysis_variant": "data_only_single_gaussian_simultaneous_phase1_v1",
+  "decision_reason": "Extend the single-year MC-constrained nominal model to both years so sparse DATA does not independently determine each year's signal shape.",
+  "input_interface_status": "versioned_manifest_delivered_and_accepted",
+  "input_request": "docs/requests/4ML/closed/2026-08-24_pbpb23_pbpb24_x_mc_shape_nominal_manifest.md",
+  "input_manifest": "../XGBoost/output/selected/X_pb23_v3_fid3_6v5_rwr6range5v1_xgb_v1/fit_scan_manifest.pb23_pb24_simultaneous_mc_shape_nominal_v2.json",
+  "input_manifest_sha256": "bdab59517264b82f4333d5250da1892a8bbb7ad5924fe264865bca69f6f54314",
+  "historical_data_only_manifest": "../XGBoost/output/selected/X_pb23_v3_fid3_6v5_rwr6range5v1_xgb_v1/fit_scan_manifest.pb23_pb24_simultaneous_v1.json",
+  "fit_contract": {
+    "fit_type": "simultaneous_extended_unbinned",
+    "mass_range_gev": [3.8, 3.94],
+    "shared_parameters": ["data_signal_mean"],
+    "category_specific_parameters": [
+      "mc_signal_mean",
+      "mc_sigma1",
+      "mc_sigma2",
+      "mc_fraction",
+      "data_mc_width_scale",
+      "signal_yield",
+      "background_yield",
+      "background_coefficients"
+    ],
+    "signal_mc": {
+      "model": "common-mean double Gaussian fitted independently by year",
+      "fit_range_gev": [3.84, 3.90],
+      "event_weight_branch": "Reweight",
+      "mean_nominal_gev": 3.87169,
+      "mean_half_range_gev": 0.005,
+      "sigma1_range_gev": [0.001, 0.1],
+      "sigma2_range_gev": [0.001, 0.1],
+      "fraction_range": [0.01, 1.0],
+      "fit_quality": {
+        "chi2_bin_widths_mev": [5.0, 1.0],
+        "range": "same as signal_mc.fit_range_gev",
+        "interpretation": "record-only; parameter boundaries are also recorded and neither is an automatic rejection criterion"
+      }
+    },
+    "data": {
+      "signal_shape_by_category": "corresponding-year MC sigma1, sigma2 and fraction fixed",
+      "signal_mean": "one shared floating mean across PbPb23 and PbPb24",
+      "data_mc_width_scale": "independent by year",
+      "data_mc_width_scale_range": [0.9, 1.5],
+      "signal_yields": "independent nonnegative by year",
+      "background": "independent second-order Chebyshev by year"
+    },
+    "working_points": "seven common weighted-X-efficiency points with year-specific thresholds"
+  },
+  "execution_policy": {
+    "status": "consumer_implemented_and_previous_seven_point_run_available",
+    "production_output": "fitER/results/pbpb_x_simultaneous_year_fit/X_pb23_v3_fid3_6v5_rwr6range5v1_xgb_v1/mc_shape_nominal_v2_fit_only_sqrtq0/",
+    "rerun_policy": "The 2026-08-25 peak-range and dual-chi2 consumer update is verified in isolated scratch; do not overwrite the previous production output. A full rerun requires an explicit user trigger.",
+    "data_only_compatibility": "Historical H027 phase-1 remains reproducible but is no longer nominal.",
+    "significance": "Changing the fit model does not authorize toys, boundary calibration, seven-point trials or a final working-point choice."
+  }
+}
