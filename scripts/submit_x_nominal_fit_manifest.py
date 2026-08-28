@@ -12,15 +12,22 @@ REPO = Path(__file__).resolve().parents[1]
 WORKFLOW = REPO / "fitER/x_fit_scan_workflow.py"
 AFS_ROOT = Path("/afs/cern.ch/user/l/leyao/private/pbpb_work/Analysis_CODES")
 EOS_RESULTS_ROOT = REPO / "fitER/results/manifest_driven_nominal_fit"
-SUPPORTED_CONTRACT = "pbpb24_x_data_only_nominal_fit_scan"
+SUPPORTED_CONTRACT = "pbpb24_x_weighted_efficiency_fit_scan"
+DATA_ONLY_COMPAT_CONTRACT = "pbpb24_x_data_only_nominal_fit_scan"
 SUPPORTED_SCHEMA = 2
+NOMINAL_WIDTH_SCALE_RANGE = [0.9, 1.5]
 POINTS = ("xeff10", "xeff15", "xeff20", "xeff25", "xeff30", "xeff35", "xeff40")
 
 
-def load_task(manifest_path):
+def load_task(manifest_path, allow_data_only_compat=False):
     manifest = json.loads(manifest_path.read_text())
-    if manifest.get("contract") != SUPPORTED_CONTRACT:
+    contract = manifest.get("contract")
+    if contract not in (SUPPORTED_CONTRACT, DATA_ONLY_COMPAT_CONTRACT):
         raise RuntimeError(f"unsupported contract: {manifest.get('contract')}")
+    if contract == DATA_ONLY_COMPAT_CONTRACT and not allow_data_only_compat:
+        raise RuntimeError(
+            "DATA-only contract is compatibility-only; pass --allow-data-only-compat"
+        )
     if manifest.get("schema_version") != SUPPORTED_SCHEMA:
         raise RuntimeError(f"unsupported schema_version: {manifest.get('schema_version')}")
     tag = manifest.get("train_tag", "")
@@ -29,9 +36,20 @@ def load_task(manifest_path):
     keys = tuple(point.get("key") for point in manifest.get("working_points", []))
     if keys != POINTS:
         raise RuntimeError(f"expected working points {POINTS}, got {keys}")
-    sigma_range = manifest["nominal_fit_contract"]["signal"]["sigma_gev"]["range"]
-    if sigma_range != [0.002, 0.008]:
-        raise RuntimeError(f"unsupported sigma range: {sigma_range}")
+    if contract == SUPPORTED_CONTRACT:
+        fit = manifest["fit_contract"]
+        width_range = fit.get("data_mc_width_scale_range")
+        if width_range != NOMINAL_WIDTH_SCALE_RANGE:
+            raise RuntimeError(f"unsupported nominal width-scale range: {width_range}")
+        if fit.get("signal_model") != "double Gaussian fitted to the scored signal MC":
+            raise RuntimeError(f"unsupported nominal signal model: {fit.get('signal_model')}")
+        signal_mc = manifest.get("inputs", {}).get("signal_mc", {})
+        if not signal_mc.get("path") or not signal_mc.get("tree"):
+            raise RuntimeError("nominal MC-shape contract requires signal_mc path/tree")
+    else:
+        sigma_range = manifest["nominal_fit_contract"]["signal"]["sigma_gev"]["range"]
+        if sigma_range != [0.002, 0.008]:
+            raise RuntimeError(f"unsupported compatibility sigma range: {sigma_range}")
     return manifest, tag
 
 
@@ -54,9 +72,13 @@ queue 1
 """
 
 
-def create_submission(manifest_path, label):
+def create_submission(manifest_path, label=None, allow_data_only_compat=False):
     manifest_path = manifest_path.resolve()
-    _, tag = load_task(manifest_path)
+    manifest, tag = load_task(manifest_path, allow_data_only_compat)
+    if label is None:
+        label = ("mc_shape_nominal_widthscale0p9_1p5_v1"
+                 if manifest["contract"] == SUPPORTED_CONTRACT
+                 else "data_only_compat_v2")
     run_name = f"{tag}_{label}"
     submission_dir = AFS_ROOT / run_name
     output_dir = EOS_RESULTS_ROOT / tag / label
@@ -94,7 +116,7 @@ def create_submission(manifest_path, label):
     ])
     (submission_dir / "fit_scan.dag").write_text("\n".join(lines) + "\n")
     task = {
-        "contract": SUPPORTED_CONTRACT,
+        "contract": manifest["contract"],
         "schema_version": SUPPORTED_SCHEMA,
         "train_tag": tag,
         "input_manifest": str(manifest_path),
@@ -108,13 +130,17 @@ def create_submission(manifest_path, label):
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("manifest", type=Path)
-    parser.add_argument("--label", default="data_only_nominal_v2")
+    parser.add_argument("--label")
+    parser.add_argument("--allow-data-only-compat", action="store_true")
     parser.add_argument("--submit", action="store_true")
     args = parser.parse_args(argv)
-    task = create_submission(args.manifest, args.label)
+    task = create_submission(args.manifest, args.label, args.allow_data_only_compat)
     if args.submit:
+        batch_prefix = ("XNominalMC" if task["contract"] == SUPPORTED_CONTRACT
+                        else "XDataOnlyCompat")
         result = subprocess.run(
-            ["condor_submit_dag", "-batch-name", f"H021_{task['train_tag']}", "fit_scan.dag"],
+            ["condor_submit_dag", "-batch-name", f"{batch_prefix}_{task['train_tag']}",
+             "fit_scan.dag"],
             cwd=task["submission_dir"], text=True, stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )

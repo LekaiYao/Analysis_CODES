@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PREPARE/FIT/AGGREGATE nodes for the H019 manifest fit scan."""
+"""PREPARE/FIT/AGGREGATE nodes for manifest-driven PbPb24 X fit scans."""
 
 import argparse
 import csv
@@ -27,7 +27,7 @@ DATA_ONLY_SIGNIFICANCE_METHOD = (
     "q0=2*(NLL_null-NLL_alt), null nsig=0, signal mean and sigma "
     "fixed at the alternative best fit, background reprofiled"
 )
-LEGACY_CONTRACT = "pbpb24_x_weighted_efficiency_fit_scan"
+MC_SHAPE_CONTRACT = "pbpb24_x_weighted_efficiency_fit_scan"
 DATA_ONLY_CONTRACT = "pbpb24_x_data_only_nominal_fit_scan"
 DATA_ONLY_SIGMA_RANGE_V2 = [0.002, 0.008]
 
@@ -38,7 +38,7 @@ def load_manifest(path):
         if key not in manifest:
             raise RuntimeError(f"manifest missing {key}")
     contract = manifest.get("contract")
-    if contract not in (LEGACY_CONTRACT, DATA_ONLY_CONTRACT):
+    if contract not in (MC_SHAPE_CONTRACT, DATA_ONLY_CONTRACT):
         raise RuntimeError("unsupported manifest contract")
     fit_key = "nominal_fit_contract" if contract == DATA_ONLY_CONTRACT else "fit_contract"
     if fit_key not in manifest:
@@ -292,7 +292,11 @@ def aggregate(repo, manifest_path, manifest, output_dir):
         "train_tag", "key", "target_weighted_efficiency", "achieved_weighted_efficiency",
         "score_threshold", "data_entries", "signal_mc_entries", "signal_yield",
         "signal_yield_error", "local_significance", "q0", "fit_status", "cov_qual",
-        "edm", "parameter_boundary", "mean", "sigma", "width_scale", "chi2_ndf",
+        "edm", "parameter_boundary", "signal_yield_at_boundary",
+        "background_yield_at_boundary", "mean_at_boundary",
+        "width_scale_at_boundary", "chebyshev_a0_at_boundary",
+        "chebyshev_a1_at_boundary", "signal_mc_parameter_boundary",
+        "mean", "sigma", "width_scale", "chi2_ndf",
     ]
     with (output_dir / "fit_summary.csv").open("w", newline="") as stream:
         writer = csv.DictWriter(stream, fields, lineterminator="\n")

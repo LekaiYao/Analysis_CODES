@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "decision": "promote_to_nominal",
+  "decision_date": "2026-08-24",
+  "decision_authority": "user_confirmed",
+  "channel": "X",
+  "system": "PbPb",
+  "dataset": "pb24",
+  "train_tag": "X_pb24_v19_fid19_6v5_rwr6range5v1_xgb_v1",
+  "analysis_variant": "reweighted_mc_double_gaussian_widthscale0p9_1p5_nominal_v1",
+  "supersedes_analysis_variant": "data_only_single_gaussian_sigma2_8mev_nominal_v2",
+  "decision_reason": "Prefer the scored and Reweight-weighted signal MC peak shape and reduce instability from sparse DATA determining the signal shape.",
+  "source_fit_manifest": "fitER/results/manifest_driven_nominal_fit/X_pb24_v19_fid19_6v5_rwr6range5v1_xgb_v1/legacy_mc_shape_widthscale150_v4/derived_legacy_manifest.json",
+  "source_result_manifest": "fitER/results/manifest_driven_nominal_fit/X_pb24_v19_fid19_6v5_rwr6range5v1_xgb_v1/legacy_mc_shape_widthscale150_v4/manifest.json",
+  "source_summary": "fitER/results/manifest_driven_nominal_fit/X_pb24_v19_fid19_6v5_rwr6range5v1_xgb_v1/legacy_mc_shape_widthscale150_v4/fit_summary.csv",
+  "fit_contract": {
+    "fit_type": "extended_unbinned",
+    "mass_range_gev": [3.8, 3.94],
+    "signal_mc": {
+      "model": "common-mean double Gaussian",
+      "event_weight_branch": "Reweight",
+      "mean_nominal_gev": 3.87169,
+      "mean_half_range_gev": 0.005,
+      "sigma1_range_gev": [0.001, 0.1],
+      "sigma2_range_gev": [0.001, 0.1],
+      "fraction_range": [0.01, 1.0]
+    },
+    "data": {
+      "signal_shape": "MC sigma1, sigma2 and fraction fixed; common mean floats",
+      "mc_width_scale_range": [0.9, 1.5],
+      "signal_yield_range": "nonnegative",
+      "background_model": "second-order Chebyshev"
+    },
+    "significance": "one-sided local profile-likelihood sqrt(max(0,q0)); null signal yield fixed to zero, signal mean and width scale fixed at alternative best fit, background reprofiled"
+  },
+  "known_limitations": [
+    "The width scale is at a boundary for all seven v19 working points: xeff10 at 0.9 and xeff15-xeff40 at 1.5.",
+    "The xeff40 single-start result is an inferior local minimum relative to the earlier 1.15-range solution and is not valid for physical ranking.",
+    "Nominal model status does not select a final working point and does not calibrate local or global significance.",
+    "A multi-start or width-scale profile scan requires separate user confirmation before changing the minimization strategy."
+  ]
+}

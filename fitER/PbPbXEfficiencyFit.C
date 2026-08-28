@@ -45,25 +45,94 @@ bool atBoundary(const RooRealVar& value)
          std::abs(value.getVal() - value.getMax()) <= tolerance);
 }
 
-void drawMc(const char* outputPath, RooDataSet& mc, RooAbsPdf& signal,
-            RooRealVar& mass, int bins, const RooFitResult& fit)
+constexpr double kMcPeakFitMin = 3.84;
+constexpr double kMcPeakFitMax = 3.90;
+constexpr int kMcChi2Bins5MeV = 12;
+constexpr int kMcChi2Bins1MeV = 60;
+
+struct McPlotQuality {
+    double chi2Ndf5MeV = 0.0;
+    double chi2Ndf1MeV = 0.0;
+    double maxAbsPull1MeV = 0.0;
+};
+
+McPlotQuality drawMc(const char* outputPath, RooDataSet& mc, RooAbsPdf& signal,
+                     RooRealVar& mass, const RooFitResult& fit,
+                     double mean, double sigma1, double sigma2, double fraction)
 {
-    TCanvas canvas("cH019Mc", "", 850, 700);
-    canvas.SetLeftMargin(0.13);
-    std::unique_ptr<RooPlot> frame(mass.frame(Bins(bins)));
+    mass.setRange("mc_peak_quality", kMcPeakFitMin, kMcPeakFitMax);
+    auto calculateChi2 = [&](int bins, const char* suffix) {
+        std::unique_ptr<RooPlot> qualityFrame(mass.frame(
+            Range(kMcPeakFitMin, kMcPeakFitMax), Bins(bins)));
+        mc.plotOn(qualityFrame.get(), Name(Form("mc_chi2_%s", suffix)),
+                  DataError(RooAbsData::SumW2));
+        signal.plotOn(qualityFrame.get(), Name(Form("signal_chi2_%s", suffix)),
+                      Range("mc_peak_quality"), NormRange("mc_peak_quality"));
+        return qualityFrame->chiSquare(Form("signal_chi2_%s", suffix),
+                                       Form("mc_chi2_%s", suffix),
+                                       fit.floatParsFinal().getSize());
+    };
+    McPlotQuality quality;
+    quality.chi2Ndf5MeV = calculateChi2(kMcChi2Bins5MeV, "5mev");
+    quality.chi2Ndf1MeV = calculateChi2(kMcChi2Bins1MeV, "1mev");
+
+    TCanvas canvas("cH019Mc", "", 900, 760);
+    TPad mainPad("mcMainPad", "", 0.0, 0.28, 1.0, 1.0);
+    TPad pullPad("mcPullPad", "", 0.0, 0.0, 1.0, 0.28);
+    mainPad.SetLeftMargin(0.13); mainPad.SetBottomMargin(0.02);
+    pullPad.SetLeftMargin(0.13); pullPad.SetBottomMargin(0.34);
+    pullPad.SetTopMargin(0.02);
+    mainPad.Draw(); pullPad.Draw(); mainPad.cd();
+    std::unique_ptr<RooPlot> frame(mass.frame(
+        Range(kMcPeakFitMin, kMcPeakFitMax), Bins(kMcChi2Bins1MeV)));
     mc.plotOn(frame.get(), Name("mc"), DataError(RooAbsData::SumW2));
-    signal.plotOn(frame.get(), Name("signal"), LineColor(kOrange + 7), LineWidth(2));
+    signal.plotOn(frame.get(), Name("signal"), LineColor(kOrange + 7), LineWidth(2),
+                  Range("mc_peak_quality"), NormRange("mc_peak_quality"));
     frame->SetTitle("");
-    frame->GetXaxis()->SetTitle("m_{J/#psi#pi^{+}#pi^{-}} [GeV]");
-    frame->GetYaxis()->SetTitle("Weighted candidates / 5 MeV");
+    frame->GetXaxis()->SetLabelSize(0.0); frame->GetXaxis()->SetTitle("");
+    frame->GetYaxis()->SetTitle("Weighted X MC / 1 MeV");
     frame->Draw();
-    TPaveText stats(0.61, 0.72, 0.93, 0.89, "NDC");
+    TPaveText stats(0.55, 0.56, 0.94, 0.90, "NDC");
     stats.SetFillStyle(0); stats.SetBorderSize(0); stats.SetTextAlign(12);
     stats.AddText("Weighted X signal MC");
     stats.AddText(Form("status/covQual=%d/%d", fit.status(), fit.covQual()));
     stats.AddText(Form("EDM=%.3g", fit.edm()));
+    stats.AddText(Form("#mu=%.6f GeV", mean));
+    stats.AddText(Form("#sigma_{1}/#sigma_{2}=%.3f/%.3f MeV", 1000.0*sigma1,
+                       1000.0*sigma2));
+    stats.AddText(Form("f_{1}=%.4f", fraction));
+    stats.AddText("fit range=[3.84,3.90] GeV");
+    stats.AddText(Form("5 MeV #chi^{2}/ndf=%.3f", quality.chi2Ndf5MeV));
+    stats.AddText(Form("1 MeV #chi^{2}/ndf=%.3f", quality.chi2Ndf1MeV));
     stats.Draw();
+
+    pullPad.cd();
+    RooHist* pull = frame->pullHist("mc", "signal");
+    for (int i = 0; pull && i < pull->GetN(); ++i) {
+        double x = 0.0, y = 0.0;
+        pull->GetPoint(i, x, y);
+        if (std::isfinite(y)) {
+            quality.maxAbsPull1MeV = std::max(quality.maxAbsPull1MeV, std::abs(y));
+        }
+    }
+    std::unique_ptr<RooPlot> pullFrame(mass.frame(
+        Range(kMcPeakFitMin, kMcPeakFitMax), Bins(kMcChi2Bins1MeV)));
+    pullFrame->addPlotable(pull, "P"); pullFrame->SetTitle("");
+    pullFrame->GetYaxis()->SetTitle("Pull");
+    const double pullLimit = std::max(6.0, std::ceil(quality.maxAbsPull1MeV + 0.5));
+    pullFrame->GetYaxis()->SetRangeUser(-pullLimit, pullLimit);
+    pullFrame->GetYaxis()->SetNdivisions(305);
+    pullFrame->GetYaxis()->SetTitleSize(0.12);
+    pullFrame->GetYaxis()->SetLabelSize(0.10);
+    pullFrame->GetYaxis()->SetTitleOffset(0.45);
+    pullFrame->GetXaxis()->SetTitle("m_{J/#psi#pi^{+}#pi^{-}} [GeV]");
+    pullFrame->GetXaxis()->SetTitleSize(0.12);
+    pullFrame->GetXaxis()->SetLabelSize(0.10);
+    pullFrame->Draw();
+    TLine zero(kMcPeakFitMin, 0.0, kMcPeakFitMax, 0.0);
+    zero.SetLineColor(kRed + 1); zero.Draw("same");
     canvas.SaveAs(outputPath);
+    return quality;
 }
 
 double drawData(const char* outputPath, const char* key, RooDataSet& data,
@@ -151,7 +220,7 @@ void PbPbXEfficiencyFit(
     auto* dataSource = dynamic_cast<TTree*>(dataFile.Get(dataTree));
     auto* signalSource = dynamic_cast<TTree*>(signalFile.Get(signalTree));
     if (!dataSource || !signalSource || !signalSource->GetBranch(weightBranch)) {
-        std::cerr << "[H019 fit] missing tree or Reweight" << std::endl;
+        std::cerr << "[X MC-shape single-year fit] missing tree or Reweight" << std::endl;
         gSystem->Exit(2); return;
     }
     gROOT->cd();
@@ -159,14 +228,13 @@ void PbPbXEfficiencyFit(
     std::unique_ptr<TTree> signalTreeSelected(signalSource->CopyTree(signalCut));
     if (!dataTreeSelected || !signalTreeSelected || dataTreeSelected->GetEntries() == 0 ||
         signalTreeSelected->GetEntries() == 0) {
-        std::cerr << "[H019 fit] empty selected sample" << std::endl;
+        std::cerr << "[X MC-shape single-year fit] empty selected sample" << std::endl;
         gSystem->Exit(3); return;
     }
 
     RooRealVar mass("Bmass", "Bmass", massMin, massMax);
     mass.setRange("all", massMin, massMax);
-    mass.setRange("signal", std::max(massMin, meanNominal - 0.035),
-                  std::min(massMax, meanNominal + 0.035));
+    mass.setRange("signal", kMcPeakFitMin, kMcPeakFitMax);
     RooRealVar weight(weightBranch, weightBranch, -1.e6, 1.e6);
     RooDataSet data("data", "data", dataTreeSelected.get(), RooArgSet(mass));
     RooDataSet mc("mc", "mc", signalTreeSelected.get(), RooArgSet(mass, weight),
@@ -188,6 +256,20 @@ void PbPbXEfficiencyFit(
         mc, Save(), Range("signal"), SumW2Error(false), PrintLevel(-1),
         Warnings(false), Verbose(false), Strategy(2), Hesse(true)));
     if (!mcFit) { gSystem->Exit(4); return; }
+    const double mcMean = mean.getVal();
+    const double mcMeanError = mean.getError();
+    const double mcSigma1 = sigma1.getVal();
+    const double mcSigma1Error = sigma1.getError();
+    const double mcSigma2 = sigma2.getVal();
+    const double mcSigma2Error = sigma2.getError();
+    const double mcFraction = fraction.getVal();
+    const double mcFractionError = fraction.getError();
+    const bool mcMeanBoundary = atBoundary(mean);
+    const bool mcSigma1Boundary = atBoundary(sigma1);
+    const bool mcSigma2Boundary = atBoundary(sigma2);
+    const bool mcFractionBoundary = atBoundary(fraction);
+    const bool mcParameterBoundary = mcMeanBoundary || mcSigma1Boundary ||
+        mcSigma2Boundary || mcFractionBoundary;
     sigma1.setConstant(true); sigma2.setConstant(true); fraction.setConstant(true);
     scale.setConstant(false);
 
@@ -214,8 +296,14 @@ void PbPbXEfficiencyFit(
     const double altA1 = a1.getVal();
     const double altNbkg = nbkg.getVal();
     const double altNll = altFit->minNll();
-    const bool boundary = atBoundary(nsig) || atBoundary(nbkg) || atBoundary(mean) ||
-                          atBoundary(scale) || atBoundary(a0) || atBoundary(a1);
+    const bool nsigBoundary = atBoundary(nsig);
+    const bool nbkgBoundary = atBoundary(nbkg);
+    const bool meanBoundary = atBoundary(mean);
+    const bool scaleBoundary = atBoundary(scale);
+    const bool a0Boundary = atBoundary(a0);
+    const bool a1Boundary = atBoundary(a1);
+    const bool boundary = nsigBoundary || nbkgBoundary || meanBoundary ||
+                          scaleBoundary || a0Boundary || a1Boundary;
 
     nsig.setVal(0.0); nsig.setConstant(true);
     mean.setVal(altMean); mean.setConstant(true);
@@ -232,8 +320,11 @@ void PbPbXEfficiencyFit(
     nsig.setVal(altYield); nsig.setError(altYieldError);
     mean.setVal(altMean); scale.setVal(altScale); a0.setVal(altA0);
     a1.setVal(altA1); nbkg.setVal(altNbkg);
-    drawMc(Form("%s/mc_template_fit.pdf", outputDirectory), mc, signal, mass,
-           massBins, *mcFit);
+    mean.setVal(mcMean); scale.setVal(1.0);
+    const McPlotQuality mcQuality = drawMc(
+        Form("%s/mc_template_fit.pdf", outputDirectory), mc, signal, mass,
+        *mcFit, mcMean, mcSigma1, mcSigma2, mcFraction);
+    mean.setVal(altMean); scale.setVal(altScale);
     const double chi2Ndf = drawData(
         Form("%s/data_fit.pdf", outputDirectory), key, data, model, signal,
         background, mass, massBins, *altFit, z);
@@ -242,6 +333,7 @@ void PbPbXEfficiencyFit(
     RooWorkspace workspace("ws_nominal", "ws_nominal");
     workspace.import(data); workspace.import(mc); workspace.import(model);
     workspace.Write();
+    mcFit->Write("fit_result_mc");
     altFit->Write("fit_result_alt");
     if (nullFit) nullFit->Write("fit_result_null");
     outputRoot.Close();
@@ -268,10 +360,47 @@ void PbPbXEfficiencyFit(
          << "  \"signal_mc_fit_status\": " << mcFit->status() << ",\n"
          << "  \"signal_mc_cov_qual\": " << mcFit->covQual() << ",\n"
          << "  \"signal_mc_edm\": " << mcFit->edm() << ",\n"
+         << "  \"signal_mc_min_nll\": " << mcFit->minNll() << ",\n"
+         << "  \"signal_mc_parameter_boundary\": "
+         << (mcParameterBoundary ? "true" : "false") << ",\n"
+         << "  \"signal_mc_mean\": " << mcMean << ",\n"
+         << "  \"signal_mc_mean_error\": " << mcMeanError << ",\n"
+         << "  \"signal_mc_mean_at_boundary\": "
+         << (mcMeanBoundary ? "true" : "false") << ",\n"
+         << "  \"signal_mc_sigma1\": " << mcSigma1 << ",\n"
+         << "  \"signal_mc_sigma1_error\": " << mcSigma1Error << ",\n"
+         << "  \"signal_mc_sigma1_at_boundary\": "
+         << (mcSigma1Boundary ? "true" : "false") << ",\n"
+         << "  \"signal_mc_sigma2\": " << mcSigma2 << ",\n"
+         << "  \"signal_mc_sigma2_error\": " << mcSigma2Error << ",\n"
+         << "  \"signal_mc_sigma2_at_boundary\": "
+         << (mcSigma2Boundary ? "true" : "false") << ",\n"
+         << "  \"signal_mc_fraction\": " << mcFraction << ",\n"
+         << "  \"signal_mc_fraction_error\": " << mcFractionError << ",\n"
+         << "  \"signal_mc_fraction_at_boundary\": "
+         << (mcFractionBoundary ? "true" : "false") << ",\n"
+         << "  \"signal_mc_fit_range_gev\": [" << kMcPeakFitMin << ", "
+         << kMcPeakFitMax << "],\n"
+         << "  \"signal_mc_chi2_ndf\": " << mcQuality.chi2Ndf5MeV << ",\n"
+         << "  \"signal_mc_chi2_ndf_5mev\": " << mcQuality.chi2Ndf5MeV << ",\n"
+         << "  \"signal_mc_chi2_ndf_1mev\": " << mcQuality.chi2Ndf1MeV << ",\n"
+         << "  \"signal_mc_max_abs_pull_1mev\": " << mcQuality.maxAbsPull1MeV << ",\n"
          << "  \"fit_status\": " << altFit->status() << ",\n"
          << "  \"cov_qual\": " << altFit->covQual() << ",\n"
          << "  \"edm\": " << altFit->edm() << ",\n"
          << "  \"parameter_boundary\": " << (boundary ? "true" : "false") << ",\n"
+         << "  \"signal_yield_at_boundary\": "
+         << (nsigBoundary ? "true" : "false") << ",\n"
+         << "  \"background_yield_at_boundary\": "
+         << (nbkgBoundary ? "true" : "false") << ",\n"
+         << "  \"mean_at_boundary\": "
+         << (meanBoundary ? "true" : "false") << ",\n"
+         << "  \"width_scale_at_boundary\": "
+         << (scaleBoundary ? "true" : "false") << ",\n"
+         << "  \"chebyshev_a0_at_boundary\": "
+         << (a0Boundary ? "true" : "false") << ",\n"
+         << "  \"chebyshev_a1_at_boundary\": "
+         << (a1Boundary ? "true" : "false") << ",\n"
          << "  \"signal_yield\": " << altYield << ",\n"
          << "  \"signal_yield_error\": " << altYieldError << ",\n"
          << "  \"background_yield\": " << altNbkg << ",\n"
@@ -288,7 +417,7 @@ void PbPbXEfficiencyFit(
          << "  \"local_significance\": " << z << ",\n"
          << "  \"chi2_ndf\": " << chi2Ndf << "\n"
          << "}\n";
-    std::cout << "[H019 fit] " << key << " DATA=" << data.numEntries()
+    std::cout << "[X MC-shape single-year fit] " << key << " DATA=" << data.numEntries()
               << " yield=" << altYield << " +/- " << altYieldError
               << " Z=" << z << " status/covQual=" << altFit->status()
               << '/' << altFit->covQual() << std::endl;
