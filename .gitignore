@@ -77,5 +77,6 @@ selectionER/optimalCUT.local.conf
 /docs/
 .manifest_runs/
 
-/plotER/Validation/results/ppRef_X_r5_splot/
-/plotER/Validation/results/pbpb24_psi2s_splot_validation/
+/fitER/results_archive/
+/plotER/Validation/results/
+/tmp/
