@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Independent PREPARE/FIT/AGGREGATE consumer for the PbPb23+PbPb24 phase-1 scan."""
+"""Historical DATA-only PbPb23+PbPb24 phase-1 compatibility consumer."""
 
 import argparse
 import csv
@@ -69,7 +69,7 @@ def prepare(repo, manifest_path, manifest, output_dir):
     broadest = manifest["working_points"][-1]
     context = {
         "contract": CONTRACT,
-        "phase": "phase1_fast_test",
+        "phase": "phase1_data_only_compatibility",
         "input_manifest": str(manifest_path),
         "input_manifest_sha256": sha256(manifest_path),
         "cache_invalidation": "invalidate when manifest, source DATA metadata, tree, broadest selection, or mass range changes",
@@ -189,7 +189,7 @@ def make_plot(output_dir, rows):
     axes[1].set_ylabel("Fitted raw X yield"); axes[1].legend(frameon=False)
     for axis in axes:
         axis.set_xlabel("Target weighted X efficiency [%]"); axis.grid(alpha=.25)
-    fig.suptitle("PbPb23+PbPb24 phase-1 scan: no toys, p0, LEE or global Z")
+    fig.suptitle("PbPb23+PbPb24 DATA-only compatibility: no toys, p0, LEE or global Z")
     fig.savefig(output_dir / "fit_scan_summary.pdf"); fig.savefig(output_dir / "fit_scan_summary.png",dpi=180); plt.close(fig)
 
 
@@ -227,7 +227,7 @@ def aggregate(repo, manifest_path, manifest, output_dir):
     validation={"status":"complete" if complete==len(POINTS) else "incomplete","expected_points":len(POINTS),"completed_points":complete,"warnings":warnings,"interpretation":"exploratory approximate local Z; report all points; no automatic working-point selection"}
     (output_dir / "validation.json").write_text(json.dumps(validation,indent=2)+"\n")
     result_manifest={
-        "schema_version":1,"contract":"pbpb_x_simultaneous_year_fit_scan_phase1_result","status":validation["status"],
+        "schema_version":1,"contract":"pbpb_x_simultaneous_year_data_only_compatibility_result","status":validation["status"],
         "anchor_train_tag":manifest["anchor_train_tag"],"input_manifest":str(manifest_path),"input_manifest_sha256":sha256(manifest_path),
         "nominal_fit_contract":manifest["nominal_fit_contract"],"phase1_overrides":{"toy_count":0,"p0":None,"significance_calibration":CALIBRATION,"merged_mass_distribution":"display_only"},
         "analysis_codes":{"branch":subprocess.check_output(["git","-C",str(repo),"branch","--show-current"],text=True).strip(),"commit":subprocess.check_output(["git","-C",str(repo),"rev-parse","HEAD"],text=True).strip(),"dirty":bool(subprocess.check_output(["git","-C",str(repo),"status","--porcelain"],text=True).strip())},

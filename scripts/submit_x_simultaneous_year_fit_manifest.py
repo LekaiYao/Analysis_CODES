@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create/submit the independent AFS Condor DAG for the two-year phase-1 fit."""
+"""Create/submit the historical DATA-only two-year compatibility DAG."""
 
 import argparse
 import json
@@ -17,10 +17,15 @@ SCHEMA = 1
 POINTS = tuple(f"xeff{x}" for x in range(10, 45, 5))
 
 
-def load_task(path):
+def load_task(path, allow_data_only_compat=False):
     manifest=json.loads(path.read_text())
     if manifest.get("contract") != CONTRACT or manifest.get("schema_version") != SCHEMA:
         raise RuntimeError("unsupported contract/schema")
+    if not allow_data_only_compat:
+        raise RuntimeError(
+            "schema-v1 DATA-only simultaneous fit is compatibility-only; "
+            "pass --allow-data-only-compat"
+        )
     tag=manifest.get("anchor_train_tag","")
     if not re.fullmatch(r"[A-Za-z0-9_.-]+",tag): raise RuntimeError(f"unsafe tag {tag!r}")
     keys=tuple(p.get("key") for p in manifest.get("working_points",[]))
@@ -50,8 +55,8 @@ queue 1
 """
 
 
-def create_submission(manifest_path,label):
-    manifest_path=manifest_path.resolve(); _,tag=load_task(manifest_path)
+def create_submission(manifest_path,label,allow_data_only_compat=False):
+    manifest_path=manifest_path.resolve(); _,tag=load_task(manifest_path,allow_data_only_compat)
     if not re.fullmatch(r"[A-Za-z0-9_.-]+",label): raise RuntimeError(f"unsafe label {label!r}")
     run_name=f"{tag}_{label}"; submission_dir=AFS_ROOT/run_name; output_dir=EOS_RESULTS_ROOT/tag/label
     if submission_dir.exists(): raise RuntimeError(f"refusing to reuse {submission_dir}")
@@ -65,15 +70,15 @@ def create_submission(manifest_path,label):
     for node,point in zip(nodes,POINTS): lines.extend([f"JOB {node} fit.sub",f'VARS {node} point_key="{point}"',f"CATEGORY {node} FIT"])
     lines.extend(["",f"PARENT PREPARE CHILD {' '.join(nodes)}","MAXJOBS FIT 7","","FINAL AGGREGATE aggregate.sub"])
     (submission_dir/"fit_scan.dag").write_text("\n".join(lines)+"\n")
-    task={"contract":CONTRACT,"schema_version":SCHEMA,"phase":"phase1_fast_test","anchor_train_tag":tag,"input_manifest":str(manifest_path),"output_dir":str(output_dir),"submission_dir":str(submission_dir),"toy_count":0,"significance_calibration":"none_sqrt_q0_heuristic"}
+    task={"contract":CONTRACT,"schema_version":SCHEMA,"phase":"phase1_data_only_compatibility","anchor_train_tag":tag,"input_manifest":str(manifest_path),"output_dir":str(output_dir),"submission_dir":str(submission_dir),"toy_count":0,"significance_calibration":"none_sqrt_q0_heuristic"}
     (submission_dir/"task.json").write_text(json.dumps(task,indent=2)+"\n"); return task
 
 
 def main(argv=None):
-    parser=argparse.ArgumentParser(); parser.add_argument("manifest",type=Path); parser.add_argument("--label",default="phase1_sqrtq0_v1"); parser.add_argument("--submit",action="store_true"); args=parser.parse_args(argv)
-    task=create_submission(args.manifest,args.label)
+    parser=argparse.ArgumentParser(); parser.add_argument("manifest",type=Path); parser.add_argument("--label",default="phase1_data_only_compat_v1"); parser.add_argument("--allow-data-only-compat",action="store_true"); parser.add_argument("--submit",action="store_true"); args=parser.parse_args(argv)
+    task=create_submission(args.manifest,args.label,args.allow_data_only_compat)
     if args.submit:
-        result=subprocess.run(["condor_submit_dag","-batch-name",f"X2324_{task['anchor_train_tag']}","fit_scan.dag"],cwd=task["submission_dir"],text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+        result=subprocess.run(["condor_submit_dag","-batch-name",f"X2324DataOnlyCompat_{task['anchor_train_tag']}","fit_scan.dag"],cwd=task["submission_dir"],text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
         if result.returncode: raise RuntimeError(result.stdout)
         task["submission_receipt"]=result.stdout.strip(); Path(task["submission_dir"],"submission_receipt.txt").write_text(result.stdout)
     print(json.dumps(task,indent=2)); return 0

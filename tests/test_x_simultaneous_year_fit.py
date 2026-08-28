@@ -46,7 +46,9 @@ class SimultaneousYearContractTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             with mock.patch.object(SUBMIT, "AFS_ROOT", root / "afs"), mock.patch.object(SUBMIT, "EOS_RESULTS_ROOT", root / "eos"):
-                task = SUBMIT.create_submission(ACTUAL_MANIFEST, "phase1_test")
+                task = SUBMIT.create_submission(
+                    ACTUAL_MANIFEST, "phase1_test", allow_data_only_compat=True
+                )
             dag = Path(task["submission_dir"], "fit_scan.dag").read_text()
             self.assertEqual(dag.count("JOB FIT_"), 7)
             self.assertIn("PARENT PREPARE CHILD", dag)
@@ -54,6 +56,13 @@ class SimultaneousYearContractTest(unittest.TestCase):
             self.assertNotIn("TOY", dag.upper())
             self.assertEqual(task["toy_count"], 0)
             self.assertFalse(Path(task["output_dir"]).exists())
+
+    def test_data_only_submission_requires_explicit_compatibility_flag(self):
+        with self.assertRaisesRegex(RuntimeError, "compatibility-only"):
+            SUBMIT.load_task(ACTUAL_MANIFEST)
+        manifest, _ = SUBMIT.load_task(ACTUAL_MANIFEST, allow_data_only_compat=True)
+        self.assertEqual(manifest["nominal_fit_contract"]["signal"]["model"],
+                         "single_gaussian")
 
     def test_phase1_semantics_are_explicit(self):
         source = (REPO / "fitER/x_simultaneous_year_fit_workflow.py").read_text()
