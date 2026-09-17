@@ -106,7 +106,7 @@ def main():
     failures = []
     with tempfile.TemporaryDirectory(prefix="x-year-mc-", dir="/tmp/leyao") as scratch_name:
         scratch = Path(scratch_name)
-        macro = REPO / "plotER/Validation/ComparePbPbYearXBaselineMC.C"
+        macro = REPO / "plotER/Validation/macros/ComparePbPbYearXBaselineMC.C"
         for name in ("fiducial_only", "fiducial_xeff25"):
             directory = OUTPUT / name
             directory.mkdir()

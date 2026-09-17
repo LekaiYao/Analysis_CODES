@@ -11,7 +11,7 @@ import submit_x_mc_shape_simultaneous_year_fit_manifest as simultaneous_submit
 
 
 REPO = Path(__file__).resolve().parents[1]
-COMPARISON_WORKFLOW = REPO / "fitER/run_x_two_year_fit_strategy_comparison.py"
+COMPARISON_WORKFLOW = REPO / "fitER/workflows/run_x_two_year_fit_strategy_comparison.py"
 COMPARISON_RESULTS_ROOT = REPO / "fitER/results/pbpb_x_two_year_fit_strategy_comparison"
 POINTS = simultaneous_submit.POINTS
 

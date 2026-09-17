@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 
-SOURCE = Path(__file__).resolve().parents[1] / "fitER" / "x_fit_scan_workflow.py"
+SOURCE = Path(__file__).resolve().parents[1] / "fitER/workflows/x_fit_scan_workflow.py"
 ACTUAL_MANIFEST = (
     Path(__file__).resolve().parents[2]
     / "XGBoost/output/selected"

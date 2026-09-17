@@ -47,7 +47,7 @@
           "nbkg1_": [25393.9, 253939.0]
         }
       },
-      "generation_command": "source /cvmfs/sft.cern.ch/lcg/views/LCG_106/x86_64-el9-gcc13-opt/setup.sh && bash plotER/Validation/run_export_ppref_psi2s_sweight_tree.sh",
+      "generation_command": "source /cvmfs/sft.cern.ch/lcg/views/LCG_106/x86_64-el9-gcc13-opt/setup.sh && bash plotER/Validation/workflows/run_export_ppref_psi2s_sweight_tree.sh",
       "provenance": {
         "root_version": "6.32.02",
         "artifact_generation_commit": null,
@@ -100,7 +100,7 @@
           "nbkg1_": [19488.6, 194886.0]
         }
       },
-      "generation_command": "bash plotER/Validation/run_export_ppref_x_r5_sweight_tree.sh",
+      "generation_command": "bash plotER/Validation/workflows/run_export_ppref_x_r5_sweight_tree.sh",
       "provenance": {
         "root_version": "6.32.02",
         "fit_artifact_execution_head": "9168339a81b25ec5abba44412c0bcc5db957afe6",

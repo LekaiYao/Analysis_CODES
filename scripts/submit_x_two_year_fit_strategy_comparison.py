@@ -11,7 +11,7 @@ from submit_x_mc_shape_simultaneous_year_fit_manifest import load_task
 
 
 REPO = Path(__file__).resolve().parents[1]
-WORKFLOW = REPO / "fitER/run_x_two_year_fit_strategy_comparison.py"
+WORKFLOW = REPO / "fitER/workflows/run_x_two_year_fit_strategy_comparison.py"
 AFS_ROOT = Path(
     "/afs/cern.ch/user/l/leyao/private/pbpb_work/Analysis_CODES/"
     "x_two_year_fit_strategy_comparison"

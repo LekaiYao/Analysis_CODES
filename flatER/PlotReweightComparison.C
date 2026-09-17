@@ -146,7 +146,7 @@ void PlotReweightComparison(TString inputFile = "",
     unweighted.Scale(1. / unweightedIntegral);
     reweighted.Scale(1. / reweightedIntegral);
 
-    // Match the visual language used by plotER/plot_dataMC.C.
+    // Match the visual language used by plotER/macros/plot_dataMC.C.
     unweighted.SetLineColor(kBlue);
     unweighted.SetFillColor(kBlue);
     unweighted.SetFillStyle(3358);

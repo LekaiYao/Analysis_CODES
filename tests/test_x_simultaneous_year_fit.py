@@ -13,9 +13,9 @@ ACTUAL_MANIFEST = (
     / "X_pb23_v3_fid3_6v5_rwr6range5v1_xgb_v1"
     / "fit_scan_manifest.pb23_pb24_simultaneous_v1.json"
 )
-sys.path.insert(0, str(REPO / "fitER"))
+sys.path.insert(0, str(REPO / "fitER/workflows"))
 WORKFLOW_SPEC = importlib.util.spec_from_file_location(
-    "x_simultaneous_year_fit_workflow", REPO / "fitER/x_simultaneous_year_fit_workflow.py"
+    "x_simultaneous_year_fit_workflow", REPO / "fitER/workflows/x_simultaneous_year_fit_workflow.py"
 )
 WORKFLOW = importlib.util.module_from_spec(WORKFLOW_SPEC)
 WORKFLOW_SPEC.loader.exec_module(WORKFLOW)
@@ -65,7 +65,7 @@ class SimultaneousYearContractTest(unittest.TestCase):
                          "single_gaussian")
 
     def test_phase1_semantics_are_explicit(self):
-        source = (REPO / "fitER/x_simultaneous_year_fit_workflow.py").read_text()
+        source = (REPO / "fitER/workflows/x_simultaneous_year_fit_workflow.py").read_text()
         self.assertIn('CALIBRATION = "none_sqrt_q0_heuristic"', source)
         self.assertIn('"p0": None', source)
         self.assertIn('"merged_mass_distribution"', source)

@@ -16,7 +16,7 @@ def load_module(name, relative):
 
 workflow = load_module(
     "xeff45_workflow_test",
-    "plotER/Validation/psi2s_xeff45_splot_closure_workflow.py",
+    "plotER/Validation/workflows/psi2s_xeff45_splot_closure_workflow.py",
 )
 submitter = load_module(
     "xeff45_submitter_test", "scripts/submit_psi2s_xeff45_splot_closure.py"

@@ -91,7 +91,7 @@ creates the `pThatreweight` branch.
 
 After producing the final merged MC file, `run_flat.sh` automatically compares the
 reconstructed `Bpt` distribution before and after applying `pThatreweight`. The
-histograms are normalized to unit area. The style follows `plotER/plot_dataMC.C`:
+histograms are normalized to unit area. The style follows `plotER/macros/plot_dataMC.C`:
 a blue hatched unweighted distribution and an orange reweighted line on a 600x600
 canvas.
 

@@ -5,9 +5,9 @@ from pathlib import Path
 
 
 REPO = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(REPO / "fitER"))
+sys.path.insert(0, str(REPO / "fitER/workflows"))
 sys.path.insert(0, str(REPO / "scripts"))
-SOURCE = REPO / "fitER/run_x_two_year_fit_strategy_comparison.py"
+SOURCE = REPO / "fitER/workflows/run_x_two_year_fit_strategy_comparison.py"
 SPEC = importlib.util.spec_from_file_location("x_two_year_fit_strategy_comparison", SOURCE)
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)

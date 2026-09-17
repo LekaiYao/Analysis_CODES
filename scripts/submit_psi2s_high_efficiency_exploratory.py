@@ -11,7 +11,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
-from fitER import psi2s_high_efficiency_exploratory_workflow as workflow  # noqa: E402
+from fitER.workflows import psi2s_high_efficiency_exploratory_workflow as workflow  # noqa: E402
 
 AFS_ROOT = Path(
     "/afs/cern.ch/user/l/leyao/private/pbpb_work/Analysis_CODES/"

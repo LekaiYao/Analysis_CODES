@@ -7,7 +7,7 @@ from unittest import mock
 
 
 REPO = Path(__file__).resolve().parents[1]
-MODULE_PATH = REPO / "fitER/psi2s_fit_scan_workflow.py"
+MODULE_PATH = REPO / "fitER/workflows/psi2s_fit_scan_workflow.py"
 SPEC = importlib.util.spec_from_file_location("psi2s_workflow", MODULE_PATH)
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)

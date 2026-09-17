@@ -18,7 +18,7 @@ def load_module(name, relative):
 
 workflow = load_module(
     "psi2s_splot_workflow_test",
-    "plotER/Validation/psi2s_pbpb_splot_validation_workflow.py",
+    "plotER/Validation/workflows/psi2s_pbpb_splot_validation_workflow.py",
 )
 submitter = load_module(
     "psi2s_splot_submitter_test",
@@ -30,7 +30,7 @@ class Psi2SSPlotValidationTest(unittest.TestCase):
     def test_contract_has_twelve_variables_and_no_bootstrap(self):
         self.assertEqual(len(workflow.VARIABLES), 12)
         self.assertIn("Btrk2dR", workflow.VARIABLES)
-        source = (REPO / "plotER/Validation/psi2s_pbpb_splot_validation_workflow.py").read_text()
+        source = (REPO / "plotER/Validation/workflows/psi2s_pbpb_splot_validation_workflow.py").read_text()
         self.assertNotIn("bootstrap_samples", source)
 
     def test_aggregate_reports_cdf_without_ranking(self):

@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 REPO = Path(__file__).resolve().parents[1]
-VALIDATION_DIR = REPO / "plotER/Validation"
+VALIDATION_DIR = REPO / "plotER/Validation/workflows"
 sys.path.insert(0, str(VALIDATION_DIR))
 import psi2s_pbpb_splot_validation_workflow as workflow  # noqa: E402
 

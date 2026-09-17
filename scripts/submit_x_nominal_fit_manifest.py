@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 REPO = Path(__file__).resolve().parents[1]
-WORKFLOW = REPO / "fitER/x_fit_scan_workflow.py"
+WORKFLOW = REPO / "fitER/workflows/x_fit_scan_workflow.py"
 AFS_ROOT = Path("/afs/cern.ch/user/l/leyao/private/pbpb_work/Analysis_CODES")
 EOS_RESULTS_ROOT = REPO / "fitER/results/manifest_driven_nominal_fit"
 SUPPORTED_CONTRACT = "pbpb24_x_weighted_efficiency_fit_scan"

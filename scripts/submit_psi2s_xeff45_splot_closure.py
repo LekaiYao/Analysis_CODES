@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-VALIDATION = REPO / "plotER/Validation"
+VALIDATION = REPO / "plotER/Validation/workflows"
 sys.path.insert(0, str(VALIDATION))
 import psi2s_xeff45_splot_closure_workflow as workflow  # noqa: E402
 

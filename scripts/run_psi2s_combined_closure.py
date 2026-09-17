@@ -87,7 +87,7 @@ def main():
     OUTPUT.mkdir(parents=True, exist_ok=resume)
     scratch = Path(f"/tmp/leyao/psi2s-combined-closure-{os.getpid()}")
     scratch.mkdir(parents=True, exist_ok=True)
-    macro = REPO / "plotER/Validation/ComparePbPbCombinedPsi2SClosure.C"
+    macro = REPO / "plotER/Validation/macros/ComparePbPbCombinedPsi2SClosure.C"
     arguments = (
         inputs["pb23"]["data"], inputs["pb23"]["data_tree"],
         inputs["pb24"]["data"], inputs["pb24"]["data_tree"],

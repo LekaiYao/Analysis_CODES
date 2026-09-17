@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 REPO = Path(__file__).resolve().parents[1]
-WORKFLOW = REPO / "fitER/psi2s_fit_scan_workflow.py"
+WORKFLOW = REPO / "fitER/workflows/psi2s_fit_scan_workflow.py"
 AFS_ROOT = Path("/afs/cern.ch/user/l/leyao/private/pbpb_work/Analysis_CODES/psi2s_nominal_fit")
 EOS_RESULTS_ROOT = REPO / "fitER/results/manifest_driven_psi2s_nominal_fit"
 SUPPORTED_CONTRACT = "pbpb24_psi2s_nominal_fit_scan"

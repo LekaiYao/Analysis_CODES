@@ -20,7 +20,7 @@ def load_module(name, relative_path):
 
 
 WORKFLOW = load_module(
-    "psi2s_data_gaussian_workflow", "fitER/psi2s_data_gaussian_workflow.py"
+    "psi2s_data_gaussian_workflow", "fitER/workflows/psi2s_data_gaussian_workflow.py"
 )
 SUBMITTER = load_module(
     "submit_psi2s_data_gaussian", "scripts/submit_psi2s_data_gaussian_manifest.py"

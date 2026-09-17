@@ -24,7 +24,7 @@ def load(name, relative):
 
 workflow = load(
     "psi2s_high_eff_workflow_test",
-    "fitER/psi2s_high_efficiency_exploratory_workflow.py",
+    "fitER/workflows/psi2s_high_efficiency_exploratory_workflow.py",
 )
 submitter = load(
     "psi2s_high_eff_submitter_test",

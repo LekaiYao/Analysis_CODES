@@ -10,7 +10,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
-WORKFLOW = REPO / "fitER/psi2s_data_gaussian_workflow.py"
+WORKFLOW = REPO / "fitER/workflows/psi2s_data_gaussian_workflow.py"
 AFS_ROOT = Path(
     "/afs/cern.ch/user/l/leyao/private/pbpb_work/Analysis_CODES/"
     "psi2s_data_gaussian_candidate"
@@ -25,7 +25,7 @@ def load_task(manifest_path):
 
 
 def validate_cache(manifest_path, manifest, cache_dir):
-    from fitER.psi2s_data_gaussian_workflow import validate_cache as validate
+    from fitER.workflows.psi2s_data_gaussian_workflow import validate_cache as validate
     return validate(manifest_path, manifest, cache_dir)
 
 

@@ -1,6 +1,8 @@
 import importlib.util
 import sys
 import unittest
+import tempfile
+from unittest import mock
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -75,6 +77,34 @@ class AdapterTest(unittest.TestCase):
         self.assertIn(inclusive, patched)
         self.assertIn(binned, patched)
 
+
+    def test_stage_keeps_new_workflow_paths_and_skips_deleted_paths(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = Path(temporary) / "source"
+            new = repo / "fitER/workflows/X3872doRoofit.sh"
+            new.parent.mkdir(parents=True)
+            new.write_text("echo staged\n")
+            listing = mock.Mock(stdout=b"fitER/X3872doRoofit.sh\0fitER/workflows/X3872doRoofit.sh\0")
+            destination = Path(temporary) / "stage"
+            with mock.patch.object(adapter, "REPO_ROOT", repo), mock.patch.object(adapter.subprocess, "run", return_value=listing):
+                adapter.stage_tracked_tree(destination)
+            self.assertEqual((destination / "fitER/workflows/X3872doRoofit.sh").read_text(), new.read_text())
+            self.assertFalse((destination / "fitER/X3872doRoofit.sh").exists())
+
+    def test_staged_fit_runs_workflow_with_original_output_directory(self):
+        import json
+        with tempfile.TemporaryDirectory() as temporary:
+            run = Path(temporary)
+            fit_script = run / "fitER/workflows/X3872doRoofit.sh"
+            fit_script.parent.mkdir(parents=True)
+            text = adapter.FIT_TEMPLATE.read_text()
+            fit_script.write_text(text)
+            (run / "optimal_results.json").write_text(json.dumps([{"cut": x} for x in (0.58, 0.24, 0.38, 0.44, 0.)]))
+            prepared = adapter.PreparedTemplates("X_test", run, "", text, ())
+            with mock.patch.object(adapter, "run_logged", return_value=(0, "")) as call:
+                adapter.run_fit(prepared, model())
+            self.assertEqual(call.call_args.args[1], run / "fitER")
+            self.assertIn("bash workflows/X3872doRoofit.sh", call.call_args.args[0][-1])
 
 if __name__ == "__main__":
     unittest.main()

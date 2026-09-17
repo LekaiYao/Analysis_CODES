@@ -15,7 +15,7 @@ from import_ml_manifest import ManifestError, load_manifest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OPTIMAL_TEMPLATE = REPO_ROOT / "selectionER/optimalCUT_X_punzi.C"
-FIT_TEMPLATE = REPO_ROOT / "fitER/X3872doRoofit.sh"
+FIT_TEMPLATE = REPO_ROOT / "fitER/workflows/X3872doRoofit.sh"
 RUN_ROOT = REPO_ROOT / ".manifest_runs"
 
 
@@ -143,10 +143,12 @@ def stage_tracked_tree(destination: Path) -> None:
     if destination.exists():
         raise AdapterError(f"refusing to overwrite existing trial directory: {destination}")
     listing = subprocess.run(
-        ["git", "ls-files", "-z"], cwd=REPO_ROOT, check=True, capture_output=True,
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"], cwd=REPO_ROOT, check=True, capture_output=True,
     ).stdout.decode().split("\0")
     for relative in filter(None, listing):
         source = REPO_ROOT / relative
+        if not source.is_file():
+            continue  # Deleted worktree paths must not enter the staged source tree.
         target = destination / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
@@ -172,7 +174,7 @@ def run_optimal(prepared: PreparedTemplates) -> tuple[list[dict[str, object]], P
     stage_tracked_tree(prepared.run_directory)
     macro = prepared.run_directory / "selectionER/optimalCUT_X_punzi.C"
     macro.write_text(prepared.optimal_text, encoding="utf-8")
-    fit_copy = prepared.run_directory / "fitER/X3872doRoofit.sh"
+    fit_copy = prepared.run_directory / "fitER/workflows/X3872doRoofit.sh"
     fit_copy.write_text(prepared.fit_text, encoding="utf-8")
     selection = prepared.run_directory / "selectionER"
     command = ["/usr/bin/root", "-l", "-b", "-q", 'optimalCUT_X_punzi.C("ppRef",2.0,5.0)']
@@ -200,12 +202,12 @@ def run_fit(prepared: PreparedTemplates, model: dict) -> Path:
     results = json.loads(result_file.read_text(encoding="utf-8"))
     inclusive, binned = fit_cut_lines(results, model["score_branch"], model["pre_cut"])
     fit_dir = prepared.run_directory / "fitER"
-    fit_script = fit_dir / "X3872doRoofit.sh"
+    fit_script = fit_dir / "workflows/X3872doRoofit.sh"
     if not fit_script.is_file():
         raise AdapterError(f"isolated native fit script is missing: {fit_script}")
     fit_script.write_text(patch_fit_cuts(prepared.fit_text, inclusive, binned), encoding="utf-8")
     setup = "/cvmfs/sft.cern.ch/lcg/views/LCG_106/x86_64-el9-gcc13-opt/setup.sh"
-    command = f"source {setup} && bash X3872doRoofit.sh"
+    command = f"source {setup} && bash workflows/X3872doRoofit.sh"
     log = prepared.run_directory / "fit.log"
     print("starting native fit under ROOT 6.32.02; live fit summaries follow", flush=True)
     returncode, _ = run_logged(
