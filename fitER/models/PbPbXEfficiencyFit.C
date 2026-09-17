@@ -95,8 +95,7 @@ McPlotQuality drawMc(const char* outputPath, RooDataSet& mc, RooAbsPdf& signal,
     TPaveText stats(0.55, 0.56, 0.94, 0.90, "NDC");
     stats.SetFillStyle(0); stats.SetBorderSize(0); stats.SetTextAlign(12);
     stats.AddText("Weighted X signal MC");
-    stats.AddText(Form("status/covQual=%d/%d", fit.status(), fit.covQual()));
-    stats.AddText(Form("EDM=%.3g", fit.edm()));
+    stats.AddText("scale=1 (fixed)");
     stats.AddText(Form("#mu=%.6f GeV", mean));
     stats.AddText(Form("#sigma_{1}/#sigma_{2}=%.3f/%.3f MeV", 1000.0*sigma1,
                        1000.0*sigma2));
@@ -174,8 +173,11 @@ double drawData(const char* outputPath, const char* key, RooDataSet& data,
     if (fittedYield) {
         stats.AddText(Form("N_{X}=%.1f #pm %.1f", fittedYield->getVal(), fittedYield->getError()));
     }
-    stats.AddText(Form("status/covQual=%d/%d", fit.status(), fit.covQual()));
-    stats.AddText(Form("EDM=%.3g", fit.edm()));
+    std::unique_ptr<RooArgSet> plotParameters(model.getParameters(data));
+    const auto* plotMean = dynamic_cast<const RooRealVar*>(plotParameters->find("mean"));
+    const auto* plotScale = dynamic_cast<const RooRealVar*>(plotParameters->find("scale"));
+    if (plotMean) stats.AddText(Form("mean=%.6f GeV", plotMean->getVal()));
+    if (plotScale) stats.AddText(Form("scale=%.4f", plotScale->getVal()));
     stats.AddText(Form("Z_{PL}=%.3f", z));
     stats.AddText(Form("#chi^{2}/ndf=%.3f", chi2Ndf));
     stats.Draw();
@@ -252,10 +254,24 @@ void PbPbXEfficiencyFit(
     RooGaussian gaussian2("gaussian2", "gaussian2", mass, mean, scaledSigma2);
     RooAddPdf signal("signalPdf", "signalPdf", RooArgList(gaussian1, gaussian2), fraction);
     scale.setConstant(true);
+    // One same-setting restart from the returned fit parameters; never a retry loop.
+    auto needsRestart = [](const RooFitResult* q) {
+        return q && std::isfinite(q->minNll()) &&
+            (q->status() != 0 || q->covQual() != 3 || !std::isfinite(q->edm()) || q->edm() >= 1.e-3);
+    };
+    std::unique_ptr<RooFitResult> mcFirst, altFirst, nullFirst;
     std::unique_ptr<RooFitResult> mcFit(signal.fitTo(
         mc, Save(), Range("signal"), SumW2Error(false), PrintLevel(-1),
         Warnings(false), Verbose(false), Strategy(2), Hesse(true)));
     if (!mcFit) { gSystem->Exit(4); return; }
+    if (needsRestart(mcFit.get())) {
+        mcFirst = std::move(mcFit);
+        std::cout << "[single restart] mcFit first status=" << mcFirst->status()
+                  << " covQual=" << mcFirst->covQual() << " EDM=" << mcFirst->edm() << std::endl;
+        mcFit.reset(signal.fitTo(mc, Save(), Range("signal"), SumW2Error(false), PrintLevel(-1),
+            Warnings(false), Verbose(false), Strategy(2), Hesse(true)));
+        if (!mcFit) { gSystem->Exit(4); return; }
+    }
     const double mcMean = mean.getVal();
     const double mcMeanError = mean.getError();
     const double mcSigma1 = sigma1.getVal();
@@ -285,8 +301,16 @@ void PbPbXEfficiencyFit(
                     RooArgList(nsig, nbkg));
     std::unique_ptr<RooFitResult> altFit(model.fitTo(
         data, Save(), Extended(true), Range("all"), PrintLevel(-1),
-        Warnings(false), Verbose(false), Strategy(1), Hesse(true)));
+        Warnings(false), Verbose(false), Strategy(2), Hesse(true)));
     if (!altFit) { gSystem->Exit(5); return; }
+    if (needsRestart(altFit.get())) {
+        altFirst = std::move(altFit);
+        std::cout << "[single restart] altFit first status=" << altFirst->status()
+                  << " covQual=" << altFirst->covQual() << " EDM=" << altFirst->edm() << std::endl;
+        altFit.reset(model.fitTo(data, Save(), Extended(true), Range("all"), PrintLevel(-1),
+            Warnings(false), Verbose(false), Strategy(2), Hesse(true)));
+        if (!altFit) { gSystem->Exit(5); return; }
+    }
 
     const double altYield = nsig.getVal();
     const double altYieldError = nsig.getError();
@@ -310,7 +334,14 @@ void PbPbXEfficiencyFit(
     scale.setVal(altScale); scale.setConstant(true);
     std::unique_ptr<RooFitResult> nullFit(model.fitTo(
         data, Save(), Extended(true), Range("all"), PrintLevel(-1),
-        Warnings(false), Verbose(false), Strategy(1), Hesse(true)));
+        Warnings(false), Verbose(false), Strategy(2), Hesse(true)));
+    if (needsRestart(nullFit.get())) {
+        nullFirst = std::move(nullFit);
+        std::cout << "[single restart] nullFit first status=" << nullFirst->status()
+                  << " covQual=" << nullFirst->covQual() << " EDM=" << nullFirst->edm() << std::endl;
+        nullFit.reset(model.fitTo(data, Save(), Extended(true), Range("all"), PrintLevel(-1),
+            Warnings(false), Verbose(false), Strategy(2), Hesse(true)));
+    }
     const double nullNll = nullFit ? nullFit->minNll() : altNll;
     const double q0 = altYield > 0.0 && std::isfinite(altNll) && std::isfinite(nullNll)
         ? std::max(0.0, 2.0 * (nullNll - altNll)) : 0.0;
@@ -336,6 +367,14 @@ void PbPbXEfficiencyFit(
     mcFit->Write("fit_result_mc");
     altFit->Write("fit_result_alt");
     if (nullFit) nullFit->Write("fit_result_null");
+    if (mcFirst) mcFirst->Write("fit_result_mc_first_attempt");
+    if (altFirst) altFirst->Write("fit_result_alt_first_attempt");
+    if (nullFirst) nullFirst->Write("fit_result_null_first_attempt");
+    std::ofstream restartInfo(Form("%s/retry_history.json", outputDirectory));
+    restartInfo << "{\"policy\":\"one same-setting restart from current solution\","
+                << "\"mc_retried\":" << (mcFirst ? "true" : "false") << ","
+                << "\"alt_retried\":" << (altFirst ? "true" : "false") << ","
+                << "\"null_retried\":" << (nullFirst ? "true" : "false") << "}\n";
     outputRoot.Close();
 
     double sumw = 0.0, sumw2 = 0.0, weightMin = 1.e100, weightMax = -1.e100;
