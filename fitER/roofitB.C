@@ -96,7 +96,10 @@ void roofitB(TString TREE = "ntphi", int FULL = 0, TString INPUTDATA = "", TStri
 	//DATA and MC SAMPLES
 	TString dataTree = TREE;
 	if (TREE == "ntmix_PSI2S" || TREE == "ntmix_X3872") dataTree = "ntmix";
-	vector<TString>   ANA_vars = {"Bpt", "By", "CentBin", "nSelectedChargedTracks"};
+	vector<TString>   ANA_vars = {"Bpt", "By", "CentBin"};
+	if (TREE != "ntmix_X3872" || VAR == "nSelectedChargedTracks" || SELcuts.Contains("nSelectedChargedTracks")) {
+		ANA_vars.push_back("nSelectedChargedTracks");
+	}
 	read_samples(*ws, ANA_vars, INPUTDATA.Data(), dataTree.Data(), "data", SYSTEM.Data(), SELcuts);
 	read_samples(*ws, ANA_vars, INPUTMC.Data()  , TREE.Data(), "mc", SYSTEM.Data(), SELcuts);
 	RooDataSet* data = (RooDataSet*) ws->data("data");
