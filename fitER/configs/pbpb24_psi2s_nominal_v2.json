@@ -9,7 +9,7 @@
   "supersedes_analysis_variant": "double_gaussian_weighted_mc_shape",
   "decision_date": "2026-08-18",
   "decision_authority": "user_confirmed",
-  "source_result_manifest": "fitER/results/manifest_driven_psi2s_data_gaussian/Psi2S_pb24_v1_fid1_6v1_rwr6range4v1_xgb_v1/data_gaussian_pdgfloat_v1/result_manifest.json",
+  "source_result_manifest": "fitER/results/archive/2026-09/psi2s_data_gaussian/Psi2S_pb24_v1_fid1_6v1_rwr6range4v1_xgb_v1/data_gaussian_pdgfloat_v1/result_manifest.json",
   "fit_contract": {
     "fit_type": "extended_unbinned",
     "data_event_weight": "unit",

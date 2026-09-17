@@ -12,7 +12,7 @@ import submit_x_mc_shape_simultaneous_year_fit_manifest as simultaneous_submit
 
 REPO = Path(__file__).resolve().parents[1]
 COMPARISON_WORKFLOW = REPO / "fitER/workflows/run_x_two_year_fit_strategy_comparison.py"
-COMPARISON_RESULTS_ROOT = REPO / "fitER/results/pbpb_x_two_year_fit_strategy_comparison"
+COMPARISON_RESULTS_ROOT = REPO / "fitER/results/ml_fits"
 POINTS = simultaneous_submit.POINTS
 
 
@@ -53,7 +53,7 @@ def create_submission(
     submission_dir = Path(task["submission_dir"])
     simultaneous_output = Path(task["output_dir"])
     tag = task["anchor_train_tag"]
-    comparison_output = COMPARISON_RESULTS_ROOT / tag / comparison_label
+    comparison_output = COMPARISON_RESULTS_ROOT / tag / "two_year_comparison" / comparison_label
     if comparison_output.exists():
         raise RuntimeError(f"refusing to overwrite comparison output: {comparison_output}")
 

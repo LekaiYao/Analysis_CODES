@@ -15,7 +15,7 @@ AFS_ROOT = Path(
     "/afs/cern.ch/user/l/leyao/private/pbpb_work/Analysis_CODES/"
     "psi2s_data_gaussian_candidate"
 )
-EOS_RESULTS_ROOT = REPO / "fitER/results/manifest_driven_psi2s_data_gaussian"
+EOS_RESULTS_ROOT = REPO / "fitER/results/ml_fits"
 POINTS = tuple(f"psi2seff{value}" for value in (10, 15, 20, 25, 30, 35, 40))
 
 
@@ -55,7 +55,7 @@ def create_submission(manifest_path, cache_dir, label):
     validate_cache(manifest_path, manifest, cache_dir)
     run_name = f"{tag}_{label}"
     submission_dir = AFS_ROOT / run_name
-    output_dir = EOS_RESULTS_ROOT / tag / label
+    output_dir = EOS_RESULTS_ROOT / tag / "data_gaussian" / label
     if submission_dir.exists():
         raise RuntimeError(f"refusing to reuse submission directory: {submission_dir}")
     if output_dir.exists():

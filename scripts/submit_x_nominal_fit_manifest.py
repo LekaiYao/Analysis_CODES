@@ -11,7 +11,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 WORKFLOW = REPO / "fitER/workflows/x_fit_scan_workflow.py"
 AFS_ROOT = Path("/afs/cern.ch/user/l/leyao/private/pbpb_work/Analysis_CODES")
-EOS_RESULTS_ROOT = REPO / "fitER/results/manifest_driven_nominal_fit"
+EOS_RESULTS_ROOT = REPO / "fitER/results/ml_fits"
 SUPPORTED_CONTRACT = "pbpb24_x_weighted_efficiency_fit_scan"
 DATA_ONLY_COMPAT_CONTRACT = "pbpb24_x_data_only_nominal_fit_scan"
 SUPPORTED_SCHEMA = 2
@@ -81,7 +81,7 @@ def create_submission(manifest_path, label=None, allow_data_only_compat=False):
                  else "data_only_compat_v2")
     run_name = f"{tag}_{label}"
     submission_dir = AFS_ROOT / run_name
-    output_dir = EOS_RESULTS_ROOT / tag / label
+    output_dir = EOS_RESULTS_ROOT / tag / "single_year_mc_shape" / label
     if submission_dir.exists():
         raise RuntimeError(f"refusing to reuse submission directory: {submission_dir}")
     if output_dir.exists():

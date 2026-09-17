@@ -20,7 +20,7 @@ NEFF_GATE = 30.0
 VARIABLES = base.VARIABLES
 CONFIG = Path("fitER/configs/pbpb24_psi2s_xeff45_70_exploratory_v1.json")
 RESULT = Path(
-    "fitER/results/psi2s_high_efficiency_exploratory/"
+    "fitER/results/archive/2026-09/psi2s_high_efficiency/"
     "Psi2S_pb24_v1_fid1_6v1_rwr6range4v1_xgb_v1/"
     "xeff45_70_data_gaussian_v1/result_manifest.json"
 )

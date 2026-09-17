@@ -14,7 +14,7 @@ AFS_ROOT = Path(
     "/afs/cern.ch/user/l/leyao/private/pbpb_work/Analysis_CODES/"
     "psi2s_simultaneous_year_fit"
 )
-EOS_RESULTS_ROOT = REPO / "fitER/results/pbpb_psi2s_simultaneous_year_fit"
+EOS_RESULTS_ROOT = REPO / "fitER/results/ml_fits"
 CONTRACT = "pbpb_psi2s_simultaneous_year_fit_scan"
 SCHEMA = 1
 CATEGORIES = ("pb23", "pb24")
@@ -160,7 +160,7 @@ def create_submission(manifest_path, label="mc_shape_nominal_v1_fit_only_sqrtq0"
     require(bool(re.fullmatch(r"[A-Za-z0-9_.-]+", label)), f"unsafe label: {label!r}")
     run_name = f"{tag}_{label}"
     submission_dir = AFS_ROOT / run_name
-    output_dir = EOS_RESULTS_ROOT / tag / label
+    output_dir = EOS_RESULTS_ROOT / tag / "paired_year_mc_shape" / label
     if submission_dir.exists():
         raise RuntimeError(f"refusing to reuse submission directory: {submission_dir}")
     if output_dir.exists():

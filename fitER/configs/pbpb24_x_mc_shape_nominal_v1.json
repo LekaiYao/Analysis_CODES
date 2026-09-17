@@ -10,9 +10,9 @@
   "analysis_variant": "reweighted_mc_double_gaussian_widthscale0p9_1p5_nominal_v1",
   "supersedes_analysis_variant": "data_only_single_gaussian_sigma2_8mev_nominal_v2",
   "decision_reason": "Prefer the scored and Reweight-weighted signal MC peak shape and reduce instability from sparse DATA determining the signal shape.",
-  "source_fit_manifest": "fitER/results/manifest_driven_nominal_fit/X_pb24_v19_fid19_6v5_rwr6range5v1_xgb_v1/legacy_mc_shape_widthscale150_v4/derived_legacy_manifest.json",
-  "source_result_manifest": "fitER/results/manifest_driven_nominal_fit/X_pb24_v19_fid19_6v5_rwr6range5v1_xgb_v1/legacy_mc_shape_widthscale150_v4/manifest.json",
-  "source_summary": "fitER/results/manifest_driven_nominal_fit/X_pb24_v19_fid19_6v5_rwr6range5v1_xgb_v1/legacy_mc_shape_widthscale150_v4/fit_summary.csv",
+  "source_fit_manifest": "fitER/results/archive/2026-09/x_single_year_legacy/X_pb24_v19_fid19_6v5_rwr6range5v1_xgb_v1/legacy_mc_shape_widthscale150_v4/derived_legacy_manifest.json",
+  "source_result_manifest": "fitER/results/archive/2026-09/x_single_year_legacy/X_pb24_v19_fid19_6v5_rwr6range5v1_xgb_v1/legacy_mc_shape_widthscale150_v4/manifest.json",
+  "source_summary": "fitER/results/archive/2026-09/x_single_year_legacy/X_pb24_v19_fid19_6v5_rwr6range5v1_xgb_v1/legacy_mc_shape_widthscale150_v4/fit_summary.csv",
   "fit_contract": {
     "fit_type": "extended_unbinned",
     "mass_range_gev": [3.8, 3.94],

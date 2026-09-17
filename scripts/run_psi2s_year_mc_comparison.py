@@ -21,7 +21,7 @@ MANIFEST = Path(
 )
 EXPECTED_SHA256 = "825d0987cccf3a1c8e6b8ea81f26c45dccaeac8451c20b26841ff6a1e0760119"
 FIT_BASE = REPO / (
-    "fitER/results/pbpb_psi2s_simultaneous_year_fit/"
+    "fitER/results/archive/earlier_workflows/pbpb_psi2s_simultaneous_year_fit/"
     "Psi2S_pb23_v1_fid1_6v1_rwr6range4v1_xgb_v1/"
     "mc_shape_nominal_v1_fit_only_sqrtq0"
 )

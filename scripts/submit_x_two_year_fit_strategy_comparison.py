@@ -16,7 +16,7 @@ AFS_ROOT = Path(
     "/afs/cern.ch/user/l/leyao/private/pbpb_work/Analysis_CODES/"
     "x_two_year_fit_strategy_comparison"
 )
-EOS_RESULTS_ROOT = REPO / "fitER/results/pbpb_x_two_year_fit_strategy_comparison"
+EOS_RESULTS_ROOT = REPO / "fitER/results/ml_fits"
 
 
 def require(condition, message):
@@ -51,7 +51,7 @@ def task_paths(manifest_path, simultaneous_root, point, label):
         "cache_root": str(cache_root),
         "simultaneous_root": str(simultaneous_root),
         "submission_dir": str(AFS_ROOT / run_name),
-        "output_dir": str(EOS_RESULTS_ROOT / tag / f"{point}_{label}"),
+        "output_dir": str(EOS_RESULTS_ROOT / tag / "two_year_comparison" / f"{point}_{label}"),
         "significance_scope": "uncalibrated fit-only sqrt(q0); no toys/p0/trials",
         "mc_mixture": "selected total DATA-entry-normalized by year",
     }

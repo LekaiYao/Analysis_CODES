@@ -11,7 +11,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 WORKFLOW = REPO / "fitER/workflows/x_simultaneous_year_fit_workflow.py"
 AFS_ROOT = Path("/afs/cern.ch/user/l/leyao/private/pbpb_work/Analysis_CODES/x_simultaneous_year_fit")
-EOS_RESULTS_ROOT = REPO / "fitER/results/pbpb_x_simultaneous_year_fit"
+EOS_RESULTS_ROOT = REPO / "fitER/results/ml_fits"
 CONTRACT = "pbpb_x_simultaneous_year_fit_scan"
 SCHEMA = 1
 POINTS = tuple(f"xeff{x}" for x in range(10, 45, 5))
@@ -58,7 +58,7 @@ queue 1
 def create_submission(manifest_path,label,allow_data_only_compat=False):
     manifest_path=manifest_path.resolve(); _,tag=load_task(manifest_path,allow_data_only_compat)
     if not re.fullmatch(r"[A-Za-z0-9_.-]+",label): raise RuntimeError(f"unsafe label {label!r}")
-    run_name=f"{tag}_{label}"; submission_dir=AFS_ROOT/run_name; output_dir=EOS_RESULTS_ROOT/tag/label
+    run_name=f"{tag}_{label}"; submission_dir=AFS_ROOT/run_name; output_dir=EOS_RESULTS_ROOT/tag/"paired_year_data_shape"/label
     if submission_dir.exists(): raise RuntimeError(f"refusing to reuse {submission_dir}")
     if output_dir.exists(): raise RuntimeError(f"refusing to overwrite {output_dir}")
     (submission_dir/"logs").mkdir(parents=True)

@@ -56,7 +56,7 @@
   },
   "execution_policy": {
     "status": "consumer_implemented_and_previous_seven_point_run_available",
-    "production_output": "fitER/results/pbpb_x_simultaneous_year_fit/X_pb23_v3_fid3_6v5_rwr6range5v1_xgb_v1/mc_shape_nominal_v2_fit_only_sqrtq0/",
+    "production_output": "fitER/results/archive/earlier_workflows/pbpb_x_simultaneous_year_fit/X_pb23_v3_fid3_6v5_rwr6range5v1_xgb_v1/mc_shape_nominal_v2_fit_only_sqrtq0/",
     "rerun_policy": "The 2026-08-25 peak-range and dual-chi2 consumer update is verified in isolated scratch; do not overwrite the previous production output. A full rerun requires an explicit user trigger.",
     "data_only_compatibility": "Historical H027 phase-1 remains reproducible but is no longer nominal.",
     "significance": "Changing the fit model does not authorize toys, boundary calibration, seven-point trials or a final working-point choice."

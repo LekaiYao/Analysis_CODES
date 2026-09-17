@@ -17,7 +17,7 @@ AFS_ROOT = Path(
     "/afs/cern.ch/user/l/leyao/private/pbpb_work/Analysis_CODES/"
     "psi2s_high_efficiency_exploratory"
 )
-EOS_ROOT = REPO / "fitER/results/psi2s_high_efficiency_exploratory"
+EOS_ROOT = REPO / "fitER/results/ml_fits"
 
 
 def submit_text(directory, arguments, stem, memory, disk, flavour):
@@ -46,7 +46,7 @@ def create_submission(manifest_path, config_path, label):
         raise RuntimeError(f"unsafe label: {label!r}")
     run_name = f"{manifest['train_tag']}_{label}"
     submission_dir = AFS_ROOT / run_name
-    output_dir = EOS_ROOT / manifest["train_tag"] / label
+    output_dir = EOS_ROOT / manifest["train_tag"] / "high_efficiency" / label
     if submission_dir.exists():
         raise RuntimeError(f"refusing to reuse submission directory: {submission_dir}")
     if output_dir.exists():
