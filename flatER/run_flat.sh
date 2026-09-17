@@ -4,7 +4,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -L)"
 MACRO_NAME="Flat_TREEs.C"
+PLOT_MACRO_NAME="PlotReweightComparison.C"
 FILELIST_DIR="${SCRIPT_DIR}/filelists"
+MC_NORM_FILE="${SCRIPT_DIR}/config/mc_normalization.csv"
+REWEIGHT_PLOT_DIR="${SCRIPT_DIR}/reweighting_comparisons"
 
 SYSTEM="${1:?missing SYSTEM}"
 KIND="${2:?missing KIND}"
@@ -13,6 +16,11 @@ PARTICLE="${4:-}"
 PVSNP="${5:-}"
 
 FILELIST_SUBDIR="${FILELIST_DIR}/${KIND}"
+if [[ "${KIND}" == "MC" && ! -r "${MC_NORM_FILE}" ]]; then
+  echo "Missing MC normalization table: ${MC_NORM_FILE}" >&2
+  exit 1
+fi
+
 CASETAG="${PARTICLE}${PVSNP}"
 SHARING_DIR="/eos/user/h/hmarques/RUN3_Data_MC_sharing"
 if [[ "${TREE}" == "ntmix" ]]; then
@@ -75,19 +83,29 @@ for idx in "${!MATCHED_LISTS[@]}"; do
   FILELIST="${MATCHED_LISTS[$idx]}"
   NUN="_${idx}"
   OUTPUT_CHUNK="flat_${TREE}_${SYSTEM}_${KIND}${CASETAG}${NUN}.root"
-  OUTPUT_CHUNK_PATH="${OUTPUT_DIR}/${OUTPUT_CHUNK}"
+  OUTPUT_CHUNK_PATH="${SCRIPT_DIR}/${OUTPUT_CHUNK}"
 
-  root -l -b -q "${MACRO_NAME}(\"${FILELIST}\",\"${NUN}\",\"${TREE}\",\"${SYSTEM}\",\"${KIND}\",\"${PARTICLE}\",\"${PVSNP}\")"
-  mv -f "${OUTPUT_CHUNK}" "${OUTPUT_CHUNK_PATH}"
+  # Flat_TREEs.C creates the chunk in SCRIPT_DIR. Keep it there until hadd has
+  # finished so every ROOT key remains readable at the path where it was made.
+  rm -f "${OUTPUT_CHUNK_PATH}"
+  root -l -b -q "${MACRO_NAME}(\"${FILELIST}\",\"${NUN}\",\"${TREE}\",\"${SYSTEM}\",\"${KIND}\",\"${PARTICLE}\",\"${PVSNP}\",\"${MC_NORM_FILE}\")"
+  if [[ ! -s "${OUTPUT_CHUNK_PATH}" ]]; then
+    echo "Flattener did not create a non-empty chunk: ${OUTPUT_CHUNK_PATH}" >&2
+    exit 1
+  fi
   INDEXED_OUTPUTS+=("${OUTPUT_CHUNK_PATH}")
 done
 
-# Merge all chunk outputs into one final file, then remove the indexed temporary files.
-rm -f "${FINAL_OUTPUT}"
-if [[ "${#INDEXED_OUTPUTS[@]}" -eq 1 ]]; then
-  mv -f "${INDEXED_OUTPUTS[0]}" "${FINAL_OUTPUT}"
-else
-  hadd -f "${TMP_OUTPUT}" "${INDEXED_OUTPUTS[@]}"
-  mv -f "${TMP_OUTPUT}" "${FINAL_OUTPUT}"
-  rm -f "${INDEXED_OUTPUTS[@]}"
+# Always build a fresh, self-contained final ROOT file with hadd, including the
+# one-chunk case. This avoids retaining transient references to a renamed chunk
+# when the final file is opened immediately through EOS.
+hadd -f "${TMP_OUTPUT}" "${INDEXED_OUTPUTS[@]}"
+mv -f "${TMP_OUTPUT}" "${FINAL_OUTPUT}"
+rm -f "${INDEXED_OUTPUTS[@]}"
+
+# Compare the unweighted and pThat-reweighted reconstructed pT shapes only
+# after all chunks have been merged. Data flattening is unchanged.
+if [[ "${KIND}" == "MC" ]]; then
+  FLAT_TREE_NAME="${TREE}${PARTICLE}"
+  root -l -b -q "${PLOT_MACRO_NAME}(\"${FINAL_OUTPUT}\",\"${FLAT_TREE_NAME}\",\"${TREE}\",\"${SYSTEM}\",\"${PARTICLE}\",\"${PVSNP}\",\"${REWEIGHT_PLOT_DIR}\",\"Bpt\",\"pThatreweight\",100)"
 fi

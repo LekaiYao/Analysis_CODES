@@ -1,13 +1,18 @@
 #include <TFile.h>
 #include <TTree.h>
 #include <TChain.h>
+#include <TObjArray.h>
 #include <iostream>
 #include <cmath>
 #include <fstream>
+#include <iomanip>
+#include <map>
 #include <string>
+#include <utility>
 #include "../plotER/aux/masses.h"
+#include "MCNormalization.h"
 
-void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TString SYSTEM="ppRef", TString KIND="MC", TString PARTICLE="", TString PVSNP="")
+void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TString SYSTEM="ppRef", TString KIND="MC", TString PARTICLE="", TString PVSNP="", TString MCNORMFILE="config/mc_normalization.csv")
 {
     bool isMC = (KIND == "MC");
     bool Fid_region  = true;       // apply fiducial region selection
@@ -36,12 +41,60 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
     std::cout << "Total files added: "      << tin->GetNtrees() << std::endl;
     std::cout << "Total entries in chain: " << tin->GetEntries() << std::endl;
 
+    if (tin->GetNtrees() == 0) {
+        throw std::runtime_error("No input ROOT files were added from " + std::string(FILEIN.Data()));
+    }
+
+    // Resolve and validate every MC input before creating an output file. The
+    // same per-campaign entry is later used by both the reco and gen chains.
+    MCNormalization::Registry mcNormalization;
+    MCNormalization::Context mcContext;
+    std::map<std::string, MCNormalization::Entry> mcNormalizationByFile;
+    if (isMC) {
+        mcContext = MCNormalization::BuildContext(SYSTEM.Data(), TREENAME.Data(),
+                                                   PARTICLE.Data(), PVSNP.Data());
+        mcNormalization.Load(MCNORMFILE.Data());
+
+        std::map<std::string, std::pair<MCNormalization::Entry, int>> sampleSummary;
+        TObjArray *inputFiles = tin->GetListOfFiles();
+        if (!inputFiles || inputFiles->GetEntries() == 0) {
+            throw std::runtime_error("The MC chain has no input files to normalize");
+        }
+
+        TIter nextInput(inputFiles);
+        TObject *inputObject = nullptr;
+        while ((inputObject = nextInput())) {
+            const std::string fileName = inputObject->GetTitle();
+            const auto entry = mcNormalization.Resolve(fileName, mcContext);
+            mcNormalizationByFile[fileName] = entry;
+            const std::string summaryKey = entry.pathPattern + "|" + std::to_string(entry.pthat);
+            auto inserted = sampleSummary.emplace(summaryKey, std::make_pair(entry, 0));
+            ++inserted.first->second.second;
+        }
+
+        std::cout << "MC normalization table: " << MCNORMFILE << std::endl;
+        std::cout << "pThat sample normalization (xsec_pb * filter_eff / n_gen):" << std::endl;
+        for (const auto &item : sampleSummary) {
+            const auto &entry = item.second.first;
+            std::cout << "  pThat=" << std::setw(2) << entry.pthat
+                      << "  files=" << std::setw(3) << item.second.second
+                      << "  xsec(pb)=" << entry.xsecPb
+                      << "  filterEff=" << entry.filterEfficiency
+                      << "  nGen=" << entry.nGenerated
+                      << "  pThatreweight=" << std::setprecision(12) << entry.Weight()
+                      << std::setprecision(6) << std::endl;
+        }
+    }
+
     // --------------------------------------------------
     // Output file
     // --------------------------------------------------
     TString outputFile = "flat_" + TREENAME + "_" + SYSTEM + "_" + KIND + specCASES + NUN + ".root";  //
     TFile *fout = new TFile(outputFile, "RECREATE");
     TTree *tout = new TTree(TREENAME + PARTICLE, "Flattened tree");
+    // Do not leave intermediate autosaved cycles in chunk files. Besides making
+    // the file larger, such cycles can retain references to a chunk's old path.
+    tout->SetAutoSave(0);
 
     // --------------------------------------------------
     // Prepare gen-level input chain and output tree
@@ -60,12 +113,33 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
 
     TTree *tgenOut = nullptr;
 
+    auto updateMCWeight = [&](TChain *chain, Int_t &activeTreeNumber,
+                              Double_t &weight) {
+        const Int_t treeNumber = chain->GetTreeNumber();
+        if (treeNumber == activeTreeNumber) return;
+        activeTreeNumber = treeNumber;
+
+        if (!chain->GetFile()) {
+            throw std::runtime_error("Cannot determine the current MC input file");
+        }
+        const std::string fileName = chain->GetFile()->GetName();
+        auto match = mcNormalizationByFile.find(fileName);
+        if (match == mcNormalizationByFile.end()) {
+            // Handles harmless path spelling differences between TChainElement
+            // and the file opened by ROOT while preserving the same validation.
+            match = mcNormalizationByFile.emplace(
+                fileName, mcNormalization.Resolve(fileName, mcContext)).first;
+        }
+        weight = match->second.Weight();
+    };
+
     // --------------------------------------------------
     // Input reconstructed branches 
     // --------------------------------------------------
     const Int_t MAXCAND = 40000;
-    Int_t Bsize, nSelectedChargedTracks, CentBin;
+    Int_t Bsize, CentBin;
     Float_t PVx, PVy, PVz, PVnchi2;
+    Float_t nChargedTracks, nChargedTracks_LOOSE, nChargedTracks_TIGHT;
     static Float_t Bmass[MAXCAND], Bpt[MAXCAND], By[MAXCAND], Bgen[MAXCAND];
     static Float_t BvtxX[MAXCAND], BvtxY[MAXCAND];
     static Bool_t Bmu1isTriggered[MAXCAND];
@@ -111,20 +185,43 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
     static Float_t Btrk2nPixelLayer[MAXCAND];  
     static Float_t Btrk2nStripLayer[MAXCAND];
     static Float_t BLxy[MAXCAND];
-    static Float_t Bmu1y[MAXCAND];
-    static Float_t Bmu2y[MAXCAND];
     static Float_t Bmu1pt[MAXCAND];
     static Float_t Bmu2pt[MAXCAND];
+    static Float_t Bmu1eta[MAXCAND];
+    static Float_t Bmu2eta[MAXCAND];
+    static Float_t Bmu1phi[MAXCAND];
+    static Float_t Bmu2phi[MAXCAND];
+    static Float_t Bujpt[MAXCAND];
+    static Float_t Bujeta[MAXCAND];
+    static Float_t Bujphi[MAXCAND];
+    static Float_t Bujlxy[MAXCAND];
+    static Bool_t BdiTrackFitValid[MAXCAND];
+    static Float_t Btrk1Dz1[MAXCAND];
+    static Float_t Btrk2Dz1[MAXCAND];
+    static Float_t Btrk1DzError1[MAXCAND];
+    static Float_t Btrk2DzError1[MAXCAND];
+    static Float_t Btrk1Dxy1[MAXCAND];
+    static Float_t Btrk2Dxy1[MAXCAND];
+    static Float_t Btrk1DxyError1[MAXCAND];
+    static Float_t Btrk2DxyError1[MAXCAND];
+    static Float_t Btktketa[MAXCAND];
+    static Float_t Btktkphi[MAXCAND];
+    static Float_t Btktky[MAXCAND];
+    static Float_t Bdoubletpt[MAXCAND];
+    static Float_t Bdoubleteta[MAXCAND];
+    static Float_t Bdoubletphi[MAXCAND];
+    static Float_t Bdoublety[MAXCAND];
     static Float_t Bnorm_trk1Dz[MAXCAND];
     static Float_t Bnorm_trk2Dz[MAXCAND];
-
 
     tin->SetBranchAddress("Bsize", &Bsize);
     tin->SetBranchAddress("PVx", &PVx);
     tin->SetBranchAddress("PVy", &PVy);
     tin->SetBranchAddress("PVz", &PVz);
     tin->SetBranchAddress("PVnchi2", &PVnchi2);
-    tin->SetBranchAddress("nSelectedChargedTracks", &nSelectedChargedTracks);
+    tin->SetBranchAddress("nChargedTracks", &nChargedTracks);
+    tin->SetBranchAddress("nChargedTracks_LOOSE", &nChargedTracks_LOOSE);
+    tin->SetBranchAddress("nChargedTracks_TIGHT", &nChargedTracks_TIGHT);
     tin->SetBranchAddress("CentBin", &CentBin);
     tin->SetBranchAddress("Bmass", Bmass);
     tin->SetBranchAddress("BvtxX", BvtxX);
@@ -138,8 +235,6 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
     tin->SetBranchAddress("Bmu2SoftMuID", Bmu2SoftMuID);
     tin->SetBranchAddress("Bmu1HybridSoftMuID", Bmu1HybridSoftMuID);
     tin->SetBranchAddress("Bmu2HybridSoftMuID", Bmu2HybridSoftMuID);
-    tin->SetBranchAddress("Bmu1y", Bmu1y);
-    tin->SetBranchAddress("Bmu2y", Bmu2y);
     tin->SetBranchAddress("Bmu1isAcc", Bmu1isAcc);
     tin->SetBranchAddress("Bmu2isAcc", Bmu2isAcc);  
     tin->SetBranchAddress("Btrk1highPurity", Btrk1highPurity);
@@ -179,25 +274,60 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
     tin->SetBranchAddress("BLxy", BLxy);
     tin->SetBranchAddress("Bmu1pt", Bmu1pt);
     tin->SetBranchAddress("Bmu2pt", Bmu2pt);
+    tin->SetBranchAddress("Bmu1eta", Bmu1eta);
+    tin->SetBranchAddress("Bmu2eta", Bmu2eta);
+    tin->SetBranchAddress("Bmu1phi", Bmu1phi);
+    tin->SetBranchAddress("Bmu2phi", Bmu2phi);
+    tin->SetBranchAddress("Bujpt", Bujpt);
+    tin->SetBranchAddress("Bujeta", Bujeta);
+    tin->SetBranchAddress("Bujphi", Bujphi);
+    tin->SetBranchAddress("Bujlxy", Bujlxy);
+    tin->SetBranchAddress("BdiTrackFitValid", BdiTrackFitValid);
+    tin->SetBranchAddress("Btrk1Dz1", Btrk1Dz1);
+    tin->SetBranchAddress("Btrk2Dz1", Btrk2Dz1);
+    tin->SetBranchAddress("Btrk1DzError1", Btrk1DzError1);
+    tin->SetBranchAddress("Btrk2DzError1", Btrk2DzError1);
+    tin->SetBranchAddress("Btrk1Dxy1", Btrk1Dxy1);
+    tin->SetBranchAddress("Btrk2Dxy1", Btrk2Dxy1);
+    tin->SetBranchAddress("Btrk1DxyError1", Btrk1DxyError1);
+    tin->SetBranchAddress("Btrk2DxyError1", Btrk2DxyError1);
+    tin->SetBranchAddress("Btktketa", Btktketa);
+    tin->SetBranchAddress("Btktkphi", Btktkphi);
+    tin->SetBranchAddress("Btktky", Btktky);
+    tin->SetBranchAddress("Bdoubletpt", Bdoubletpt);
+    tin->SetBranchAddress("Bdoubleteta", Bdoubleteta);
+    tin->SetBranchAddress("Bdoubletphi", Bdoubletphi);
+    tin->SetBranchAddress("Bdoublety", Bdoublety);
     tin->SetBranchAddress("Bnorm_trk1Dz", Bnorm_trk1Dz);
     tin->SetBranchAddress("Bnorm_trk2Dz", Bnorm_trk2Dz);
     // --------------------------------------------------
     // Output branches (for Selection // Analysis)
     // --------------------------------------------------
     float PVx_out, PVy_out, PVz_out, PVnchi2_out;
+    float nChargedTracks_out, nChargedTracks_LOOSE_out, nChargedTracks_TIGHT_out;
     float Bmass_out, Bpt_out, By_out, Bchi2Prob_out, Btrk1dR_out, Btrk2dR_out, BtrkPtimb_out, Btktkpt_out, Bujmass_out, Bnorm_svpvDistance_2D_out;
     float BQvalue_out, Bnorm_trk1Dxy_out, Bnorm_trk2Dxy_out, Balpha_out, Bdtheta_out, Bcos_dtheta_out, Btktkmass_out, Btrk1Pt_out, Btrk2Pt_out;
     float Bgen_out, BsvpvDistance_2D_out, BtktkvProb_out, BLxy_out;
     float BvtxX_out, BvtxY_out, BsvpvDisErr_2D_out;
     float Btrk1Eta_out, Btrk2Eta_out, Btrk1Phi_out, Btrk2Phi_out, Btrk1PtErr_out, Btrk2PtErr_out;
-    float BujvProb_out, Bmu1y_out, Bmu2y_out, Bmu1pt_out, Bmu2pt_out, Bnorm_trk1Dz_out, Bnorm_trk2Dz_out;
-    int CentBin_out, nSelectedChargedTracks_out;
+    float BujvProb_out, Bmu1pt_out, Bmu2pt_out, Bnorm_trk1Dz_out, Bnorm_trk2Dz_out;
+    float Bmu1eta_out, Bmu2eta_out, Bmu1phi_out, Bmu2phi_out;
+    float Bujpt_out, Bujeta_out, Bujphi_out, Bujlxy_out;
+    float Btrk1Dz1_out, Btrk2Dz1_out, Btrk1DzError1_out, Btrk2DzError1_out;
+    float Btrk1Dxy1_out, Btrk2Dxy1_out, Btrk1DxyError1_out, Btrk2DxyError1_out;
+    float Btktketa_out, Btktkphi_out, Btktky_out;
+    float Bdoubletpt_out, Bdoubleteta_out, Bdoubletphi_out, Bdoublety_out;
+    bool BdiTrackFitValid_out;
+    int CentBin_out;
+    Double_t pThatreweight_out = 1.;
 
     tout->Branch("PVx", &PVx_out, "PVx/F");
     tout->Branch("PVy", &PVy_out, "PVy/F");
     tout->Branch("PVz", &PVz_out, "PVz/F");
     tout->Branch("PVnchi2", &PVnchi2_out, "PVnchi2/F");
-    tout->Branch("nSelectedChargedTracks", &nSelectedChargedTracks_out, "nSelectedChargedTracks/I");
+    tout->Branch("nChargedTracks", &nChargedTracks_out, "nChargedTracks/F");
+    tout->Branch("nChargedTracks_LOOSE", &nChargedTracks_LOOSE_out, "nChargedTracks_LOOSE/F");
+    tout->Branch("nChargedTracks_TIGHT", &nChargedTracks_TIGHT_out, "nChargedTracks_TIGHT/F");
     tout->Branch("CentBin", &CentBin_out, "CentBin/I");
     tout->Branch("Bmass", &Bmass_out, "Bmass/F");
     tout->Branch("Bpt", &Bpt_out, "Bpt/F");
@@ -231,20 +361,44 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
     tout->Branch("BLxy", &BLxy_out, "BLxy/F");
     tout->Branch("BvtxX", &BvtxX_out, "BvtxX/F");
     tout->Branch("BvtxY", &BvtxY_out, "BvtxY/F");
-    tout->Branch("Bmu1y", &Bmu1y_out, "Bmu1y/F");
-    tout->Branch("Bmu2y", &Bmu2y_out, "Bmu2y/F");
     tout->Branch("Bmu1pt", &Bmu1pt_out, "Bmu1pt/F");
     tout->Branch("Bmu2pt", &Bmu2pt_out, "Bmu2pt/F");
+    tout->Branch("Bmu1eta", &Bmu1eta_out, "Bmu1eta/F");
+    tout->Branch("Bmu2eta", &Bmu2eta_out, "Bmu2eta/F");
+    tout->Branch("Bmu1phi", &Bmu1phi_out, "Bmu1phi/F");
+    tout->Branch("Bmu2phi", &Bmu2phi_out, "Bmu2phi/F");
+    tout->Branch("Bujpt", &Bujpt_out, "Bujpt/F");
+    tout->Branch("Bujeta", &Bujeta_out, "Bujeta/F");
+    tout->Branch("Bujphi", &Bujphi_out, "Bujphi/F");
+    tout->Branch("Bujlxy", &Bujlxy_out, "Bujlxy/F");
+    tout->Branch("BdiTrackFitValid", &BdiTrackFitValid_out, "BdiTrackFitValid/O");
+    tout->Branch("Btrk1Dz1", &Btrk1Dz1_out, "Btrk1Dz1/F");
+    tout->Branch("Btrk2Dz1", &Btrk2Dz1_out, "Btrk2Dz1/F");
+    tout->Branch("Btrk1DzError1", &Btrk1DzError1_out, "Btrk1DzError1/F");
+    tout->Branch("Btrk2DzError1", &Btrk2DzError1_out, "Btrk2DzError1/F");
+    tout->Branch("Btrk1Dxy1", &Btrk1Dxy1_out, "Btrk1Dxy1/F");
+    tout->Branch("Btrk2Dxy1", &Btrk2Dxy1_out, "Btrk2Dxy1/F");
+    tout->Branch("Btrk1DxyError1", &Btrk1DxyError1_out, "Btrk1DxyError1/F");
+    tout->Branch("Btrk2DxyError1", &Btrk2DxyError1_out, "Btrk2DxyError1/F");
+    tout->Branch("Btktketa", &Btktketa_out, "Btktketa/F");
+    tout->Branch("Btktkphi", &Btktkphi_out, "Btktkphi/F");
+    tout->Branch("Btktky", &Btktky_out, "Btktky/F");
+    tout->Branch("Bdoubletpt", &Bdoubletpt_out, "Bdoubletpt/F");
+    tout->Branch("Bdoubleteta", &Bdoubleteta_out, "Bdoubleteta/F");
+    tout->Branch("Bdoubletphi", &Bdoubletphi_out, "Bdoubletphi/F");
+    tout->Branch("Bdoublety", &Bdoublety_out, "Bdoublety/F");
     tout->Branch("Bnorm_trk1Dz", &Bnorm_trk1Dz_out, "Bnorm_trk1Dz/F");
     tout->Branch("Bnorm_trk2Dz", &Bnorm_trk2Dz_out, "Bnorm_trk2Dz/F");
     if (isMC){
         tout->Branch("Bgen", &Bgen_out, "Bgen/F");
+        tout->Branch("pThatreweight", &pThatreweight_out, "pThatreweight/D");
     }
 
     // --------------------------------------------------
     // Event loop
     // --------------------------------------------------
     Long64_t nentries = tin->GetEntries();
+    Int_t activeRecoTreeNumber = -1;
     std::cout << "Processing " << nentries << " entries..." << std::endl;
     for(Long64_t ev=0; ev<nentries; ++ev)
     {
@@ -253,6 +407,8 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
             std::cout << "Processing event " << ev << " / " << nentries 
                       << " (" << (100.0*ev/nentries) << "%)" << std::endl;
         }
+        if (tin->LoadTree(ev) < 0) break;
+        if (isMC) updateMCWeight(tin, activeRecoTreeNumber, pThatreweight_out);
         tin->GetEntry(ev);
 
         // Event-level variables
@@ -261,7 +417,9 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
         PVz_out = PVz;
         PVnchi2_out = PVnchi2;
         CentBin_out = CentBin;
-        nSelectedChargedTracks_out = nSelectedChargedTracks;
+        nChargedTracks_out = nChargedTracks;
+        nChargedTracks_LOOSE_out = nChargedTracks_LOOSE;
+        nChargedTracks_TIGHT_out = nChargedTracks_TIGHT;
 
         // --------------------------------------------------
         // Candidate loop
@@ -352,11 +510,33 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
             Btrk2PtErr_out = Btrk2PtErr[i];
             BvtxX_out = BvtxX[i];
             BvtxY_out = BvtxY[i];
-            Bmu1y_out = Bmu1y[i];
-            Bmu2y_out = Bmu2y[i];
             BLxy_out  = BLxy[i];
             Bmu1pt_out = Bmu1pt[i];
             Bmu2pt_out = Bmu2pt[i];
+            Bmu1eta_out = Bmu1eta[i];
+            Bmu2eta_out = Bmu2eta[i];
+            Bmu1phi_out = Bmu1phi[i];
+            Bmu2phi_out = Bmu2phi[i];
+            Bujpt_out = Bujpt[i];
+            Bujeta_out = Bujeta[i];
+            Bujphi_out = Bujphi[i];
+            Bujlxy_out = Bujlxy[i];
+            BdiTrackFitValid_out = BdiTrackFitValid[i];
+            Btrk1Dz1_out = Btrk1Dz1[i];
+            Btrk2Dz1_out = Btrk2Dz1[i];
+            Btrk1DzError1_out = Btrk1DzError1[i];
+            Btrk2DzError1_out = Btrk2DzError1[i];
+            Btrk1Dxy1_out = Btrk1Dxy1[i];
+            Btrk2Dxy1_out = Btrk2Dxy1[i];
+            Btrk1DxyError1_out = Btrk1DxyError1[i];
+            Btrk2DxyError1_out = Btrk2DxyError1[i];
+            Btktketa_out = Btktketa[i];
+            Btktkphi_out = Btktkphi[i];
+            Btktky_out = Btktky[i];
+            Bdoubletpt_out = Bdoubletpt[i];
+            Bdoubleteta_out = Bdoubleteta[i];
+            Bdoubletphi_out = Bdoubletphi[i];
+            Bdoublety_out = Bdoublety[i];
             Bnorm_trk1Dz_out = Bnorm_trk1Dz[i];
             Bnorm_trk2Dz_out = Bnorm_trk2Dz[i];
 
@@ -403,9 +583,11 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
 
         // Output tree (flat)
         tgenOut = new TTree("ntGen", "Gen-level (flat, filtered)");
+        tgenOut->SetAutoSave(0);
         Float_t Gmu1eta_out, Gmu1pt_out, Gmu2eta_out, Gmu2pt_out;
         Float_t Gtk1pt_out, Gtk1eta_out, Gtk2pt_out, Gtk2eta_out, Gpt_out, Gy_out;
         Int_t GpdgId_out;
+        Double_t pThatreweight_gen_out = 1.;
         tgenOut->Branch("Gmu1eta", &Gmu1eta_out, "Gmu1eta/F");
         tgenOut->Branch("Gmu1pt", &Gmu1pt_out, "Gmu1pt/F");
         tgenOut->Branch("Gmu2eta", &Gmu2eta_out, "Gmu2eta/F");
@@ -417,9 +599,13 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
         tgenOut->Branch("GpdgId", &GpdgId_out, "GpdgId/I");
         tgenOut->Branch("Gpt", &Gpt_out, "Gpt/F");
         tgenOut->Branch("Gy", &Gy_out, "Gy/F");
+        tgenOut->Branch("pThatreweight", &pThatreweight_gen_out, "pThatreweight/D");
 
         const Long64_t ngen = tgen->GetEntries();
+        Int_t activeGenTreeNumber = -1;
         for (Long64_t ev=0; ev<ngen; ++ev) {
+            if (tgen->LoadTree(ev) < 0) break;
+            updateMCWeight(tgen, activeGenTreeNumber, pThatreweight_gen_out);
             tgen->GetEntry(ev);
             for (int i=0; i<Gsize; ++i) {
 
@@ -452,9 +638,12 @@ void Flat_TREEs( TString FILEIN="", TString NUN="", TString TREENAME="ntmix", TS
 
     std::cout << "Output tree has " << tout->GetEntries() << " entries" << std::endl;
     // Write trees (only two top-level trees)
-    tout->Write();
-    if (isMC && tgenOut) tgenOut->Write();
+    tout->Write("", TObject::kOverwrite);
+    if (isMC && tgenOut) tgenOut->Write("", TObject::kOverwrite);
+    fout->Purge();
     fout->Close();
     delete tin;
+    delete tgen;
+    delete fout;
     std::cout << "Done & Saved -> " << outputFile << "\n";
 }
