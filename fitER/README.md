@@ -1,5 +1,9 @@
 # fitER：拟合入口
 
+> 发布范围：本 README 中的 results、ROOTfiles、archive、backups、metadata 产物及 docs 链接为 CERN 本地资料，不随 Git 发布；源码、配置目录的链接随仓库提供。
+
+> 2026-09-28：用户因旧 pThat reweight 定义问题要求归档既有结果。旧做法按生成样本 pthat=N 统一赋权；用户指定后续按事件实际 pThat 区间（如 5–10、10–15）合并各生成样本成分后赋权。本次只归档，未实现或验证新权重；旧拟合、选点与 validation 不作为新样本结果或有效缓存。 [日期归档入口](../archive/2026-09-28/README.md)。下方旧研究名称与说明仅作历史索引。
+
 默认2023 X拟合从仓库根运行：
 
 ```bash
@@ -16,7 +20,7 @@ python3 scripts/workflows/run_pb23_default_fit.py --tag TAG --output OUTPUT
 | [diagnostics/](diagnostics/) | MC峰形诊断、重画、结果导出及历史注入研究工具 |
 | roofitB.C、roofitB.h、aux/ | 保留的通用原生拟合核心与共用头文件 |
 | configs/ | 已有版本化物理配置 |
-| results/（本地资料：`fitER/results/README.md`，不随Git发布）、ROOTfiles/ | 已有输出，路径不变 |
+| [results/](results/README.md)、ROOTfiles/ | 新结果入口；旧输出见日期归档 |
 | logs/、.cache/ | 历史运行日志及编译/字节码缓存，非分析入口 |
 
 ## 按任务选择

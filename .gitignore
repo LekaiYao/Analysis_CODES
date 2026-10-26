@@ -94,3 +94,18 @@ selectionER/optimalCUT.local.conf
 
 # Dated local scientific artifact archives
 /archive/
+# Local scientific outputs and session/build artifacts; never delete on ignore.
+/.cache/
+/plotER/results/
+/X3872/backups/
+/X3872/three_weights_pb23_pb25/
+/X3872/metadata/*.json
+/X3872/metadata/*.before_*
+/X3872/metadata/run2_source_maps/
+
+# Coding-agent files remain local.
+AGENTS.md
+CLAUDE.md
+.codex/
+.agents/
+.claude/
