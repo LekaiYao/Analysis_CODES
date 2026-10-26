@@ -19,6 +19,7 @@
 #include <RooFitResult.h>
 #include <RooGaussian.h>
 #include <RooHist.h>
+#include <RooCurve.h>
 #include <RooPlot.h>
 #include <RooProduct.h>
 #include <RooRealVar.h>
@@ -30,8 +31,75 @@
 #include <iomanip>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 
 using namespace RooFit;
+
+double ExpectedDataYield(RooAddPdf& model, RooRealVar& mass)
+{
+    RooArgSet observables(mass);
+    return model.expectedEvents(&observables);
+}
+
+struct DataPlotQuality {
+    double chi2 = 0.;
+    int points = 0;
+    int floating = 0;
+    int ndf = 0;
+    double ratio = 0.;
+};
+
+// ROOT 6.32.02 RooCurve::chiSquare convention: nonzero observed bins,
+// curve averaged across each bin, asymmetric Poisson error toward the curve.
+DataPlotQuality FrameDataQuality(RooPlot& frame, int floating)
+{
+    auto* hist = frame.getHist("data");
+    auto* curve = frame.getCurve("model");
+    if (!hist || !curve) throw std::runtime_error("Missing DATA plot objects");
+    DataPlotQuality q;
+    q.floating = floating;
+    const double lo = curve->GetPointX(0), hi = curve->GetPointX(curve->GetN()-1);
+    for (int i=0; i<hist->GetN(); ++i)
+        if (hist->GetPointX(i)>=lo && hist->GetPointX(i)<=hi && hist->GetPointY(i)!=0.) ++q.points;
+    q.ndf = q.points-floating;
+    if (q.ndf<=0) throw std::runtime_error("Nonpositive DATA plot ndf");
+    q.chi2 = curve->chiSquare(*hist,0)*q.points;
+    q.ratio = q.chi2/q.ndf;
+    if (!std::isfinite(q.chi2) || std::abs(q.ratio-frame.chiSquare("model","data",floating))>1.e-10)
+        throw std::runtime_error("DATA chi-square consistency failure");
+    return q;
+}
+
+DataPlotQuality GetDataPlotQuality(RooDataSet& data, RooAddPdf& model,
+                                  RooRealVar& mass, int bins, int floating)
+{
+    std::unique_ptr<RooPlot> frame(mass.frame(Bins(bins)));
+    data.plotOn(frame.get(),Name("data"));
+    model.plotOn(frame.get(),Name("model"),Normalization(ExpectedDataYield(model,mass),RooAbsReal::NumEvent));
+    return FrameDataQuality(*frame,floating);
+}
+
+void WriteDataQuality(const char* outputPath, RooPlot& frame, const DataPlotQuality& q,
+                      double jointChi2=-1., int jointNdf=0)
+{
+    std::string path(outputPath);
+    path=path.substr(0,path.find_last_of('.'))+".chi2.json";
+    std::ofstream out(path);
+    auto* h=frame.getHist("data"); auto* c=frame.getCurve("model");
+    out << std::setprecision(17) << "{\n\"chi2\":" << q.chi2 << ",\"participating_bins\":" << q.points
+        << ",\"floating_parameters\":" << q.floating << ",\"ndf\":" << q.ndf
+        << ",\"chi2_ndf\":" << q.ratio << ",\"joint_chi2\":" << jointChi2
+        << ",\"joint_ndf\":" << jointNdf << ",\"normalization\":\"extended_expected_yield\",\"bins\":[";
+    for(int i=0;i<h->GetN();++i){
+        if(i) out << ",";
+        const double x=h->GetPointX(i);
+        out << "{\"center\":" << x << ",\"observed\":" << h->GetPointY(i)
+            << ",\"expected_curve_average\":" << c->average(x-h->GetErrorXlow(i),x+h->GetErrorXhigh(i))
+            << ",\"error_low\":" << h->GetErrorYlow(i) << ",\"error_high\":" << h->GetErrorYhigh(i) << "}";
+    }
+    out << "]}\n";
+    if(!out) throw std::runtime_error("Could not save DATA chi-square diagnostics");
+}
 
 namespace {
 
@@ -150,14 +218,16 @@ double drawTwoData(const char* outputPath, const char* key, RooDataSet& data,
     mainPad.cd();
     std::unique_ptr<RooPlot> frame(mass.frame(Bins(bins)));
     data.plotOn(frame.get(), Name("data"));
-    model.plotOn(frame.get(), Name("model"), LineColor(kRed + 1), LineWidth(2));
-    model.plotOn(frame.get(), Name("background"), Components(background),
+    model.plotOn(frame.get(), Normalization(ExpectedDataYield(model,mass),RooAbsReal::NumEvent), Name("model"), LineColor(kRed + 1), LineWidth(2));
+    model.plotOn(frame.get(), Normalization(ExpectedDataYield(model,mass),RooAbsReal::NumEvent), Name("background"), Components(background),
                  LineColor(kBlue + 1), LineStyle(2), LineWidth(2));
-    model.plotOn(frame.get(), Name("signal"), Components(signal),
+    model.plotOn(frame.get(), Normalization(ExpectedDataYield(model,mass),RooAbsReal::NumEvent), Name("signal"), Components(signal),
                  LineColor(kOrange + 7), LineStyle(7), LineWidth(2));
-    model.plotOn(frame.get(), Name("psi"), Components(psi),
+    model.plotOn(frame.get(), Normalization(ExpectedDataYield(model,mass),RooAbsReal::NumEvent), Name("psi"), Components(psi),
                  LineColor(kGreen + 2), LineStyle(7), LineWidth(2));
-    const double chi2Ndf = frame->chiSquare("model", "data", fit.floatParsFinal().getSize());
+    const auto quality = FrameDataQuality(*frame,fit.floatParsFinal().getSize());
+    const double chi2Ndf = quality.ratio;
+    WriteDataQuality(outputPath,*frame,quality);
     frame->SetTitle("");
     frame->GetYaxis()->SetTitle("Candidates / 5 MeV");
     frame->SetMaximum(1.55*frame->GetMaximum());
@@ -187,11 +257,14 @@ double drawTwoData(const char* outputPath, const char* key, RooDataSet& data,
     const auto* psiY = dynamic_cast<const RooRealVar*>(fit.floatParsFinal().find("psi_yield"));
     const auto* psiM = dynamic_cast<const RooRealVar*>(plotParameters->find("psi_mean"));
     const auto* psiS = dynamic_cast<const RooRealVar*>(plotParameters->find("psi_scale"));
+    if (!psiY) psiY = dynamic_cast<const RooRealVar*>(plotParameters->find("psi_yield"));
+    if (!psiY->isConstant())
     stats.AddText(Form("N_{#psi}=%.1f #pm %.1f",psiY->getVal(),psiY->getError()));
+    else stats.AddText(Form("N_{#psi}=%.1f (fixed)",psiY->getVal()));
     stats.AddText(Form("mean_{#psi}=%.6f GeV",psiM->getVal()));
     stats.AddText(Form("scale_{#psi}=%.4f",psiS->getVal()));
     stats.AddText(Form("Z_{PL,X}=%.3f", z));
-    stats.AddText(Form("#chi^{2}/ndf=%.3f", chi2Ndf));
+    stats.AddText(Form("#chi^{2}/ndf=%.2f/%d = %.3f", quality.chi2, quality.ndf, chi2Ndf));
     stats.Draw();
 
     pullPad.cd();

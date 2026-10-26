@@ -1,7 +1,7 @@
 from pathlib import Path
-import json,math,hashlib,shutil,argparse,subprocess,sys
+import json,math,hashlib,shutil,argparse,subprocess,sys,os
 ap=argparse.ArgumentParser(description='Explicit conditional X test from a completed two-peak fit')
-ap.add_argument('--source',type=Path,required=True,help='Directory of the selected two-peak result');ap.add_argument('--dry-run',action='store_true');ap.add_argument('--no-report',action='store_true');ap.add_argument('--data-label',choices=['PbPb DATA','ppRef DATA'],default='PbPb DATA');args=ap.parse_args()
+ap.add_argument('--source',type=Path,required=True,help='Directory of the selected two-peak result');ap.add_argument('--dry-run',action='store_true');ap.add_argument('--no-report',action='store_true');ap.add_argument('--data-label',choices=['PbPb DATA','ppRef DATA','PbPb 2018 DATA','PbPb 2023 DATA'],default='PbPb DATA');args=ap.parse_args()
 repo=Path(__file__).resolve().parents[2];base=args.source.resolve();out=base/'conditional'
 first_result=json.loads((base/'fit_result.json').read_text());assert first_result['mass_range']==[3.62,4.0]
 assert 'x' in first_result['signals'] and 'psi' in first_result['signals']
@@ -15,6 +15,8 @@ src=base/'fit_workspace.root';f=R.TFile.Open(str(src));w=f.Get('ws_nominal');fir
 for p in params:p.setConstant(True)
 for n in ['x_yield','nbkg']:w.var(n).setConstant(False)
 fixed={p.GetName():p.getVal() for p in params if p.isConstant()};initial={p.GetName():p.getVal() for p in params}
+background_order=first_result.get('background_order',2)
+assert all('a'+str(i) in fixed and w.var('a'+str(i)).isConstant() for i in range(background_order))
 retry_history=[]
 def fit_with_one_restart(pdf,d,opts):
  def snapshot(q):
@@ -34,10 +36,16 @@ for n,val in fixed.items():assert w.var(n).getVal()==val
 nll0=null.createNLL(data,R.RooFit.Extended(True),R.RooFit.Range('all'));assert abs(nll0.getVal()-nullfit.minNll())<1e-6
 w.var('x_yield').setVal(0);nll=model.createNLL(data,R.RooFit.Extended(True),R.RooFit.Range('all'));assert abs(nll.getVal()-nll0.getVal())<1e-6
 params.assignValueOnly(snap);assert abs(nll.getVal()-alt.minNll())<1e-6;q0=max(0.,2*(nullfit.minNll()-alt.minNll()));z=math.sqrt(q0)
-r={'tag':first_result['tag'],'xeff':first_result['xeff'],'interpretation':'conditional same-data fixed-parameter sqrt(q0); calibration not established','mass_range':[3.62,4.0],'data_entries':data.numEntries(),'step1_reused':{'path':str(src),'sha256':hashlib.sha256(src.read_bytes()).hexdigest(),'fit':'fit_result_alt','nll':first.minNll()},'fixed_parameters':fixed,'initial_parameters':initial,'alt':altinfo,'null':nullinfo,'q0':q0,'Z_PL':z,'audit':{'quality_pass':all(x['status']==0 and x['covQual']==3 and x['edm']<1e-3 for x in [altinfo,nullinfo]),'fixed_parameters_unchanged':True,'null_removed_x_matches_zero_yield':True,'nll_recomputed':True}}
+r={'tag':first_result['tag'],'xeff':first_result['xeff'],'background_order':background_order,'interpretation':'conditional same-data fixed-parameter sqrt(q0); calibration not established','mass_range':[3.62,4.0],'data_entries':data.numEntries(),'step1_reused':{'path':str(src),'sha256':hashlib.sha256(src.read_bytes()).hexdigest(),'fit':'fit_result_alt','nll':first.minNll()},'fixed_parameters':fixed,'initial_parameters':initial,'alt':altinfo,'null':nullinfo,'q0':q0,'Z_PL':z,'audit':{'quality_pass':all(x['status']==0 and x['covQual']==3 and x['edm']<1e-3 for x in [altinfo,nullinfo]),'fixed_parameters_unchanged':True,'null_removed_x_matches_zero_yield':True,'nll_recomputed':True}}
 output=R.TFile.Open(str(out/'fit_workspace.root'),'RECREATE');ww=R.RooWorkspace('ws_conditional');imp=getattr(ww,'import');imp(data);imp(model);imp(null,R.RooFit.RecycleConflictNodes());ww.Write();alt.Write('fit_result_alt');nullfit.Write('fit_result_null');first.Write('fit_result_step1');output.Close();(out/'fit_result.json').write_text(json.dumps(r,indent=2)+'\n')
 plot=(repo/'fitER/models/TwoPeakPlots.C').read_text();assert plot.count('PbPb DATA')==1;plot=plot.replace('PbPb DATA',args.data_label,1);a='fit.floatParsFinal().find("psi_yield")';assert plot.count(a)==1;plot=plot.replace(a,'plotParameters->find("psi_yield")',1);a='"N_{#psi}=%.1f #pm %.1f",psiY->getVal(),psiY->getError()';assert plot.count(a)==1;plot=plot.replace(a,'"N_{#psi}=%.1f (fixed)",psiY->getVal()',1);(art/'TwoPeakPlots.C').write_text(plot)
-R.gSystem.SetBuildDir(str(art),True);assert R.gSystem.CompileMacro(str(art/'TwoPeakPlots.C'),'k')>0;R.PlotTwoData(str(out/'data_fit.pdf'),data,model,w.pdf('x_signal'),w.pdf('psi_signal'),w.pdf('backgroundPdf'),mass,alt,z)
+plot_build=art
+if os.environ.get('PBC_PLOT_CACHE'):
+ plot_key=hashlib.sha256((R.gROOT.GetVersion()+'\n'+plot).encode()).hexdigest();plot_build=Path(os.environ['PBC_PLOT_CACHE'])/plot_key;plot_build.mkdir(parents=True,exist_ok=True);cached_plot=plot_build/'TwoPeakPlots.C'
+ if not cached_plot.exists():cached_plot.write_text(plot)
+ assert cached_plot.read_text()==plot, 'Plot cache source mismatch'
+ (art/'plot_build.json').write_text(json.dumps({'cache':str(plot_build),'root_version':R.gROOT.GetVersion(),'source_sha256':hashlib.sha256(plot.encode()).hexdigest()},indent=2)+'\n')
+R.gSystem.SetBuildDir(str(plot_build),True);assert R.gSystem.CompileMacro(str(plot_build/'TwoPeakPlots.C'),'k')>0;R.PlotTwoData(str(out/'data_fit.pdf'),data,model,w.pdf('x_signal'),w.pdf('psi_signal'),w.pdf('backgroundPdf'),mass,alt,z)
 print(json.dumps(r,indent=2),flush=True)
 
 if not args.no_report:subprocess.run([sys.executable,str(repo/'scripts/workflows/update_fit_reports.py')],check=True)

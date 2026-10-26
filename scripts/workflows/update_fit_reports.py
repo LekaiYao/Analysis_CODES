@@ -7,11 +7,20 @@ BASELINE='X_pb23_v19_fid13_9v9_rw0_xgb_v1'
 def read(p):return json.loads(p.read_text())
 def link(p,owner):return os.path.relpath(p,owner.parent)
 def write(p,s):
- p.parent.mkdir(parents=True,exist_ok=True);tmp=p.with_suffix(p.suffix+'.tmp');tmp.write_text(s);tmp.replace(p)
+ p.parent.mkdir(parents=True,exist_ok=True)
+ import tempfile, os
+ fd, name = tempfile.mkstemp(prefix=p.name+'.', suffix='.tmp', dir=p.parent)
+ try:
+  with os.fdopen(fd, 'w') as handle: handle.write(s)
+  if p.exists(): os.chmod(name, p.stat().st_mode)
+  os.replace(name, p)
+ finally:
+  if os.path.exists(name): os.unlink(name)
 def key(x):return (x[0]!=BASELINE,x[0],str(x[1]))
 def main():
  root=REPO/'fitER/results/ml_fits';wide_doc=REPO/'docs/pb23_wide_fit_results.md';two_doc=REPO/'docs/pb23_two_peak_results.md';scans=[];peaks=[]
- for tagdir in root.iterdir():
+ roots=[root,REPO/'fitER/results/archive/ml_fits']
+ for tagdir in [p for base in roots if base.exists() for p in base.iterdir()]:
   if not tagdir.is_dir():continue
   for p in tagdir.iterdir():
    if not p.is_dir() or not (p/'scan_manifest.json').exists() or not (p/'fit_summary.json').exists() or not (p/'audit.json').exists():continue
@@ -22,7 +31,7 @@ def main():
    expected=sorted(round(x['target_efficiency']*100) for x in trainings[0]['points'])
    if sorted(x['xeff'] for x in rows)!=expected:continue
    scans.append((tagdir.name,p,m,rows,read(p/'audit.json')))
-  for p in list((tagdir/'two_peak').glob('xeff*'))+list((tagdir/'two_peak_mc_width').glob('xeff*')):
+  for p in list((tagdir/'two_peak').glob('xeff*'))+list((tagdir/'two_peak_mc_width').glob('xeff*'))+list((tagdir/'two_peak_mc_width').glob('score*'))+list((tagdir/'checks/x_width_float').glob('xeff*'))+list((tagdir/'checks/cheb4').glob('*')):
    if (p/'fit_result.json').exists():peaks.append((tagdir.name,p,read(p/'fit_result.json')))
  scans.sort(key=key);peaks.sort(key=key)
  s=['# PbPb23 宽范围单 X 拟合：持续结果汇总','','本文件由 `scripts/workflows/update_fit_reports.py` 从结果JSON生成；新结果完成后更新本文件，不另建逐次拟合docs。基准固定列在首位。','','2023 DATA，3.75–4.00 GeV；MC双高斯定形，DATA mean/scale浮动，C2背景，Strategy2。√q₀是约定的初步指标；表中不同扫描点集及fiducial selection必须一并比较。','','## 扫描最大值','','| ML tag | 扫描xeff [%] | 最大点 [%] | √q₀ | X yield | mean [GeV] | scale | 审计 |','|---|---|---:|---:|---:|---:|---:|---|'];maxima=[]
@@ -71,18 +80,22 @@ def main():
   s+=['',f"[全部拟合图]({link(p/'all_fits.pdf',wide_doc)}) · [CSV]({link(p/'fit_summary.csv',wide_doc)}) · [配置]({link(p/'scan_manifest.json',wide_doc)}) · [审计]({link(p/'audit.json',wide_doc)})。"]
  s+=['','历史窄范围与不同Strategy扫描见 [旧报告归档](archive/pb23_legacy_fits/README.md)，不混入上述宽范围比较。']
  write(wide_doc,'\n'.join(s)+'\n');write(REPO/'fitER/results/comparisons/pb23/wide_scan_maxima.json',json.dumps(maxima,indent=2)+'\n')
- s=['# PbPb23 双峰及条件检验：持续结果汇总','','本文件由 `scripts/workflows/update_fit_reports.py` 从结果JSON生成；以后每个明确指定的双峰选点完成后加入这里，不另建逐次拟合docs。','','DATA范围3.62–4.00 GeV。先拟合X+ψ(2S)+C2背景，当前默认两峰mean独立浮动、scale=1固定为MC宽度；历史mean/scale浮动策略保留并明确标记。再固定最佳形状、ψ(2S) yield及背景形状，仅X/background yields自由，移除X后仅background yield自由。两步指标分别记录，条件指标的统计可靠程度留待后续讨论。','','| ML tag | xeff [%] | 浮动拟合 X yield | 浮动 √q₀,X | 条件 X yield | 条件 √q₀,X |','|---|---:|---:|---:|---:|---:|']
+ s=['# PbPb 单年份双峰及条件检验：持续结果汇总','','本文件由 `scripts/workflows/update_fit_reports.py` 从结果JSON生成；以后每个明确指定的双峰选点完成后加入这里，不另建逐次拟合docs。','','DATA范围3.62–4.00 GeV。默认先拟合X+ψ(2S)+C2背景，显式C4备选单独标记；当前默认两峰mean独立浮动、scale=1固定为MC宽度；历史mean/scale浮动策略保留并明确标记。再固定最佳形状、ψ(2S) yield及背景形状，仅X/background yields自由，移除X后仅background yield自由。两步指标分别记录，条件指标的统计可靠程度留待后续讨论。','','| ML tag | xeff [%] | 浮动拟合 X yield | 浮动 √q₀,X | 条件 X yield | 条件 √q₀,X |','|---|---:|---:|---:|---:|---:|']
  summaries=[]
  for tag,p,result in peaks:
   x=result['signals']['x'];c=read(p/'conditional/fit_result.json') if (p/'conditional/fit_result.json').exists() else None;cy=c['alt']['floating']['x_yield'] if c else None
-  cs=f"{cy['value']:.2f} ± {cy['error']:.2f}" if cy else '未完成';cz=f"{c['Z_PL']:.4f}" if c else '未完成';name=tag+(' (baseline)' if tag==BASELINE else '')+(' [默认 MC width]' if result.get('shape_strategy')=='mc_width_mean_float' else ' [历史浮动 scale]')
+  cs=f"{cy['value']:.2f} ± {cy['error']:.2f}" if cy else '未完成';cz=f"{c['Z_PL']:.4f}" if c else '未完成';name=tag+(' (baseline)' if tag==BASELINE else '')+(' [默认 MC width]' if result.get('shape_strategy')=='mc_width_mean_float' else ' [测试：仅X scale浮动]' if result.get('shape_strategy')=='x_scale_float_psi_mc_width' else ' [历史浮动 scale]')
+  name+=(' [C4背景备选]' if result.get('background_order',2)==4 else '')
   s.append(f"| `{name}` | {result['xeff']} | {x['yield']['value']:.2f} ± {x['yield']['error']:.2f} | {x['Z_PL']:.4f} | {cs} | {cz} |")
-  summaries.append({'tag':tag,'xeff':result['xeff'],'floating_Z':x['Z_PL'],'conditional_Z':c['Z_PL'] if c else None,'directory':str(p),'shape_strategy':result.get('shape_strategy','mean_scale_float')})
+  summaries.append({'tag':tag,'xeff':result['xeff'],'floating_Z':x['Z_PL'],'conditional_Z':c['Z_PL'] if c else None,'directory':str(p),'shape_strategy':result.get('shape_strategy','mean_scale_float'),'background_order':result.get('background_order',2)})
  for tag,p,result in peaks:
-  s+=['',f"## {tag} / xeff{result['xeff']}%"+('（baseline）' if tag==BASELINE else '')+(' — 默认MC宽度，scale=1' if result.get('shape_strategy')=='mc_width_mean_float' else ' — 历史scale浮动'),'','| 峰 | yield | mean [GeV] | scale | mean/scale触边 |','|---|---:|---:|---:|---|']
+  s+=['',f"## {tag} / xeff{result['xeff']}%"+('（baseline）' if tag==BASELINE else '')+(' — 默认MC宽度，scale=1' if result.get('shape_strategy')=='mc_width_mean_float' else ' — 测试：X scale浮动，ψ scale=1' if result.get('shape_strategy')=='x_scale_float_psi_mc_width' else ' — 历史scale浮动'),'','| 峰 | yield | mean [GeV] | scale | mean/scale触边 |','|---|---:|---:|---:|---|']
+  s[-4]+=('，C4背景备选' if result.get('background_order',2)==4 else '')
   for k,name in [('x','X'),('psi','ψ(2S)')]:
    x=result['signals'][k];s.append(f"| {name} | {x['yield']['value']:.2f} ± {x['yield']['error']:.2f} | {x['mean']['value']:.7f} | {x['scale']['value']:.6f} | {x['mean']['at_boundary']}/{x['scale']['at_boundary']} |")
   s+=['',f"第一步数值质量：{'PASS' if result['audit']['quality_pass'] else 'WARN'}。[双峰图]({link(p/'data_fit.pdf',two_doc)}) · [完整结果]({link(p/'fit_result.json',two_doc)}) · [输入配置]({link(p/'manifest.json',two_doc)})。"]
+  if result.get('background_order',2)==4:
+   s+=['','本次使用四阶Chebyshev备选；a0–a3先自由拟合，条件检验固定为第一步值，常规默认仍为二阶。背景系数：'+', '.join(f"{k}={v['value']:.6g} ± {v['error']:.3g}" for k,v in result['background'].items() if k.startswith('a'))+'。']
   for stage,hp in [('浮动双峰',p/'retry_history.json'),('条件检验',p/'conditional/retry_history.json')]:
    if hp.exists():
     retries=[h for h in read(hp) if len(h['attempts'])>1]
