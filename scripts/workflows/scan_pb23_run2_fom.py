@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Approved v27 Run-2 counting FOM, frozen 50% DATA normalization; no DATA peak scan."""
+# Historical study: frozen tags/FOM contract; not the current pb23 workflow.
+"""Approved v27 Run-2 counting FOM, frozen reference DATA normalization; no DATA peak scan."""
 from pathlib import Path
-import json, hashlib, csv, math, re, shutil
+import json, hashlib, csv, math, re, shutil, argparse
 import numpy as np
 import uproot, numexpr, ROOT as R
 from scipy.special import ndtr
@@ -11,15 +12,24 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 R.gROOT.SetBatch(True); R.RooMsgService.instance().setGlobalKillBelow(R.RooFit.WARNING)
-repo=Path(__file__).resolve().parents[2];tag='X_pb23_v27_fid18_9v9_rw0_xgb_v1'
+parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--tag',default='X_pb23_v27_fid18_9v9_rw0_xgb_v1')
+parser.add_argument('--reference-xeff',type=int,default=50)
+parser.add_argument('--reference-dir',type=Path)
+args=parser.parse_args()
+repo=Path(__file__).resolve().parents[2];tag=args.tag
+assert re.fullmatch(r'X_pb23_v27_fid18_9v9_rw0_xgb_v[146]',tag), 'Only approved v1/v4/v6 scans'
+assert args.reference_xeff==({1:50,4:50,6:40}[int(tag.rsplit('v',1)[1])]), 'Unapproved reference cut'
 base=repo/'fitER/results/ml_fits'/tag;out=base/'fom_run2';assert not out.exists()
 assert R.gROOT.GetVersion()=='6.32.02'
 training,oldpoints=load_training(repo,tag);assert training['weight']=='pThatreweight'
-reference=base/'checks/two_peak_mc_width/xeff50';ref=json.loads((reference/'fit_result.json').read_text());rm=json.loads((reference/'manifest.json').read_text())
+reference=args.reference_dir or base/('checks/two_peak_mc_width' if tag.endswith('_v1') else 'two_peak_mc_width')/f'xeff{args.reference_xeff}';reference=reference.resolve();ref=json.loads((reference/'fit_result.json').read_text());rm=json.loads((reference/'manifest.json').read_text())
 assert ref['audit']['quality_pass'] and rm['selection']==training['selection']
+assert rm['tag']==tag and rm['xeff']==args.reference_xeff and rm['mass_range']==[3.62,4.0]
+assert rm['scale_fixed'] and rm['scale_value']==1.0
 N=ref['signals']['x']['yield']['value'];Nerr=ref['signals']['x']['yield']['error'];mean=ref['signals']['x']['mean']['value'];c0=rm['threshold']
 D=[3.62,4.0];W=[3.84,3.90];SB=[3.75,4.0];grid=list(range(15,61))
-refpath=repo.parent/'XGBoost/output/selected'/tag/'REFERENCE_MC_with_score.root'
+refpath=Path(training['selected_dir'])/'REFERENCE_MC_with_score.root'
 inputs={};arrays={}
 for key,spec in {**training['sources'],'reference':{'path':str(refpath),'tree':'ntmix_X3872'}}.items():
  path=Path(spec['path']);inputs[key]=fingerprint(path)
@@ -36,12 +46,12 @@ def threshold(e):
  return dict(target_efficiency=e,score_threshold=c,achieved_efficiency=float(rw[rs>c].sum()/rw.sum()))
 for point in oldpoints:
  new=threshold(point['target_efficiency']);assert new['score_threshold']==point['score_threshold'];assert abs(new['achieved_efficiency']-point['achieved_efficiency'])<1e-12
-points=[threshold(e/100) for e in grid];assert points[grid.index(50)]['score_threshold']==c0
+points=[threshold(e/100) for e in grid];assert points[grid.index(args.reference_xeff)]['score_threshold']==c0
 out.mkdir();art=out/'artifacts';art.mkdir();shutil.copy2(__file__,art)
-for name in ['fit_input_contract.py','scan_10v1_merged_punzi.py']:shutil.copy2(repo/'scripts/workflows'/name,art)
+for name in ['fit_input_contract.py','scan_10v1_merged_punzi.py','plot_pb23_run2_fom.py']:shutil.copy2(repo/'scripts/workflows'/name,art)
 shutil.copy2(repo.parent/'XGBoost/utils/score_thresholds.py',art/'upstream_score_thresholds.py')
 for key,a in arrays.items():np.savez(art/(key+'_cache.npz'),**a)
-contract=dict(tag=tag,grid=grid,selection=training['selection'],reference_yield=N,reference_error=Nerr,reference_mean=mean,reference_cut=c0,reference_result=fingerprint(reference/'fit_result.json'),reference_manifest=fingerprint(reference/'manifest.json'),inputs=inputs,training=training,mass_range=D,window=W,sideband_fit_range=SB,background='conditional unbinned C2, [-2,2], positive over full range',mc_shape='same-cut weighted unbinned double Gaussian, [3.84,3.90], Strategy2 SumW2Error(false); one permitted warm restart',window_shape_mean='frozen 50% DATA mean; MC widths/fraction, scale=1',normalization='MC efficiency in D relative to c0; window PDF integral normalized in D',interpretation='inclusive DATA reference transported with prompt MC efficiency; uncalibrated counting proxy',bootstrap=0,root_version=R.gROOT.GetVersion(),source_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
+contract=dict(tag=tag,reference_xeff=args.reference_xeff,grid=grid,selection=training['selection'],reference_yield=N,reference_error=Nerr,reference_mean=mean,reference_cut=c0,reference_result=fingerprint(reference/'fit_result.json'),reference_manifest=fingerprint(reference/'manifest.json'),inputs=inputs,training=training,mass_range=D,window=W,sideband_fit_range=SB,background='conditional unbinned C2, [-2,2], positive over full range',mc_shape='same-cut weighted unbinned double Gaussian, [3.84,3.90], Strategy2 SumW2Error(false); one permitted warm restart',window_shape_mean=f'frozen {args.reference_xeff}% DATA mean; MC widths/fraction, scale=1',normalization='MC efficiency in D relative to c0; window PDF integral normalized in D',interpretation='inclusive DATA reference transported with prompt MC efficiency; uncalibrated counting proxy',bootstrap=0,root_version=R.gROOT.GetVersion(),source_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
 dump(out/'contract.json',contract)
 supp=dict(schema_version=1,train_tag=tag,parent_thresholds_sha256=training['thresholds_sha256'],selection=training['selection'],weight_branch=['pThatreweight'],comparison='Prediction > threshold',existing_thresholds_exactly_reproduced=len(oldpoints),reference_file=str(refpath),reference_sha256=inputs['reference']['sha256'],thresholds=points)
 dump(out/'thresholds.json',supp)
@@ -52,7 +62,7 @@ root=R.TFile.Open(str(art/'mc_templates.root'),'RECREATE');keep=[]
 def qual(r):return dict(status=int(r.status()),covQual=int(r.covQual()),edm=float(r.edm()),nll=float(r.minNll()))
 def good(q):return q['status']==0 and q['covQual']==3 and math.isfinite(q['edm']) and q['edm']<1e-3
 def template(e,mask):
- if e==50:return dict(ref['mc']['x'],quality_pass=True,reused_reference=True,attempts=[])
+ if e==args.reference_xeff:return dict(ref['mc']['x'],quality_pass=True,reused_reference=True,attempts=[])
  mass=R.RooRealVar('Bmass','Bmass',*D);mass.setRange('mc',*W);weight=R.RooRealVar('pThatreweight','pThatreweight',-1e6,1e6)
  ds=R.RooDataSet.from_numpy({'Bmass':mc['Bmass'][mask],'pThatreweight':mc['pThatreweight'][mask]},[mass,weight],name='mc_data',weight_name='pThatreweight')
  mu=R.RooRealVar('mean','',3.87169,3.86169,3.88169);s1=R.RooRealVar('sigma1','',.01,.001,.1);s2=R.RooRealVar('sigma2','',.005,.001,.1);frac=R.RooRealVar('fraction','',.5,.01,1.)
@@ -87,5 +97,5 @@ from plot_pb23_run2_fom import plot
 plot(out)
 for key,spec in inputs.items():assert fingerprint(spec['path'])==spec
 assert all(points[i]['score_threshold']>=points[i+1]['score_threshold'] for i in range(len(points)-1))
-dump(out/'audit.json',dict(status='PASS' if len(valid)==len(rows) else 'WARN_FIT_QUALITY',points=len(rows),valid_points=len(valid),input_hashes_unchanged=True,existing_threshold_closure=len(oldpoints),reference_mc_sumw_closure=True,reference_signal_closure=abs(rows[grid.index(50)]['signal']-N*rows[grid.index(50)]['window_acceptance'])<1e-10,selected_point_frozen=True))
+dump(out/'audit.json',dict(status='PASS' if len(valid)==len(rows) else 'WARN_FIT_QUALITY',points=len(rows),valid_points=len(valid),input_hashes_unchanged=True,existing_threshold_closure=len(oldpoints),reference_mc_sumw_closure=True,reference_signal_closure=abs(rows[grid.index(args.reference_xeff)]['signal']-N*rows[grid.index(args.reference_xeff)]['window_acceptance'])<1e-10,selected_point_frozen=True))
 print('SELECTED',json.dumps(selected),flush=True)
