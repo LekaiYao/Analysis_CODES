@@ -1,11 +1,12 @@
 from pathlib import Path
+from validation_archive_paths import validation_input
 import argparse,csv,json,re,subprocess,hashlib
 import numpy as np,uproot,ROOT as R
 from ppref_psi2s_prompt_fit import cdf,corr,dump
 ap=argparse.ArgumentParser();ap.add_argument('--output',required=True);a=ap.parse_args();out=Path(a.output)
-repo=Path(__file__).resolve().parents[2];base=repo/'plotER/Validation/results/psi2s_ppref_validation'
+repo=Path(__file__).resolve().parents[2];base=repo/'plotER/validation_archive/results/psi2s_ppref_validation'
 R.gROOT.SetBatch(True);R.gStyle.SetOptStat(0);R.gStyle.SetOptTitle(0)
-old={r['variable']:r for r in json.loads((base/'variable_metrics.json').read_text())}
+old={r['variable']:r for r in json.loads(validation_input(base/'variable_metrics.json').read_text())}
 def read(p,t):
  with uproot.open(p) as f:return f[t].arrays(library='np')
 d=read(out/'artifacts/psi2s_sweights.root','ntmix_PSI2S_sWeight');m=read(out/'artifacts/selected_mc.root','ntmix_PSI2S')
@@ -17,15 +18,15 @@ for new,prev in [(d,bd),(m,bm)]:
 assert np.array_equal(m['pThatreweight'],bm['pThatreweight'][bm['Bnorm_svpvDistance_2D']<2])
 # Include historical commented definitions; active and historical ranges stay fixed.
 config={}
-for line in (repo/'plotER/Validation/aux.h').read_text().splitlines():
+for line in (repo/'plotER/validation_archive/aux.h').read_text().splitlines():
  q=re.search(r'\{"([^"]+)",\s*"([^"]+)",\s*kNBins,\s*([^,]+),\s*([^,]+),\s*(true|false)',line)
  if q:
   try:config[q[1]]=(float(q[3]),float(q[4]),q[5]=='true',q[2].split(';')[1])
   except ValueError:pass
 # Species-dependent dipion range is the active native configuration.
-R.gInterpreter.Declare('#include "'+str(repo/'plotER/Validation/aux.h')+'"')
+R.gInterpreter.Declare('#include "'+str(repo/'plotER/validation_archive/aux.h')+'"')
 for q in R.getSignalVars('ntmix_PSI2S'):config[str(q.expr)]=(float(q.xmin),float(q.xmax),bool(q.absVal),str(q.title).split(';')[1])
-rows=[];root=R.TFile(str(out/'artifacts/validation_histograms.root'),'RECREATE');book=str(out/'figures/validation_all.pdf')
+rows=[];root=R.TFile(str(out/'artifacts/validation_histograms.root'),'RECREATE');book=str(out/'validation_all.pdf')
 for j,n in enumerate(sorted(old)):
  good=np.isfinite(d[n]);gm=np.isfinite(m[n]);x=d[n][good].astype(float);w=d['signal_sWeight'][good];y=m[n][gm].astype(float);v=m['pThatreweight'][gm].astype(float)
  z,cd,cm,after=cdf(x,w,y,v)
@@ -61,14 +62,14 @@ for j,n in enumerate(sorted(old)):
   val=num/den;err=np.hypot(sp.GetBinError(i)/den,num*mc.GetBinError(i)/den**2);k=g.GetN();g.SetPoint(k,mc.GetBinCenter(i),val);g.SetPointError(k,0,float(err));clip+=int(val<0 or val>5)
  g.SetMarkerStyle(20);g.SetMarkerColor(R.kOrange+7);g.SetLineColor(R.kOrange+7);g.Draw('P SAME');line=R.TLine(lo,1,hi,1);line.SetLineStyle(2);line.Draw();rec['ratio_points_outside_0_5']=clip
  if clip:lab.SetTextSize(.075);lab.DrawLatex(.18,.82,f'{clip} ratio points outside [0,5]')
- c.SaveAs(str(out/'figures'/f'{n}.pdf'))
+ c.SaveAs(str(out/'pdf'/f'{n}.pdf'))
  root.cd()
  for obj in [sp,mc,g]:obj.Write()
  # Store full-support CDF curves, independent of displayed histogram range.
  for tag,values in [('data',cd),('mc',cm)]:
   gg=R.TGraph(len(z),np.ascontiguousarray(z,dtype='d'),np.ascontiguousarray(values,dtype='d'));gg.Write(n+'_cdf_'+tag)
  c.Close();rows.append(rec)
-root.Close();subprocess.run(['pdfunite',*[str(out/'figures'/f'{n}.pdf') for n in sorted(old)],book],check=True)
+root.Close();subprocess.run(['pdfunite',*[str(out/'pdf'/f'{n}.pdf') for n in sorted(old)],book],check=True)
 rows.sort(key=lambda r:r['cdf_after'],reverse=True);dump(out/'cdf_comparison.json',rows)
 with (out/'cdf_comparison.csv').open('w') as f:
  wr=csv.DictWriter(f,fieldnames=list(rows[0]));wr.writeheader();wr.writerows(rows)
@@ -79,9 +80,9 @@ frame=mass.frame(R.RooFit.Bins(80));data.plotOn(frame,R.RooFit.Name('data_points
 c=R.TCanvas('mass_canvas','',760,650);top=R.TPad('mass_top','',0,.30,1,1);bot=R.TPad('mass_bot','',0,0,1,.30)
 for p in [top,bot]:p.SetLeftMargin(.14);p.SetRightMargin(.04);p.Draw()
 top.SetBottomMargin(.01);bot.SetTopMargin(.01);bot.SetBottomMargin(.33);top.cd();frame.Draw();lab.SetTextSize(.037);lab.DrawLatex(.18,.87,'ppRef #psi(2S), SV-PV significance < 2');lab.DrawLatex(.18,.80,'N_{sig} = 24611 #pm 267')
-bot.cd();pf=mass.frame();pf.addPlotable(pull,'P');pf.SetMinimum(-5);pf.SetMaximum(5);pf.GetYaxis().SetTitle('Pull');pf.GetYaxis().SetTitleSize(.09);pf.GetYaxis().SetLabelSize(.08);pf.GetYaxis().SetTitleOffset(.7);pf.GetXaxis().SetTitle('m(J/#psi #pi^{+}#pi^{-}) [GeV/c^{2}]');pf.GetXaxis().SetTitleSize(.10);pf.GetXaxis().SetLabelSize(.09);pf.Draw();c.SaveAs(str(out/'figures/mass_fit.pdf'));c.Close();f.Close()
-for p in (out/'figures').glob('*.pdf'):assert 'Pages:' in subprocess.check_output(['pdfinfo',str(p)],text=True)
-assert len(list((out/'figures').glob('*.pdf')))==69
+bot.cd();pf=mass.frame();pf.addPlotable(pull,'P');pf.SetMinimum(-5);pf.SetMaximum(5);pf.GetYaxis().SetTitle('Pull');pf.GetYaxis().SetTitleSize(.09);pf.GetYaxis().SetLabelSize(.08);pf.GetYaxis().SetTitleOffset(.7);pf.GetXaxis().SetTitle('m(J/#psi #pi^{+}#pi^{-}) [GeV/c^{2}]');pf.GetXaxis().SetTitleSize(.10);pf.GetXaxis().SetLabelSize(.09);pf.Draw();c.SaveAs(str(out/'mass_fit.pdf'));c.Close();f.Close()
+for p in [*(out/'pdf').glob('*.pdf'),out/'validation_all.pdf',out/'mass_fit.pdf']:assert 'Pages:' in subprocess.check_output(['pdfinfo',str(p)],text=True)
+assert len(list((out/'pdf').glob('*.pdf')))==67
 assert not list(out.rglob('*.png'))
 summary=json.loads((out/'summary.json').read_text());summary['status']='complete';dump(out/'summary.json',summary)
 dump(out/'audit.json',{'status':'PASS','variables':67,'pdf_files':69,'book_pages':67,'baseline_cdf_reproduced_max_tolerance':1e-10,'source_entry_selection':'exact baseline subset for DATA and MC','mc_weights':'exact baseline subset','sweights':'refitted after cut; closure in summary.json','ratio_display':[0,5],'cdf':'signed full finite support; no KS p-value','hist_normalization':'in-range; full-support fallback if in-range total <= 0','bootstrap':False})

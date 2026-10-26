@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-VALIDATION = REPO / "plotER/Validation/workflows"
+VALIDATION = REPO / "plotER/validation_archive/workflows"
 sys.path.insert(0, str(VALIDATION))
 import psi2s_xeff45_splot_closure_workflow as workflow  # noqa: E402
 
@@ -16,7 +16,7 @@ AFS_ROOT = Path(
     "/afs/cern.ch/user/l/leyao/private/pbpb_work/Analysis_CODES/"
     "psi2s_xeff45_splot_closure"
 )
-EOS_ROOT = REPO / "plotER/Validation/results/pbpb24_psi2s_splot_validation"
+EOS_ROOT = REPO / "plotER/validation_archive/results/pbpb24_psi2s_splot_validation"
 LABEL = "xeff45_one_off_neff30_gate_v1"
 
 

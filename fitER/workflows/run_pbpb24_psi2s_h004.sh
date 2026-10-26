@@ -3,8 +3,8 @@ set -euo pipefail
 
 repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 fit_dir="${repo_dir}/fitER"
-validation_macro="${repo_dir}/plotER/Validation/macros/DataSIGNAL_VS_MC.C"
-validation_base="${repo_dir}/plotER/Validation/H004"
+validation_macro="${repo_dir}/plotER/validation_archive/macros/DataSIGNAL_VS_MC.C"
+validation_base="${repo_dir}/plotER/validation_archive/results/archive/psi2s_pbpb24_selection"
 
 data="/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/PbPb24/flat_ntmix_PbPb24_DATA.root"
 mc="/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/PbPb24/flat_ntmix_PbPb24_MC_PSI2S.root"
@@ -58,7 +58,7 @@ head -n 1 "${fit_dir}/results/PbPb_H004_S2/fit_summary.csv" > "${summary}"
 tail -n 1 "${fit_dir}/results/PbPb_H004_S2/fit_summary.csv" >> "${summary}"
 tail -n 1 "${fit_dir}/results/PbPb_H004_S3/fit_summary.csv" >> "${summary}"
 
-find "${fit_dir}" "${repo_dir}/plotER/Validation" -maxdepth 2 \
+find "${fit_dir}" "${repo_dir}/plotER/validation_archive" -maxdepth 2 \
   \( -name 'roofitB_C.d' -o -name 'roofitB_C.so' -o \
      -name 'roofitB_C_ACLiC_dict_rdict.pcm' -o \
      -name 'DataSIGNAL_VS_MC_C.d' -o -name 'DataSIGNAL_VS_MC_C.so' -o \

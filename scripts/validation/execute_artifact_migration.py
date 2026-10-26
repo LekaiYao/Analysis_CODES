@@ -195,7 +195,7 @@ def post_link_validation(
         passed = passed and item_pass
 
     text_files = reference_files(repo, inventory.get("method", {}).get("reference_roots", [
-        "docs", ".codex/session_handoff.md", "scripts", "fitER", "plotER/Validation"
+        "docs", ".codex/session_handoff.md", "scripts", "fitER", "plotER/validation_archive"
     ]), evidence_dir)
     stale_references: list[dict[str, object]] = []
     for entry in inventory["entries"]:

@@ -57,7 +57,7 @@ def corr(x,y,w):
 def main():
  ap=argparse.ArgumentParser();ap.add_argument('--output',required=True);args=ap.parse_args();out=Path(args.output)
  out.mkdir(parents=True,exist_ok=False)
- for d in ['figures','artifacts']: (out/d).mkdir()
+ for d in ['pdf','artifacts']: (out/d).mkdir()
  R.gROOT.SetBatch(True)
  assert R.gROOT.GetVersion()=='6.32.02'
  R.RooMsgService.instance().setGlobalKillBelow(R.RooFit.WARNING)

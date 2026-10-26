@@ -26,7 +26,7 @@ FIT_BASE = REPO / (
     "mc_shape_nominal_v1_fit_only_sqrtq0"
 )
 OUTPUT = REPO / (
-    "plotER/Validation/results/pbpb23_pbpb24_psi2s_mc_year_comparison/"
+    "plotER/validation_archive/results/pbpb23_pbpb24_psi2s_mc_year_comparison/"
     "psi2s_pb23_pb24_v1"
 )
 
@@ -111,7 +111,7 @@ def main():
         )
         if not cache.is_file():
             root_call(
-                REPO / "plotER/Validation/macros/PreparePsi2SSimultaneousSPlotCache.C",
+                REPO / "plotER/validation_archive/macros/PreparePsi2SSimultaneousSPlotCache.C",
                 (source, data_spec["tree"], cache_selection, cache),
                 OUTPUT / f"prepare_{category}.log", scratch,
             )
@@ -133,7 +133,7 @@ def main():
         }
         if not (point_dir / "sweight_quality.json").is_file():
             root_call(
-                REPO / "plotER/Validation/macros/PbPbPsi2SSimultaneousYearSPlot.C",
+                REPO / "plotER/validation_archive/macros/PbPbPsi2SSimultaneousYearSPlot.C",
                 (workspace, caches["pb23"]["path"], caches["pb23"]["tree"],
                  caches["pb24"]["path"], caches["pb24"]["tree"], point_dir,
                  score_selections["pb23"], score_selections["pb24"]),
@@ -165,7 +165,7 @@ def main():
         category: best_manifest_point["categories"][category]["selection"]
         for category in ("pb23", "pb24")
     }
-    compare_macro = REPO / "plotER/Validation/macros/ComparePbPbYearPsi2SMC.C"
+    compare_macro = REPO / "plotER/validation_archive/macros/ComparePbPbYearPsi2SMC.C"
     for directory, selections, label in (
         (fiducial_dir, fiducial, "fiducial region"),
         (best_dir, best_selections,

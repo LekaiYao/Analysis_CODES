@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 REPO = Path(__file__).resolve().parents[1]
-VALIDATION_DIR = REPO / "plotER/Validation/workflows"
+VALIDATION_DIR = REPO / "plotER/validation_archive/workflows"
 sys.path.insert(0, str(VALIDATION_DIR))
 import psi2s_pbpb_splot_validation_workflow as workflow  # noqa: E402
 
@@ -18,7 +18,7 @@ AFS_ROOT = Path(
     "/afs/cern.ch/user/l/leyao/private/pbpb_work/Analysis_CODES/"
     "psi2s_pbpb_splot_validation"
 )
-EOS_RESULTS_ROOT = REPO / "plotER/Validation/results/pbpb24_psi2s_splot_validation"
+EOS_RESULTS_ROOT = REPO / "plotER/validation_archive/results/pbpb24_psi2s_splot_validation"
 VARIABLES = workflow.VARIABLES
 
 

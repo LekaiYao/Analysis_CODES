@@ -120,7 +120,8 @@ def reference_files(repo: Path, roots: list[str], excluded: Path) -> list[Path]:
     files: list[Path] = []
     skipped_results = {
         (repo / "fitER/results").resolve(),
-        (repo / "plotER/Validation/results").resolve(),
+        (repo / "plotER/validation_archive/results").resolve(),
+        (repo / "plotER/validation_archive/archive").resolve(),
     }
     for value in roots:
         root = repo / value

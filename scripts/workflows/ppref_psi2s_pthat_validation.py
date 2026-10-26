@@ -61,7 +61,7 @@ def corr(x,y,w):
 def main():
  ap=argparse.ArgumentParser();ap.add_argument('--output',required=True);args=ap.parse_args();out=Path(args.output)
  out.mkdir(parents=True,exist_ok=False)
- for d in ['figures','artifacts']: (out/d).mkdir()
+ for d in ['pdf','artifacts']: (out/d).mkdir()
  R.gROOT.SetBatch(True)
  assert R.gROOT.GetVersion()=='6.32.02'
  R.RooMsgService.instance().setGlobalKillBelow(R.RooFit.WARNING)
@@ -168,13 +168,13 @@ def main():
  ax.set_ylabel('Candidates / 2.5 MeV');ax.legend(frameon=False);ax.set_title(r'ppRef $\psi(2S)$: preselection, no ML cut')
  ax.text(.02,.95,f"Yield = {fr['parameters']['nsig']['value']:.0f} ± {fr['parameters']['nsig']['error']:.0f}\nWidth scale = {fr['parameters']['scale']['value']:.4f}",transform=ax.transAxes,va='top')
  pa.axhline(0,color='gray');pa.plot(cent,(h-sh-bh)/np.sqrt(np.maximum(sh+bh,1e-9)),'.',color='black');pa.set_ylabel('Pearson pull');pa.set_xlabel(r'$m(J/\psi\pi^+\pi^-)$ [GeV]')
- fig.tight_layout();fig.savefig(out/'figures/mass_fit.pdf');fig.savefig(out/'figures/mass_fit.png',dpi=150);plt.close(fig)
+ fig.tight_layout();fig.savefig(out/'mass_fit.pdf');plt.close(fig)
  # Plot weighted MC mass independently, with sumw2 errors and peak-fit extrapolation.
  em=np.linspace(3.6,3.8,101);hm=np.histogram(mc['Bmass'],em,weights=w)[0];vm=np.histogram(mc['Bmass'],em,weights=w*w)[0]
  mu,ss1,ss2,ff=mcpars;pred=ff*gauss_int(mu,ss1,em)+(1-ff)*gauss_int(mu,ss2,em)
- fig,ax=plt.subplots(figsize=(8,5));ax.errorbar((em[1:]+em[:-1])/2,hm/w.sum(),yerr=np.sqrt(vm)/w.sum(),fmt='.',label='pThat-weighted RECO MC');ax.stairs(pred,em,label='Double Gaussian (peak fit)');ax.set_xlabel('Bmass [GeV]');ax.set_ylabel('Normalized bin content');ax.legend();fig.tight_layout();fig.savefig(out/'figures/mc_mass.pdf');plt.close(fig)
+ fig,ax=plt.subplots(figsize=(8,5));ax.errorbar((em[1:]+em[:-1])/2,hm/w.sum(),yerr=np.sqrt(vm)/w.sum(),fmt='.',label='pThat-weighted RECO MC');ax.stairs(pred,em,label='Double Gaussian (peak fit)');ax.set_xlabel('Bmass [GeV]');ax.set_ylabel('Normalized bin content');ax.legend();fig.tight_layout();fig.savefig(out/'mc_mass.pdf');plt.close(fig)
  metrics=[]
- with PdfPages(out/'figures/validation_all.pdf') as book:
+ with PdfPages(out/'validation_all.pdf') as book:
   for name in variables:
    goodd=np.isfinite(d[name]);goodm=np.isfinite(mc[name]);x=d[name][goodd].astype(float);u=sw[goodd];y=mc[name][goodm].astype(float);v=w[goodm]
    assert len(x)>0 and len(y)>0 and u.sum()>0
@@ -190,8 +190,7 @@ def main():
    ax.step(z[take],cx[take],where='post',color='black',label='Signed sPlot DATA');ax.step(z[take],cy[take],where='post',color='tab:blue',label='pThat-weighted MC');ax.step(z[take],cu[take],where='post',color='tab:orange',linestyle='--',label='Unit MC');ax.set_ylabel('Cumulative normalized weight');ax.legend(fontsize=8)
    for ax in axs:ax.set_xlabel(name);ax.grid(alpha=.15)
    fig.suptitle(f'{name}   D_CDF: pThat={dist:.3f}, unit={du:.3f}');fig.tight_layout();book.savefig(fig)
-   fig.savefig(out/f'figures/{name}.pdf')
-   if name in ['Bpt','By','Btrk1Pt','Btrk2Pt','Btktkpt','Bcos_dtheta','Btktkmass','Bchi2Prob']:fig.savefig(out/f'figures/{name}.png',dpi=130)
+   fig.savefig(out/f'pdf/{name}.pdf')
    plt.close(fig)
  metrics.sort(key=lambda r:r['cdf_pthat'],reverse=True)
  with (out/'variable_metrics.csv').open('w') as f:
@@ -200,6 +199,6 @@ def main():
  for k,p in FILES.items():assert fingerprint(p)==provenance[k]
  assert fingerprint(Path(__file__))==provenance['script']
  summary['status']='completed_with_warnings' if summary['warnings'] else 'completed';dump(out/'summary.json',summary)
- (out/'README.md').write_text('# ppRef Psi2S RECO validation, 2026-09-14\n\nSelection: `'+SEL+'`. DATA mass: `(3.6,3.8)` GeV. MC validation: no extra mass cut. MC weight: `pThatreweight`.\n\n- [Mass fit](figures/mass_fit.pdf)\n- [Weighted MC mass](figures/mc_mass.pdf)\n- [All variable plots](figures/validation_all.pdf)\n- [Metrics](variable_metrics.csv)\n- [Fit and weight checks](summary.json)\n\nAll common numeric RECO scalars except Bmass/weights are shown; missing branches are listed in variable_inventory.json. Signed sWeights are not clipped. CDF is descriptive, not a p-value; correlation with mass can bias sPlot. Inclusive DATA versus prompt MC is not a prompt-only closure, especially for lifetime variables. No automatic ML variable choice.\n')
+ (out/'README.md').write_text('# ppRef Psi2S RECO validation, 2026-09-14\n\nSelection: `'+SEL+'`. DATA mass: `(3.6,3.8)` GeV. MC validation: no extra mass cut. MC weight: `pThatreweight`.\n\n- [Mass fit](mass_fit.pdf)\n- [Weighted MC mass](mc_mass.pdf)\n- [All variable plots](validation_all.pdf)\n- [Metrics](variable_metrics.csv)\n- [Fit and weight checks](summary.json)\n\nAll common numeric RECO scalars except Bmass/weights are shown; missing branches are listed in variable_inventory.json. Signed sWeights are not clipped. CDF is descriptive, not a p-value; correlation with mass can bias sPlot. Inclusive DATA versus prompt MC is not a prompt-only closure, especially for lifetime variables. No automatic ML variable choice.\n')
  print('COMPLETE',out,summary['splot'],flush=True)
 if __name__=='__main__':main()

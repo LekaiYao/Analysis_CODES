@@ -13,8 +13,8 @@ REPO = Path(__file__).resolve().parents[1]
 ROOT_BASE = Path("/cvmfs/sft.cern.ch/lcg/app/releases/ROOT/6.32.02/x86_64-almalinux9.4-gcc114-opt")
 MANIFEST = Path("/eos/home-l/leyao/pbpb_work/X_analysis/XGBoost/output/selected/Psi2S_pb23_v1_fid1_6v1_rwr6range4v1_xgb_v1/fit_scan_manifest.pb23_pb24_psi2s_simultaneous_v1.json")
 EXPECTED_MANIFEST_SHA256 = "825d0987cccf3a1c8e6b8ea81f26c45dccaeac8451c20b26841ff6a1e0760119"
-SPLOT_BASE = REPO / "plotER/Validation/results/pbpb23_pbpb24_psi2s_mc_year_comparison/psi2s_pb23_pb24_v1/neff_scan/psi2seff30"
-OUTPUT_PARENT = REPO / "plotER/Validation/results/pbpb23_pbpb24_psi2s_combined_closure"
+SPLOT_BASE = REPO / "plotER/validation_archive/results/pbpb23_pbpb24_psi2s_mc_year_comparison/psi2s_pb23_pb24_v1/neff_scan/psi2seff30"
+OUTPUT_PARENT = REPO / "plotER/validation_archive/results/pbpb23_pbpb24_psi2s_combined_closure"
 OUTPUT = OUTPUT_PARENT / "psi2s_pb23_pb24_v1"
 VARIABLES = (
     "Bcos_dtheta", "Btktkpt", "Bchi2Prob", "Btrk2Pt", "Btrk1Pt", "Btrk1dR",
@@ -87,7 +87,7 @@ def main():
     OUTPUT.mkdir(parents=True, exist_ok=resume)
     scratch = Path(f"/tmp/leyao/psi2s-combined-closure-{os.getpid()}")
     scratch.mkdir(parents=True, exist_ok=True)
-    macro = REPO / "plotER/Validation/macros/ComparePbPbCombinedPsi2SClosure.C"
+    macro = REPO / "plotER/validation_archive/macros/ComparePbPbCombinedPsi2SClosure.C"
     arguments = (
         inputs["pb23"]["data"], inputs["pb23"]["data_tree"],
         inputs["pb24"]["data"], inputs["pb24"]["data_tree"],

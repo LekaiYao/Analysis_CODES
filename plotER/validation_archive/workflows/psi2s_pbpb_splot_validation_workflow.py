@@ -118,7 +118,7 @@ def prepare(repo, manifest_path, output_dir):
         f'"{root_string(value)}"' for value in values
     ) + ")"
     status = run_root(
-        repo / "plotER/Validation/macros/PreparePbPbPsi2SXeff30Cache.C",
+        repo / "plotER/validation_archive/macros/PreparePbPbPsi2SXeff30Cache.C",
         expression, output_dir / "prepare.log",
     )
     metadata_path = cache / "cache_metadata.json"
@@ -166,7 +166,7 @@ def splot(repo, manifest_path, output_dir):
         f'"{root_string(value)}"' for value in values
     ) + ")"
     status = run_root(
-        repo / "plotER/Validation/macros/PbPbPsi2SNominalSPlot.C",
+        repo / "plotER/validation_archive/macros/PbPbPsi2SNominalSPlot.C",
         expression, splot_dir / "splot.log",
     )
     quality_path = splot_dir / "sweight_quality.json"
@@ -267,7 +267,7 @@ def analyze(repo, manifest_path, output_dir, variable, input_dir=None,
         f'"{root_string(value)}"' for value in values
     ) + ")"
     status = run_root(
-        repo / "plotER/Validation/macros/AnalyzePbPbPsi2SVariable.C",
+        repo / "plotER/validation_archive/macros/AnalyzePbPbPsi2SVariable.C",
         expression, variable_dir / "analyze.log",
     )
     metrics = variable_dir / "metrics.json"

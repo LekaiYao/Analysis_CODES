@@ -15,6 +15,7 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from validation_archive_paths import validation_input
 
 import matplotlib
 
@@ -67,7 +68,7 @@ SPLOT_SYSTEM = "ppRef_X_r5_splot_ppref_snapshot_v1"
 FIT_RESULTS = REPO / "fitER/results" / FIT_SYSTEM
 FIT_ROOT_DIR = REPO / "fitER/ROOTfiles" / FIT_SYSTEM
 FIT_WORKSPACE = FIT_ROOT_DIR / f"nominalFitModel_{MC_TREE}_{FIT_SYSTEM}.root"
-PLOT_ROOT = REPO / "plotER/Validation/results" / SPLOT_SYSTEM
+PLOT_ROOT = REPO / "plotER/validation_archive/results" / SPLOT_SYSTEM
 PROVENANCE = PLOT_ROOT / "provenance"
 VALIDATION = PLOT_ROOT / "validation"
 EVENT_ROOT = PLOT_ROOT / "artifacts" / "ppref_x_signed_sweight_all_common.root"
@@ -78,15 +79,15 @@ RUN_CONTEXT = PROVENANCE / "run_context.json"
 PROTECTED = [
     REPO / "fitER/results/archive/feasibility/ppRef_X_r5_fiducial_feasibility",
     REPO / "fitER/ROOTfiles/ppRef_X_r5_fiducial_feasibility",
-    REPO / "plotER/Validation/results/archive/2026-09/x_ppref_r5_splot",
+    REPO / "plotER/validation_archive/results/archive/2026-09/x_ppref_r5_splot",
 ]
 ROOT_BASE = Path(
     "/cvmfs/sft.cern.ch/lcg/views/LCG_106/"
     "x86_64-el9-gcc13-opt"
 )
 ROOT_SETUP = ROOT_BASE / "setup.sh"
-OLD_DISCREPANCY = PROTECTED[2] / "COMPARE/ntmix_X3872/validation_discrepancy.csv"
-OLD_QUALITY = PROTECTED[2] / "COMPARE/ntmix_X3872/validation_quality.csv"
+OLD_DISCREPANCY = validation_input(PROTECTED[2] / "COMPARE/ntmix_X3872/validation_discrepancy.csv")
+OLD_QUALITY = validation_input(PROTECTED[2] / "COMPARE/ntmix_X3872/validation_quality.csv")
 FIXED_EXPORT_BRANCHES = [
     "Bchi2Prob",
     "Btrk1dR",
@@ -523,7 +524,7 @@ def common_scalar_schema() -> tuple[list[str], list[dict[str, object]]]:
 
 
 def load_splot_quality() -> dict[str, str]:
-    quality_csv = PLOT_ROOT / f"legacy_splot/COMPARE/{MC_TREE}/validation_quality.csv"
+    quality_csv = validation_input(PLOT_ROOT / f"legacy_splot/COMPARE/{MC_TREE}/validation_quality.csv")
     with quality_csv.open(newline="") as stream:
         return next(csv.DictReader(stream))
 
@@ -545,7 +546,7 @@ def write_splot_quality(quality: dict[str, str]) -> dict[str, object]:
     }
     payload = {
         "status": "PASS" if all(checks.values()) else "NEEDS_REVIEW",
-        "source": str(PLOT_ROOT / f"legacy_splot/COMPARE/{MC_TREE}/validation_quality.csv"),
+        "source": str(validation_input(PLOT_ROOT / f"legacy_splot/COMPARE/{MC_TREE}/validation_quality.csv")),
         "quality": quality,
         "event_weight_statistics": event_stats,
         "sumw_signal_yield_closure": {
@@ -575,7 +576,7 @@ def splot() -> None:
     env = root_environment()
     work = PLOT_ROOT / "legacy_splot"
     work.mkdir(parents=True, exist_ok=False)
-    macro = REPO / "plotER/Validation/macros/DataSIGNAL_VS_MC.C"
+    macro = REPO / "plotER/validation_archive/macros/DataSIGNAL_VS_MC.C"
     call = (
         f'{macro}++("{root_quote(DATA_PATH)}","{root_quote(MC_PATH)}",'
         f'"{root_quote(FIT_WORKSPACE)}","{root_quote(SELECTION)}",'
@@ -601,7 +602,7 @@ def splot() -> None:
     weighted = work / f"WEIGHTS/SignalWeight_sPlot_{SPLOT_SYSTEM}_{MC_TREE}_X3872.root"
     fixed_root = work / "fixed_export.root"
     fixed_json = work / "fixed_export.json"
-    export_macro = REPO / "plotER/Validation/macros/ExportSWeightTree.C"
+    export_macro = REPO / "plotER/validation_archive/macros/ExportSWeightTree.C"
     export_call = (
         f'{export_macro}++("{root_quote(weighted)}","{root_quote(fixed_root)}",'
         f'"{root_quote(fixed_json)}","{root_quote(DATA_PATH)}","{DATA_TREE}",'
@@ -760,8 +761,8 @@ def plot_variable(
     discrete: bool,
 ) -> None:
     tag = safe_tag(name)
-    dist_dir = PLOT_ROOT / "figures/distributions"
-    cdf_dir = PLOT_ROOT / "figures/cdfs"
+    dist_dir = PLOT_ROOT / "pdf/distributions"
+    cdf_dir = PLOT_ROOT / "pdf/cdfs"
     dist_dir.mkdir(parents=True, exist_ok=True)
     cdf_dir.mkdir(parents=True, exist_ok=True)
     low, high = support
@@ -983,11 +984,16 @@ def validate_variables(
         "splot_fit_quality": quality,
         "fit_quality_comparison": quality_comparison,
         "plots": {
-            "distributions": str(PLOT_ROOT / "figures/distributions"),
-            "cdfs": str(PLOT_ROOT / "figures/cdfs"),
+            "distributions": str(PLOT_ROOT / "pdf/distributions"),
+            "cdfs": str(PLOT_ROOT / "pdf/cdfs"),
         },
         "physics_interpretation": "none; descriptive validation only",
     }
+    # Main albums stay next to the study README for VS Code browsing.
+    for folder, album in [("distributions", "validation_all.pdf"), ("cdfs", "cdf_all.pdf")]:
+        pages = [PLOT_ROOT / "pdf" / folder / f"{safe_tag(row['variable'])}.pdf" for row in passed]
+        if pages:
+            subprocess.run(["pdfunite", *map(str, pages), str(PLOT_ROOT / album)], check=True)
     atomic_json(PLOT_ROOT / "summary.json", summary)
     write_summary_markdown(summary)
     if summary["status"] != "PASS":

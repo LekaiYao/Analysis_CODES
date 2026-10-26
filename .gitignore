@@ -12,8 +12,8 @@
 *.out
 *.err
 *.sub
-/plotER/Validation/COMPARE/**/*.csv
-/plotER/Validation/WEIGHTS/*.json
+/plotER/validation_archive/COMPARE/**/*.csv
+/plotER/validation_archive/WEIGHTS/*.json
 /fitER/results/ppRef/x_reweighted_working_points/
 /fitER/ROOTfiles/ppRef/x_reweighted_working_points/
 /fitER/results/ppRef/x_reweighted_working_points_matched_mc/
@@ -29,12 +29,12 @@
 /plotER/results/PbPb24/psi2s_selection_mass_scan/
 /fitER/results/PbPb_H004*/
 /fitER/ROOTfiles/PbPb_H004*/
-/plotER/Validation/H004/
+/plotER/validation_archive/H004/
 /fitER/results/PbPb_H004_S2/
 /fitER/results/PbPb_H004_S3/
 /fitER/ROOTfiles/PbPb_H004_S2/
 /fitER/ROOTfiles/PbPb_H004_S3/
-/plotER/Validation/H004/
+/plotER/validation_archive/H004/
 /selectionER/ntmix_optimalCUT/x_punzi_comparison/
 /selectionER/x_punzi.*.local.conf
 /fitER/results/ppRef/x_punzi_optimal_comparison/
@@ -78,10 +78,19 @@ selectionER/optimalCUT.local.conf
 .manifest_runs/
 
 /fitER/results_archive/
-/plotER/Validation/results/
+/plotER/validation_archive/results/
+/plotER/validation_archive/archive/
 /tmp/
 
 # Local build/bytecode caches separated from analysis source.
 /fitER/.cache/
 /plotER/.cache/
-/plotER/Validation/.cache/
+/plotER/validation_archive/.cache/
+
+# Current MC validation generated artifacts
+/plotER/Validation/pb23_x_mc_sideband/
+/plotER/validation_archive/pb23_x_mc_sideband_19vars/
+/plotER/Validation/pb23_x_mc_sideband_no_dr/
+
+# Dated local scientific artifact archives
+/archive/

@@ -24,7 +24,7 @@ source_mc=/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppR
 source_fit="${repo_dir}/fitER/ROOTfiles/ppRef/nominalFitModel_ntmix_PSI2S_ppRef.root"
 analysis_tree=ntmix_PSI2S
 physics_status=nominal_ppref_psi2s_splot_event_interface
-generation_command='source /cvmfs/sft.cern.ch/lcg/views/LCG_106/x86_64-el9-gcc13-opt/setup.sh && bash plotER/Validation/workflows/run_add_btrk2dr_to_ppref_psi2s_sweight.sh'
+generation_command='source /cvmfs/sft.cern.ch/lcg/views/LCG_106/x86_64-el9-gcc13-opt/setup.sh && bash plotER/validation_archive/workflows/run_add_btrk2dr_to_ppref_psi2s_sweight.sh'
 implicit_flat_selection='ppRef ntmix flatER/Flat_TREEs.C: Bmu1isTriggered && Bmu2isTriggered; Bmu1SoftMuID && Bmu2SoftMuID; Bmu1isAcc && Bmu2isAcc; abs(Bujmass-3.096916)<0.15; BujvProb>0.01; abs(Btrk1Eta)<=2.4; Btrk1Pt>0.5; Btrk1PtErr/Btrk1Pt<0.1; Btrk1nPixelLayer+Btrk1nStripLayer>10; Btrk1Chi2ndf/(Btrk1nPixelLayer+Btrk1nStripLayer)<0.18; Btrk1highPurity; abs(Btrk2Eta)<=2.4; Btrk2Pt>0.5; Btrk2PtErr/Btrk2Pt<0.1; Btrk2nPixelLayer+Btrk2nStripLayer>10; Btrk2Chi2ndf/(Btrk2nPixelLayer+Btrk2nStripLayer)<0.18; Btrk2highPurity; 3.6<=Bmass<=4.0; Bchi2Prob>=0.005; effective flat fiducial Bpt>=5 and abs(By)<=2.4; finite Bmass, Bpt, By, Bnorm_trk1Dxy, CentBin, Bchi2Prob, Btrk1dR and Bnorm_svpvDistance_2D. Every passing reconstructed candidate is written; no best-candidate or event-level duplicate removal.'
 for required in "${source_splot}" "${baseline_root}" "${baseline_manifest}" "${source_fit}"; do
     [[ -f "${required}" ]] || { echo "ERROR: missing ${required}" >&2; exit 1; }

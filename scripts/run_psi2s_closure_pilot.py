@@ -23,10 +23,10 @@ REPO = Path(__file__).resolve().parents[1]
 ROOT_BASE = Path("/cvmfs/sft.cern.ch/lcg/app/releases/ROOT/6.32.02/x86_64-almalinux9.4-gcc114-opt")
 MANIFEST = Path("/eos/home-l/leyao/pbpb_work/X_analysis/XGBoost/output/selected/Psi2S_pb23_v1_fid1_6v1_rwr6range4v1_xgb_v1/fit_scan_manifest.pb23_pb24_psi2s_simultaneous_v1.json")
 MANIFEST_SHA256 = "825d0987cccf3a1c8e6b8ea81f26c45dccaeac8451c20b26841ff6a1e0760119"
-SPLOT = REPO / "plotER/Validation/results/pbpb23_pbpb24_psi2s_mc_year_comparison/psi2s_pb23_pb24_v1/neff_scan/psi2seff30"
-OUTPUT = REPO / "plotER/Validation/results/pbpb23_pbpb24_psi2s_combined_closure/psi2s_pb23_pb24_before_after_pilot_v1"
+SPLOT = REPO / "plotER/validation_archive/results/pbpb23_pbpb24_psi2s_mc_year_comparison/psi2s_pb23_pb24_v1/neff_scan/psi2seff30"
+OUTPUT = REPO / "plotER/validation_archive/results/pbpb23_pbpb24_psi2s_combined_closure/psi2s_pb23_pb24_before_after_pilot_v1"
 EXPANDED_MANIFEST = Path("/eos/home-l/leyao/pbpb_work/X_analysis/XGBoost/output/selected/Psi2S_pb23_v1_fid1_6v1_rwr6range4v1_xgb_v1/closure25_v1/closure_input_manifest.pb23_pb24_psi2s_closure25_v1.json")
-EXPANDED_OUTPUT = REPO / "plotER/Validation/results/pbpb23_pbpb24_psi2s_combined_closure/psi2s_pb23_pb24_before_after_expanded22_v1"
+EXPANDED_OUTPUT = REPO / "plotER/validation_archive/results/pbpb23_pbpb24_psi2s_combined_closure/psi2s_pb23_pb24_before_after_expanded22_v1"
 
 VARIABLES = {
     "Bcos_dtheta": (-1.0, 1.000001), "Btktkpt": (2.0, 8.000001),
@@ -38,7 +38,7 @@ VARIABLES = {
 }
 EXPANDED_VARIABLES = {
     **VARIABLES,
-    # Existing validation ranges from plotER/Validation/aux.h.
+    # Existing validation ranges from plotER/validation_archive/aux.h.
     "BujvProb": (0.0, 1.000001), "Balpha": (0.0, 3.14),
     "Btrk2Eta": (-2.4, 2.4), "Btrk1Eta": (-2.4, 2.4),
     "Btrk1Phi": (-3.2, 3.2), "Btrk2Phi": (-3.2, 3.2),

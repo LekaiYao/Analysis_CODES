@@ -4,8 +4,8 @@
   "targets": {
     "ppref_psi2s": {
       "label": "ppRef psi(2S) reweighting target",
-      "root_file": "plotER/Validation/WEIGHTS/SignalWeight_TTree_ppRef_ntmix_PSI2S_PSI2S.root",
-      "source_manifest": "plotER/Validation/WEIGHTS/SignalWeight_TTree_ppRef_ntmix_PSI2S_PSI2S.json",
+      "root_file": "plotER/validation_archive/WEIGHTS/SignalWeight_TTree_ppRef_ntmix_PSI2S_PSI2S.root",
+      "source_manifest": "plotER/validation_archive/WEIGHTS/SignalWeight_TTree_ppRef_ntmix_PSI2S_PSI2S.json",
       "tree": "ntmix_PSI2S_sWeight",
       "weight_branch": "signal_sWeight",
       "source_data_root": "/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_DATA.root",
@@ -16,8 +16,8 @@
       "mass_variable": "Bmass",
       "fit_range_gev": [3.6, 3.8],
       "source_nominal_fit": "fitER/ROOTfiles/ppRef/nominalFitModel_ntmix_PSI2S_ppRef.root",
-      "fit_plot": "plotER/Validation/COMPARE/ntmix_PSI2S/massFit_splot_ntmix_PSI2S.pdf",
-      "quality_csv": "plotER/Validation/COMPARE/ntmix_PSI2S/validation_quality.csv",
+      "fit_plot": "plotER/validation_archive/archive/previous_validation/COMPARE/ntmix_PSI2S/massFit_splot_ntmix_PSI2S.pdf",
+      "quality_csv": "plotER/validation_archive/archive/previous_validation/COMPARE/ntmix_PSI2S/validation_quality.csv",
       "fit_model": {
         "fit_type": "extended unbinned maximum likelihood",
         "signal": "two Gaussians with common mean; MC-fixed component widths and fraction; common DATA/MC width scale",
@@ -47,7 +47,7 @@
           "nbkg1_": [25393.9, 253939.0]
         }
       },
-      "generation_command": "source /cvmfs/sft.cern.ch/lcg/views/LCG_106/x86_64-el9-gcc13-opt/setup.sh && bash plotER/Validation/workflows/run_export_ppref_psi2s_sweight_tree.sh",
+      "generation_command": "source /cvmfs/sft.cern.ch/lcg/views/LCG_106/x86_64-el9-gcc13-opt/setup.sh && bash plotER/validation_archive/workflows/run_export_ppref_psi2s_sweight_tree.sh",
       "provenance": {
         "root_version": "6.32.02",
         "artifact_generation_commit": null,
@@ -57,8 +57,8 @@
     },
     "ppref_x": {
       "label": "ppRef X transfer-closure target",
-      "root_file": "plotER/Validation/results/ppRef_X_r5_splot/SignalWeight_TTree_ppRef_X_r5_fiducial_splot_ntmix_X3872.root",
-      "source_manifest": "plotER/Validation/results/ppRef_X_r5_splot/SignalWeight_TTree_ppRef_X_r5_fiducial_splot_ntmix_X3872.json",
+      "root_file": "plotER/validation_archive/results/ppRef_X_r5_splot/SignalWeight_TTree_ppRef_X_r5_fiducial_splot_ntmix_X3872.root",
+      "source_manifest": "plotER/validation_archive/results/ppRef_X_r5_splot/SignalWeight_TTree_ppRef_X_r5_fiducial_splot_ntmix_X3872.json",
       "tree": "ntmix_X3872_sWeight",
       "weight_branch": "signal_sWeight",
       "source_data_root": "/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24/flat_ntmix_ppRef_DATA.root",
@@ -69,8 +69,8 @@
       "mass_variable": "Bmass",
       "fit_range_gev": [3.8, 4.0],
       "source_nominal_fit": "fitER/ROOTfiles/ppRef_X_r5_fiducial_feasibility/nominalFitModel_ntmix_X3872_ppRef_X_r5_fiducial_feasibility.root",
-      "fit_plot": "plotER/Validation/results/ppRef_X_r5_splot/COMPARE/ntmix_X3872/massFit_splot_ntmix_X3872.pdf",
-      "quality_csv": "plotER/Validation/results/ppRef_X_r5_splot/COMPARE/ntmix_X3872/validation_quality.csv",
+      "fit_plot": "plotER/validation_archive/archive/previous_validation/results/archive/2026-09/x_ppref_r5_splot/COMPARE/ntmix_X3872/massFit_splot_ntmix_X3872.pdf",
+      "quality_csv": "plotER/validation_archive/archive/previous_validation/results/archive/2026-09/x_ppref_r5_splot/COMPARE/ntmix_X3872/validation_quality.csv",
       "fit_model": {
         "fit_type": "extended unbinned maximum likelihood",
         "signal": "two Gaussians with common mean; MC-fixed component widths and fraction; common DATA/MC width scale",
@@ -100,7 +100,7 @@
           "nbkg1_": [19488.6, 194886.0]
         }
       },
-      "generation_command": "bash plotER/Validation/workflows/run_export_ppref_x_r5_sweight_tree.sh",
+      "generation_command": "bash plotER/validation_archive/workflows/run_export_ppref_x_r5_sweight_tree.sh",
       "provenance": {
         "root_version": "6.32.02",
         "fit_artifact_execution_head": "9168339a81b25ec5abba44412c0bcc5db957afe6",

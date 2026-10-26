@@ -1,9 +1,10 @@
 from pathlib import Path
+from validation_archive_paths import validation_input
 import json,csv,re,hashlib,subprocess,argparse
 import numpy as np,uproot,ROOT as R
-ap=argparse.ArgumentParser();ap.add_argument('--output',required=True);args=ap.parse_args();repo=Path.cwd();out=Path(args.output);out.mkdir(parents=True,exist_ok=False);(out/'figures').mkdir();(out/'artifacts').mkdir()
+ap=argparse.ArgumentParser();ap.add_argument('--output',required=True);args=ap.parse_args();repo=Path.cwd();out=Path(args.output);out.mkdir(parents=True,exist_ok=False);(out/'pdf').mkdir();(out/'artifacts').mkdir()
 R.gROOT.SetBatch(True);R.gStyle.SetOptStat(0);R.gStyle.SetOptTitle(0)
-base=repo/'plotER/Validation/results/ppRef_X_r5_splot_ppref_snapshot_v1';src=Path('/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24');paths={'data':src/'flat_ntmix_ppRef_DATA.root','mc':src/'flat_ntmix_ppRef_MC_X3872.root','splot':base/'artifacts/ppref_x_signed_sweight_all_common.root','model':repo/'fitER/ROOTfiles/ppRef_X_r5_fiducial_feasibility_ppref_snapshot_v1/nominalFitModel_ntmix_X3872_ppRef_X_r5_fiducial_feasibility_ppref_snapshot_v1.root'}
+base=repo/'plotER/validation_archive/results/ppRef_X_r5_splot_ppref_snapshot_v1';src=Path('/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/ppRef24');paths={'data':src/'flat_ntmix_ppRef_DATA.root','mc':src/'flat_ntmix_ppRef_MC_X3872.root','splot':base/'artifacts/ppref_x_signed_sweight_all_common.root','model':repo/'fitER/ROOTfiles/ppRef_X_r5_fiducial_feasibility_ppref_snapshot_v1/nominalFitModel_ntmix_X3872_ppRef_X_r5_fiducial_feasibility_ppref_snapshot_v1.root'}
 def fingerprint(p):
  st=p.stat();h=hashlib.sha256()
  with p.open('rb') as f:
@@ -12,7 +13,7 @@ def fingerprint(p):
  return {'path':str(p),'sha256':h.hexdigest(),'bytes':st.st_size,'mtime_ns':st.st_mtime_ns}
 provenance={k:fingerprint(p) for k,p in paths.items()};assert provenance['data']['sha256']=='03706f676cf24d3bf0c24c5ab49cf54345369c8cfb80d6f75d3d287e5787e599'
 meta=json.loads((base/'artifacts/ppref_x_signed_sweight_all_common.json').read_text());names=[n for n in meta['variables'] if n not in ['Bmass','signal_sWeight']];assert len(names)==67
-old={r['variable']:r for r in csv.DictReader((base/'validation/common_scalar_cdf_metrics.csv').open())}
+old={r['variable']:r for r in csv.DictReader(validation_input(base/'validation/common_scalar_cdf_metrics.csv').open())}
 f=R.TFile.Open(str(paths['model']));ws=f.Get('ws_nominal');get=lambda n:ws.var(n).getVal();mean=get('mean1_');sigma=np.sqrt(get('sig1frac1_')*get('sigma11_')**2+(1-get('sig1frac1_'))*get('sigma21_')**2)*get('scale');scale=get('scale');f.Close();windows=[[mean-8*sigma,mean-4*sigma],[mean+4*sigma,mean+8*sigma]]
 def read(p,t):
  with uproot.open(p) as f:return f[t].arrays(library='np')
@@ -24,12 +25,12 @@ sb=pre(d)&(((d['Bmass']>windows[0][0])&(d['Bmass']<windows[0][1]))|((d['Bmass']>
 ms=pre(mc);assert ms.sum()==84381;assert np.unique(mc['pThatreweight']).size==1
 samples={'splot':{n:sp[n] for n in names},'mc':{n:mc[n][ms] for n in names},'sideband':{n:d[n][sb] for n in names}};weights={'splot':sp['signal_sWeight'].astype(float),'mc':mc['pThatreweight'][ms].astype(float),'sideband':np.ones(int(sb.sum()))}
 config={}
-for line in (repo/'plotER/Validation/aux.h').read_text().splitlines():
+for line in (repo/'plotER/validation_archive/aux.h').read_text().splitlines():
  q=re.search(r'\{"([^"]+)",\s*"([^"]+)",\s*kNBins,\s*([^,]+),\s*([^,]+),\s*(true|false)',line)
  if q:
   try:config[q[1]]=(float(q[3]),float(q[4]),q[5]=='true',q[2].split(';')[1])
   except ValueError:pass
-R.gInterpreter.Declare('#include "'+str(repo/'plotER/Validation/aux.h')+'"')
+R.gInterpreter.Declare('#include "'+str(repo/'plotER/validation_archive/aux.h')+'"')
 for q in R.getSignalVars('ntmix_X3872'):config[str(q.expr)]=(float(q.xmin),float(q.xmax),bool(q.absVal),str(q.title).split(';')[1])
 def cdf(x,w,y,v):
  z=np.union1d(x,y);ix=np.argsort(x,kind='stable');iy=np.argsort(y,kind='stable');a=np.r_[0,np.cumsum(w[ix])][np.searchsorted(x[ix],z,side='right')]/w.sum();b=np.r_[0,np.cumsum(v[iy])][np.searchsorted(y[iy],z,side='right')]/v.sum();return float(np.max(abs(a-b)))
@@ -63,11 +64,11 @@ for j,n in enumerate(names):
   g.Draw('P SAME');gs.append(g)
  line=R.TLine(lo,1,hi,1);line.SetLineStyle(2);line.Draw();rec['ratio_points_outside_display']=clips
  if clips:lab.SetTextSize(.075);lab.DrawLatex(.18,.85,f'{clips} ratio points outside [-2,5]')
- c.SaveAs(str(out/'figures'/f'{n}.pdf'));root.cd()
+ c.SaveAs(str(out/'pdf'/f'{n}.pdf'));root.cd()
  for obj in [*hs.values(),*gs]:obj.Write()
  c.Close();metrics.append(rec)
-root.Close();subprocess.run(['pdfunite',*[str(out/'figures'/f'{n}.pdf') for n in names],str(out/'figures/validation_all.pdf')],check=True)
-for p in (out/'figures').glob('*.pdf'):assert 'Pages:' in subprocess.check_output(['pdfinfo',str(p)],text=True)
+root.Close();subprocess.run(['pdfunite',*[str(out/'pdf'/f'{n}.pdf') for n in names],str(out/'validation_all.pdf')],check=True)
+for p in [*(out/'pdf').glob('*.pdf'),out/'validation_all.pdf']:assert 'Pages:' in subprocess.check_output(['pdfinfo',str(p)],text=True)
 for k,p in paths.items():assert fingerprint(p)==provenance[k]
 summary={'status':'PASS','selection':meta['selection'],'sideband_definition':'raw DATA, both sides 4-8 effective sigma, strict open intervals','mean':mean,'effective_sigma':float(sigma),'width_scale':scale,'sideband_windows':windows,'mc_mass_cut':None,'splot_mass_range':[3.8,4.0],'counts':{k:len(w) for k,w in weights.items()},'sumw':{k:float(w.sum()) for k,w in weights.items()},'mc_weight_unique':np.unique(weights['mc']).tolist(),'variables':len(names),'splot_alignment':'all 67 variables and mass matched current DATA entrywise','max_change_from_old_splot_mc_cdf':max(abs(r['old_cdf_difference']) for r in metrics),'input_provenance':provenance,'notes':['MC file hash differs from old snapshot; current constant pThat weighting used.','Existing sPlot and model reused; no refit, no sideband subtraction.','Histogram normalized in display range, nonpositive totals fall back to full support; CDF full finite raw support.','Signed sWeights and negative bins retained; CDF is not a KS p-value.','sPlot scale is near its original upper bound; MC remains single-pThat private sample.']}
 (out/'summary.json').write_text(json.dumps(summary,indent=2)+'\n');(out/'variable_metrics.json').write_text(json.dumps(metrics,indent=2)+'\n');print(json.dumps(summary,indent=2))

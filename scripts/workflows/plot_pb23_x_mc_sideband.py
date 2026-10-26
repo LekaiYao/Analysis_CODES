@@ -1,13 +1,13 @@
 from pathlib import Path
 import json,csv,re,hashlib,subprocess,argparse
 import numpy as np,uproot,ROOT as R
-ap=argparse.ArgumentParser();ap.add_argument('--output',required=True);ap.add_argument('--variable',choices=['Btktkmass']);args=ap.parse_args();repo=Path.cwd();out=Path(args.output);out.mkdir(parents=True,exist_ok=False);(out/'figures').mkdir();(out/'artifacts').mkdir()
+ap=argparse.ArgumentParser();ap.add_argument('--output',required=True);ap.add_argument('--variable',choices=['Btktkmass']);args=ap.parse_args();repo=Path.cwd();out=Path(args.output);out.mkdir(parents=True,exist_ok=False);(out/'pdf').mkdir();(out/'artifacts').mkdir()
 R.gROOT.SetBatch(True);R.gStyle.SetOptStat(0);R.gStyle.SetOptTitle(0)
 src=Path('/eos/user/h/hmarques/RUN3_Data_MC_sharing/X3872/PbPb23');paths={'data':src/'flat_ntmix_PbPb23_DATA.root','mc':src/'flat_ntmix_PbPb23_MC_X3872.root'}
 def fingerprint(p):
  st=p.stat();return {'path':str(p),'bytes':st.st_size,'mtime_ns':st.st_mtime_ns}
 provenance={k:fingerprint(p) for k,p in paths.items()}
-base=repo/'plotER/Validation/results/ppRef_X_r5_splot_ppref_snapshot_v1'
+base=repo/'plotER/validation_archive/results/ppRef_X_r5_splot_ppref_snapshot_v1'
 names=[n for n in json.loads((base/'artifacts/ppref_x_signed_sweight_all_common.json').read_text())['variables'] if n not in ['Bmass','signal_sWeight']];assert len(names)==67
 if args.variable:names=[args.variable]
 windows=[[3.75,3.85],[3.9,4.0]]
@@ -27,12 +27,12 @@ old={}
 for n in names:
  vals=np.r_[samples['mc'][n],samples['sideband'][n]];vals=vals[np.isfinite(vals)];old[n]={'support_min':float(vals.min()),'support_max':float(vals.max())}
 config={}
-for line in (repo/'plotER/Validation/aux.h').read_text().splitlines():
+for line in (repo/'plotER/validation_archive/aux.h').read_text().splitlines():
  q=re.search(r'\{"([^"]+)",\s*"([^"]+)",\s*kNBins,\s*([^,]+),\s*([^,]+),\s*(true|false)',line)
  if q:
   try:config[q[1]]=(float(q[3]),float(q[4]),q[5]=='true',q[2].split(';')[1])
   except ValueError:pass
-R.gInterpreter.Declare('#include "'+str(repo/'plotER/Validation/aux.h')+'"')
+R.gInterpreter.Declare('#include "'+str(repo/'plotER/validation_archive/aux.h')+'"')
 for q in R.getSignalVars('ntmix_X3872'):config[str(q.expr)]=(float(q.xmin),float(q.xmax),bool(q.absVal),str(q.title).split(';')[1])
 if 'Btktkmass' in names:
  lo=np.floor(old['Btktkmass']['support_min']/.05)*.05;hi=(np.floor(old['Btktkmass']['support_max']/.05)+1)*.05
@@ -69,11 +69,11 @@ for j,n in enumerate(names):
   g.Draw('P SAME');gs.append(g)
  line=R.TLine(lo,1,hi,1);line.SetLineStyle(2);line.Draw();rec['ratio_points_outside_display']=clips
  if clips:lab.SetTextSize(.075);lab.DrawLatex(.18,.85,f'{clips} ratio points outside [0,5]')
- c.SaveAs(str(out/'figures'/f'{n}.pdf'));root.cd()
+ c.SaveAs(str(out/'pdf'/f'{n}.pdf'));root.cd()
  for obj in [*hs.values(),*gs]:obj.Write()
  c.Close();metrics.append(rec)
-root.Close();subprocess.run(['pdfunite',*[str(out/'figures'/f'{n}.pdf') for n in names],str(out/'figures/validation_all.pdf')],check=True)
-for p in (out/'figures').glob('*.pdf'):assert 'Pages:' in subprocess.check_output(['pdfinfo',str(p)],text=True)
+root.Close();subprocess.run(['pdfunite',*[str(out/'pdf'/f'{n}.pdf') for n in names],str(out/'validation_all.pdf')],check=True)
+for p in [*(out/'pdf').glob('*.pdf'),out/'validation_all.pdf']:assert 'Pages:' in subprocess.check_output(['pdfinfo',str(p)],text=True)
 for k,p in paths.items():assert fingerprint(p)==provenance[k]
 summary={'status':'PASS','selection':'Bpt > 10 && Bpt < 50 && abs(By) < 1.6 && BQvalue < 0.15','sideband_definition':'raw DATA, strict open mass intervals','sideband_windows':windows,'mc_mass_cut':None,'counts':{k:len(w) for k,w in weights.items()},'cutflow':cutflow,'sumw':{k:float(w.sum()) for k,w in weights.items()},'mc_weight_unique':np.unique(weights['mc']).tolist(),'variables':len(names),'input_provenance':provenance,'notes':['Prompt X MC pThatreweight; raw sideband DATA unit weight.','No ML, dR, or displacement significance cut; no fitting or subtraction.','Histogram normalized in visible range; full-support fallback for empty visible range recorded per variable.','CDF full finite raw support; separation diagnostic, not MC-to-signal validation.','Input file size/mtime checked before/after; no claim of full source SHA256.']}
 (out/'summary.json').write_text(json.dumps(summary,indent=2)+'\n');(out/'variable_metrics.json').write_text(json.dumps(metrics,indent=2)+'\n');print(json.dumps(summary,indent=2))

@@ -22,7 +22,7 @@ MANIFEST = Path(
 )
 EXPECTED_SHA256 = "bdab59517264b82f4333d5250da1892a8bbb7ad5924fe264865bca69f6f54314"
 OUTPUT = REPO / (
-    "plotER/Validation/results/pbpb23_pbpb24_x_mc_year_comparison/"
+    "plotER/validation_archive/results/pbpb23_pbpb24_x_mc_year_comparison/"
     "x_pb23_pb24_baseline_v1"
 )
 VARIABLES = (
@@ -106,7 +106,7 @@ def main():
     failures = []
     with tempfile.TemporaryDirectory(prefix="x-year-mc-", dir="/tmp/leyao") as scratch_name:
         scratch = Path(scratch_name)
-        macro = REPO / "plotER/Validation/macros/ComparePbPbYearXBaselineMC.C"
+        macro = REPO / "plotER/validation_archive/macros/ComparePbPbYearXBaselineMC.C"
         for name in ("fiducial_only", "fiducial_xeff25"):
             directory = OUTPUT / name
             directory.mkdir()
