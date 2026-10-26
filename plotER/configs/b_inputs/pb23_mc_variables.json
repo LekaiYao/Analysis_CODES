@@ -1,0 +1,3348 @@
+{
+  "Bu": {
+    "Bpt": {
+      "range": [
+        7.5,
+        50.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "p_{T} [GeV/c]",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "By": {
+      "range": [
+        0.0,
+        2.4
+      ],
+      "bins": 15,
+      "absolute_display": true,
+      "title": "|y|",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BLxy": {
+      "range": [
+        0.0,
+        0.5
+      ],
+      "bins": 15,
+      "absolute_display": true,
+      "title": "|BLxy|",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Balpha": {
+      "range": [
+        0.0,
+        3.14
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Balpha",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bchi2Prob": {
+      "range": [
+        0.0,
+        1.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bchi2Prob",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bcos_dtheta": {
+      "range": [
+        -1.0,
+        1.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bcos_dtheta",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bdtheta": {
+      "range": [
+        -0.07853967610592286,
+        3.220132067596911
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bdtheta",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bnorm_svpvDistance_2D": {
+      "range": [
+        0.0,
+        20.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bnorm_svpvDistance_2D",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BsvpvDisErr_2D": {
+      "range": [
+        0.0,
+        0.05
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BsvpvDisErr_2D",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BsvpvDistance_2D": {
+      "range": [
+        0.0,
+        0.25
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BsvpvDistance_2D",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BvtxX": {
+      "range": [
+        -0.1,
+        0.1
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BvtxX",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BvtxY": {
+      "range": [
+        -0.1,
+        0.1
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BvtxY",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bnorm_trk1Dxy": {
+      "range": [
+        -50.0,
+        50.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bnorm_trk1Dxy",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bnorm_trk1Dz": {
+      "range": [
+        -2000.0,
+        2000.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bnorm_trk1Dz",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bnorm_trk2Dxy": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bnorm_trk2Dxy",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bnorm_trk2Dz": {
+      "range": [
+        -2000.0,
+        2000.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bnorm_trk2Dz",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk1Chi2ndf": {
+      "range": [
+        -0.09023392156232149,
+        3.6996093639405445
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1Chi2ndf",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk1Dxy1": {
+      "range": [
+        -117.25645275115967,
+        117.33778972625733
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1Dxy1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk1DxyError1": {
+      "range": [
+        -0.05950164487003349,
+        2.479971385508543
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1DxyError1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk1Dz1": {
+      "range": [
+        -264.2832336425781,
+        252.14321899414062
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1Dz1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk1DzError1": {
+      "range": [
+        -0.2201440214936156,
+        9.135564332763897
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1DzError1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk1Eta": {
+      "range": [
+        -2.4,
+        2.4
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1Eta",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk1Phi": {
+      "range": [
+        -3.2,
+        3.2
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1Phi",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk1Pt": {
+      "range": [
+        0.5,
+        10.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1Pt",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk1PtErr": {
+      "range": [
+        0.0,
+        0.1
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1PtErr",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk1dR": {
+      "range": [
+        0.0,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1dR",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk1highPurity": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1highPurity",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk1nPixelLayer": {
+      "range": [
+        -0.15000000000000002,
+        6.15
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1nPixelLayer",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk1nStripLayer": {
+      "range": [
+        4.7,
+        17.3
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1nStripLayer",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2Chi2ndf": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2Chi2ndf",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2Dxy1": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2Dxy1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2DxyError1": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2DxyError1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2Dz1": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2Dz1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2DzError1": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2DzError1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2Eta": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2Eta",
+      "range_source": "full finite support: legacy range has no entries",
+      "log_y": false
+    },
+    "Btrk2Phi": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2Phi",
+      "range_source": "full finite support: legacy range has no entries",
+      "log_y": false
+    },
+    "Btrk2Pt": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2Pt",
+      "range_source": "full finite support: legacy range has no entries",
+      "log_y": false
+    },
+    "Btrk2PtErr": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2PtErr",
+      "range_source": "full finite support: legacy range has no entries",
+      "log_y": false
+    },
+    "Btrk2dR": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2dR",
+      "range_source": "full finite support: legacy range has no entries",
+      "log_y": false
+    },
+    "Btrk2highPurity": {
+      "range": [
+        -0.5,
+        0.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2highPurity",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2nPixelLayer": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2nPixelLayer",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2nStripLayer": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2nStripLayer",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BtrkPtimb": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BtrkPtimb",
+      "range_source": "full finite support: legacy range has no entries",
+      "log_y": false
+    },
+    "Bdoubleteta": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bdoubleteta",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bdoubletphi": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bdoubletphi",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bdoubletpt": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bdoubletpt",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bdoublety": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bdoublety",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btktketa": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btktketa",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btktkmass": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btktkmass",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btktkphi": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btktkphi",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btktkpt": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btktkpt",
+      "range_source": "full finite support: legacy range has no entries",
+      "log_y": false
+    },
+    "BtktkvProb": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BtktkvProb",
+      "range_source": "full finite support: legacy range has no entries",
+      "log_y": false
+    },
+    "Btktky": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btktky",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu1HybridSoftMuID": {
+      "range": [
+        -0.025,
+        1.025
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu1HybridSoftMuID",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu1SoftMuID": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu1SoftMuID",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu1eta": {
+      "range": [
+        -2.5199993371963503,
+        2.519998860359192
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu1eta",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu1isAcc": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu1isAcc",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu1isTriggered": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu1isTriggered",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu1phi": {
+      "range": [
+        -3.2986701309680937,
+        3.298670369386673
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu1phi",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu1pt": {
+      "range": [
+        1.0,
+        25.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu1pt",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bmu2HybridSoftMuID": {
+      "range": [
+        -0.025,
+        1.025
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu2HybridSoftMuID",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu2SoftMuID": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu2SoftMuID",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu2eta": {
+      "range": [
+        -2.5199996054172518,
+        2.519999843835831
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu2eta",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu2isAcc": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu2isAcc",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu2isTriggered": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu2isTriggered",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu2phi": {
+      "range": [
+        -3.298671638965607,
+        3.298672115802765
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu2phi",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu2pt": {
+      "range": [
+        1.0,
+        25.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu2pt",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BmuLeadPt": {
+      "range": [
+        -1.7267976224422457,
+        136.6473758637905
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BmuLeadPt",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BmuMaxAbsEta": {
+      "range": [
+        -0.05961643408809323,
+        2.459990498193656
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BmuMaxAbsEta",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BmuMaxdR": {
+      "range": [
+        -0.03384699732996524,
+        2.4293566482607276
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BmuMaxdR",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BmuMindR": {
+      "range": [
+        -0.0487241760827601,
+        2.174905148986727
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BmuMindR",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BmuSubPt": {
+      "range": [
+        0.09374076426029188,
+        59.1567738622427
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BmuSubPt",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bujeta": {
+      "range": [
+        -4.104945290088653,
+        4.100407230854034
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bujeta",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bujlxy": {
+      "range": [
+        -1.618010738492012,
+        5.091332533955574
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bujlxy",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bujmass": {
+      "range": [
+        2.9,
+        3.25
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bujmass [GeV/c^{2}]",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bujphi": {
+      "range": [
+        -3.298672103881836,
+        3.2986711502075194
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bujphi",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bujpt": {
+      "range": [
+        -4.173381172120571,
+        195.9336580261588
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bujpt",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BujvProb": {
+      "range": [
+        0.0,
+        1.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BujvProb",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BQvalue": {
+      "range": [
+        -20.5,
+        -19.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BQvalue",
+      "range_source": "full finite support: legacy range has no entries",
+      "log_y": false
+    },
+    "BdiTrackFitValid": {
+      "range": [
+        -0.5,
+        0.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BdiTrackFitValid",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bsize": {
+      "range": [
+        0.32499999999999996,
+        28.675
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bsize",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "CentBin": {
+      "range": [
+        -0.5,
+        0.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "CentBin",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "PVnchi2": {
+      "range": [
+        0.0,
+        1.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "PVnchi2",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "PVx": {
+      "range": [
+        -0.1,
+        0.1
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "PVx",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "PVxE": {
+      "range": [
+        -0.01768663583061425,
+        0.741324893599085
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "PVxE",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "PVy": {
+      "range": [
+        -0.1,
+        0.1
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "PVy",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "PVyE": {
+      "range": [
+        -0.010654507730941988,
+        0.45405297886682094
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "PVyE",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "PVz": {
+      "range": [
+        -25.0,
+        25.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "PVz",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "PVzE": {
+      "range": [
+        -0.08515535826154519,
+        3.516831441389513
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "PVzE",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "nChargedTracks": {
+      "range": [
+        -6.106416702270508,
+        250.36308479309082
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "nChargedTracks",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "nChargedTracks_LOOSE": {
+      "range": [
+        -5.309884643554688,
+        261.97971496582034
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "nChargedTracks_LOOSE",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "nChargedTracks_TIGHT": {
+      "range": [
+        -5.755210876464844,
+        235.9636459350586
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "nChargedTracks_TIGHT",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bgen": {
+      "bins": 15,
+      "range": [
+        23332.5,
+        23333.5
+      ],
+      "absolute_display": false,
+      "title": "Bgen",
+      "origin": "MC finite support"
+    },
+    "Bmass": {
+      "bins": 100,
+      "range": [
+        5.0,
+        6.0
+      ],
+      "absolute_display": false,
+      "title": "m(J/#psi K^{+}) [GeV/c^{2}]",
+      "origin": "accepted Bmass 5-6 display"
+    },
+    "pThatreweight": {
+      "bins": 15,
+      "range": [
+        -2.4100716817571843,
+        105.49076416082967
+      ],
+      "absolute_display": false,
+      "title": "pThatreweight",
+      "origin": "MC finite support"
+    },
+    "pThats": {
+      "bins": 15,
+      "range": [
+        3.875,
+        51.125
+      ],
+      "absolute_display": false,
+      "title": "pThats",
+      "origin": "MC finite support"
+    },
+    "pthat": {
+      "bins": 15,
+      "range": [
+        -5.35000468492508,
+        430.7555980801582
+      ],
+      "absolute_display": false,
+      "title": "pthat",
+      "origin": "MC finite support"
+    }
+  },
+  "Bs": {
+    "Bpt": {
+      "range": [
+        7.5,
+        50.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "p_{T} [GeV/c]",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "By": {
+      "range": [
+        0.0,
+        2.4
+      ],
+      "bins": 15,
+      "absolute_display": true,
+      "title": "|y|",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BLxy": {
+      "range": [
+        0.0,
+        0.5
+      ],
+      "bins": 15,
+      "absolute_display": true,
+      "title": "|BLxy|",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Balpha": {
+      "range": [
+        0.0,
+        3.14
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Balpha",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bchi2Prob": {
+      "range": [
+        0.0,
+        1.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bchi2Prob",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bcos_dtheta": {
+      "range": [
+        -1.0,
+        1.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bcos_dtheta",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bdtheta": {
+      "range": [
+        -0.07853954149216343,
+        3.220125714238322
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bdtheta",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bnorm_svpvDistance_2D": {
+      "range": [
+        0.0,
+        20.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bnorm_svpvDistance_2D",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BsvpvDisErr_2D": {
+      "range": [
+        0.0,
+        0.05
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BsvpvDisErr_2D",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BsvpvDistance_2D": {
+      "range": [
+        0.0,
+        0.25
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BsvpvDistance_2D",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BvtxX": {
+      "range": [
+        -0.1,
+        0.1
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BvtxX",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BvtxY": {
+      "range": [
+        -0.1,
+        0.1
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BvtxY",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bnorm_trk1Dxy": {
+      "range": [
+        -50.0,
+        50.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bnorm_trk1Dxy",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bnorm_trk1Dz": {
+      "range": [
+        -2000.0,
+        2000.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bnorm_trk1Dz",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bnorm_trk2Dxy": {
+      "range": [
+        -68.35403251647949,
+        89.30450248718262
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bnorm_trk2Dxy",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bnorm_trk2Dz": {
+      "range": [
+        -2000.0,
+        2000.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bnorm_trk2Dz",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk1Chi2ndf": {
+      "range": [
+        -0.0033508300781250056,
+        3.449395751953125
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1Chi2ndf",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk1Dxy1": {
+      "range": [
+        -1.9077742278575898,
+        2.3475675761699675
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1Dxy1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk1DxyError1": {
+      "range": [
+        -0.022282978906878272,
+        0.971034413939924
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1DxyError1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk1Dz1": {
+      "range": [
+        -22.356243991851805,
+        20.99826898574829
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1Dz1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk1DzError1": {
+      "range": [
+        -0.11416762419394218,
+        4.797632669372251
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1DzError1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk1Eta": {
+      "range": [
+        -2.4,
+        2.4
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1Eta",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk1Phi": {
+      "range": [
+        -3.2,
+        3.2
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1Phi",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk1Pt": {
+      "range": [
+        0.5,
+        4.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1Pt",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk1PtErr": {
+      "range": [
+        0.0,
+        0.1
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1PtErr",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk1dR": {
+      "range": [
+        0.0,
+        0.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1dR",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk1highPurity": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1highPurity",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk1nPixelLayer": {
+      "range": [
+        -0.125,
+        5.125
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1nPixelLayer",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk1nStripLayer": {
+      "range": [
+        5.725,
+        17.275
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1nStripLayer",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2Chi2ndf": {
+      "range": [
+        -0.011529541015625006,
+        3.497613525390625
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2Chi2ndf",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2Dxy1": {
+      "range": [
+        -3.1851949125528334,
+        1.6975045830011368
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2Dxy1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2DxyError1": {
+      "range": [
+        -0.02855363587732427,
+        1.2360209117818157
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2DxyError1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2Dz1": {
+      "range": [
+        -20.983431577682495,
+        20.978546857833862
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2Dz1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2DzError1": {
+      "range": [
+        -0.06942830855841749,
+        2.9613232928502837
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2DzError1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2Eta": {
+      "range": [
+        -2.4,
+        2.4
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2Eta",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk2Phi": {
+      "range": [
+        -3.2,
+        3.2
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2Phi",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk2Pt": {
+      "range": [
+        0.5,
+        4.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2Pt",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk2PtErr": {
+      "range": [
+        0.0,
+        0.1
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2PtErr",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk2dR": {
+      "range": [
+        0.0,
+        0.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2dR",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk2highPurity": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2highPurity",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2nPixelLayer": {
+      "range": [
+        -0.15000000000000002,
+        6.15
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2nPixelLayer",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2nStripLayer": {
+      "range": [
+        5.725,
+        17.275
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2nStripLayer",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BtrkLeadPt": {
+      "range": [
+        -0.3646240234375,
+        35.9906005859375
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BtrkLeadPt",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BtrkLeadPtFrac": {
+      "range": [
+        0.006650506705045699,
+        0.5136343546211719
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BtrkLeadPtFrac",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BtrkMaxAbsEta": {
+      "range": [
+        -0.0577440707013011,
+        2.459794871322811
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BtrkMaxAbsEta",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BtrkMaxdR": {
+      "range": [
+        -0.04927763452287763,
+        2.6518034433713185
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BtrkMaxdR",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BtrkMindR": {
+      "range": [
+        -0.04991032110992819,
+        2.2526482550660147
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BtrkMindR",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BtrkPtimb": {
+      "range": [
+        0.0,
+        0.8
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BtrkPtimb",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BtrkSubPt": {
+      "range": [
+        -0.08856201171875,
+        24.65155029296875
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BtrkSubPt",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BtrkSubPtFrac": {
+      "range": [
+        0.004072874458506702,
+        0.40856403331272306
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BtrkSubPtFrac",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bdoubleteta": {
+      "range": [
+        -2.53538099527359,
+        2.541390573978424
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bdoubleteta",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bdoubletphi": {
+      "range": [
+        -3.298622190952301,
+        3.2986674904823303
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bdoubletphi",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bdoubletpt": {
+      "range": [
+        -0.5241428717970849,
+        60.64327974170446
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bdoubletpt",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bdoublety": {
+      "range": [
+        -2.4969067513942718,
+        2.4894154012203216
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bdoublety",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btktketa": {
+      "range": [
+        -2.536894202232361,
+        2.540747046470642
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btktketa",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btktkmass": {
+      "range": [
+        1.0037057131528855,
+        1.0352045565843582
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btktkmass",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btktkphi": {
+      "range": [
+        -3.298609787225723,
+        3.2986596167087554
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btktkphi",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btktkpt": {
+      "range": [
+        1.0,
+        10.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btktkpt",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BtktkvProb": {
+      "range": [
+        0.0,
+        1.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BtktkvProb",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btktky": {
+      "range": [
+        -2.4968679368495943,
+        2.4892559468746187
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btktky",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu1HybridSoftMuID": {
+      "range": [
+        -0.025,
+        1.025
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu1HybridSoftMuID",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu1SoftMuID": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu1SoftMuID",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu1eta": {
+      "range": [
+        -2.519986867904663,
+        2.51999831199646
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu1eta",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu1isAcc": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu1isAcc",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu1isTriggered": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu1isTriggered",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu1phi": {
+      "range": [
+        -3.2986261427402495,
+        3.298669296503067
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu1phi",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu1pt": {
+      "range": [
+        1.0,
+        25.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu1pt",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bmu2HybridSoftMuID": {
+      "range": [
+        -0.025,
+        1.025
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu2HybridSoftMuID",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu2SoftMuID": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu2SoftMuID",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu2eta": {
+      "range": [
+        -2.519926351308823,
+        2.51994041800499
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu2eta",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu2isAcc": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu2isAcc",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu2isTriggered": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu2isTriggered",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu2phi": {
+      "range": [
+        -3.298670321702957,
+        3.298618108034134
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu2phi",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu2pt": {
+      "range": [
+        1.0,
+        25.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu2pt",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BmuLeadPt": {
+      "range": [
+        -0.66411534845829,
+        92.76145915091038
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BmuLeadPt",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BmuMaxAbsEta": {
+      "range": [
+        -0.055388983211014424,
+        2.4598861684673468
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BmuMaxAbsEta",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BmuMaxdR": {
+      "range": [
+        -0.010361614078283315,
+        1.9106424771249295
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BmuMaxdR",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BmuMindR": {
+      "range": [
+        -0.03406751630827785,
+        1.7517503733746707
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BmuMindR",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BmuSubPt": {
+      "range": [
+        0.4374066084623336,
+        45.06792621910572
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BmuSubPt",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bujeta": {
+      "range": [
+        -3.4452557146549223,
+        3.65357990860939
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bujeta",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bujlxy": {
+      "range": [
+        -0.3356235146522522,
+        2.67931581735611
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bujlxy",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bujmass": {
+      "range": [
+        2.9,
+        3.25
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bujmass [GeV/c^{2}]",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bujphi": {
+      "range": [
+        -3.2986624419689177,
+        3.298635500669479
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bujphi",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bujpt": {
+      "range": [
+        -1.7724937781691552,
+        110.68556070178747
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bujpt",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BujvProb": {
+      "range": [
+        0.0,
+        1.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BujvProb",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BQvalue": {
+      "range": [
+        0.7391130045056343,
+        2.027987150847912
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BQvalue",
+      "range_source": "full finite support: legacy range has no entries",
+      "log_y": false
+    },
+    "BdiTrackFitValid": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BdiTrackFitValid",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bsize": {
+      "range": [
+        0.725,
+        12.275
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bsize",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "CentBin": {
+      "range": [
+        -0.5,
+        0.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "CentBin",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "PVnchi2": {
+      "range": [
+        0.0,
+        1.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "PVnchi2",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "PVx": {
+      "range": [
+        -0.1,
+        0.1
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "PVx",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "PVxE": {
+      "range": [
+        -0.0078037219755060505,
+        0.3380917335853155
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "PVxE",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "PVy": {
+      "range": [
+        -0.1,
+        0.1
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "PVy",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "PVyE": {
+      "range": [
+        -0.0044314560247585184,
+        0.20027071672957392
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "PVyE",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "PVz": {
+      "range": [
+        -25.0,
+        25.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "PVz",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "PVzE": {
+      "range": [
+        -0.018092196530778894,
+        0.767241810428095
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "PVzE",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "nChargedTracks": {
+      "range": [
+        -2.0139799177646642,
+        176.23947597146034
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "nChargedTracks",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "nChargedTracks_LOOSE": {
+      "range": [
+        -0.1775484800338747,
+        186.78168685436248
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "nChargedTracks_LOOSE",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "nChargedTracks_TIGHT": {
+      "range": [
+        -1.7863171100616455,
+        170.2536919116974
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "nChargedTracks_TIGHT",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bgen": {
+      "bins": 15,
+      "range": [
+        23332.5,
+        23333.5
+      ],
+      "absolute_display": false,
+      "title": "Bgen",
+      "origin": "MC finite support"
+    },
+    "Bmass": {
+      "bins": 100,
+      "range": [
+        5.0,
+        6.0
+      ],
+      "absolute_display": false,
+      "title": "m(J/#psi K^{+}K^{-}) [GeV/c^{2}]",
+      "origin": "accepted Bmass 5-6 display"
+    },
+    "pThatreweight": {
+      "bins": 15,
+      "range": [
+        -0.6677297479788851,
+        29.14381437467345
+      ],
+      "absolute_display": false,
+      "title": "pThatreweight",
+      "origin": "MC finite support"
+    },
+    "pThats": {
+      "bins": 15,
+      "range": [
+        3.875,
+        51.125
+      ],
+      "absolute_display": false,
+      "title": "pThats",
+      "origin": "MC finite support"
+    },
+    "pthat": {
+      "bins": 15,
+      "range": [
+        -6.0923126459121715,
+        460.54004271030425
+      ],
+      "absolute_display": false,
+      "title": "pthat",
+      "origin": "MC finite support"
+    }
+  },
+  "Bd": {
+    "Bpt": {
+      "range": [
+        7.5,
+        50.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "p_{T} [GeV/c]",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "By": {
+      "range": [
+        0.0,
+        2.4
+      ],
+      "bins": 15,
+      "absolute_display": true,
+      "title": "|y|",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BLxy": {
+      "range": [
+        0.0,
+        0.5
+      ],
+      "bins": 15,
+      "absolute_display": true,
+      "title": "|BLxy|",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Balpha": {
+      "range": [
+        0.0,
+        3.14
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Balpha",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bchi2Prob": {
+      "range": [
+        0.0,
+        1.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bchi2Prob",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bcos_dtheta": {
+      "range": [
+        -1.0,
+        1.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bcos_dtheta",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bdtheta": {
+      "range": [
+        -0.0785397289074,
+        3.2201323131184183
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bdtheta",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bnorm_svpvDistance_2D": {
+      "range": [
+        0.0,
+        20.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bnorm_svpvDistance_2D",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BsvpvDisErr_2D": {
+      "range": [
+        0.0,
+        0.05
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BsvpvDisErr_2D",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BsvpvDistance_2D": {
+      "range": [
+        0.0,
+        0.25
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BsvpvDistance_2D",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BvtxX": {
+      "range": [
+        -0.1,
+        0.1
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BvtxX",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BvtxY": {
+      "range": [
+        -0.1,
+        0.1
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BvtxY",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bnorm_trk1Dxy": {
+      "range": [
+        -50.0,
+        50.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bnorm_trk1Dxy",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bnorm_trk1Dz": {
+      "range": [
+        -2000.0,
+        2000.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bnorm_trk1Dz",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bnorm_trk2Dxy": {
+      "range": [
+        -128.15883045196534,
+        91.23029499053955
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bnorm_trk2Dxy",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bnorm_trk2Dz": {
+      "range": [
+        -2000.0,
+        2000.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bnorm_trk2Dz",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk1Chi2ndf": {
+      "range": [
+        -0.046090698242187506,
+        3.6585174560546876
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1Chi2ndf",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk1Dxy1": {
+      "range": [
+        -7.790556383132935,
+        109.18682522773743
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1Dxy1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk1DxyError1": {
+      "range": [
+        -0.04074717452458572,
+        1.7194543933699606
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1DxyError1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk1Dz1": {
+      "range": [
+        -26.156633424758912,
+        212.72862248420716
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1Dz1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk1DzError1": {
+      "range": [
+        -0.1971557856304571,
+        8.19387412245851
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1DzError1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk1Eta": {
+      "range": [
+        -2.4,
+        2.4
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1Eta",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk1Phi": {
+      "range": [
+        -3.2,
+        3.2
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1Phi",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk1Pt": {
+      "range": [
+        0.5,
+        4.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1Pt",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk1PtErr": {
+      "range": [
+        0.0,
+        0.1
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1PtErr",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk1dR": {
+      "range": [
+        0.0,
+        0.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1dR",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk1highPurity": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1highPurity",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk1nPixelLayer": {
+      "range": [
+        -0.15000000000000002,
+        6.15
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1nPixelLayer",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk1nStripLayer": {
+      "range": [
+        4.7,
+        17.3
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk1nStripLayer",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2Chi2ndf": {
+      "range": [
+        -0.06573486328125,
+        3.65899658203125
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2Chi2ndf",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2Dxy1": {
+      "range": [
+        -108.16312808394431,
+        6.71347422003746
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2Dxy1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2DxyError1": {
+      "range": [
+        -0.03900736196956132,
+        1.6439339866541558
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2DxyError1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2Dz1": {
+      "range": [
+        -198.42905917167664,
+        28.298152112960814
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2Dz1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2DzError1": {
+      "range": [
+        -0.16084531820961276,
+        6.704601672576973
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2DzError1",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2Eta": {
+      "range": [
+        -2.4,
+        2.4
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2Eta",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk2Phi": {
+      "range": [
+        -3.2,
+        3.2
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2Phi",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk2Pt": {
+      "range": [
+        0.5,
+        4.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2Pt",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk2PtErr": {
+      "range": [
+        0.0,
+        0.1
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2PtErr",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk2dR": {
+      "range": [
+        0.0,
+        0.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2dR",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btrk2highPurity": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2highPurity",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2nPixelLayer": {
+      "range": [
+        -0.15000000000000002,
+        6.15
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2nPixelLayer",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btrk2nStripLayer": {
+      "range": [
+        4.7,
+        17.3
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btrk2nStripLayer",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BtrkLeadPt": {
+      "range": [
+        -0.67449951171875,
+        48.67498779296875
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BtrkLeadPt",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BtrkLeadPtFrac": {
+      "range": [
+        -0.006704999529756606,
+        0.7956902882317081
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BtrkLeadPtFrac",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BtrkMaxAbsEta": {
+      "range": [
+        -0.059057892533019185,
+        2.4598269157577306
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BtrkMaxAbsEta",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BtrkMaxdR": {
+      "range": [
+        -0.06507528887595981,
+        3.292269017896615
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BtrkMaxdR",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BtrkMindR": {
+      "range": [
+        -0.06166545476007741,
+        2.560556793582509
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BtrkMindR",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BtrkPtimb": {
+      "range": [
+        0.0,
+        0.8
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BtrkPtimb",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BtrkSubPt": {
+      "range": [
+        -0.07684326171875,
+        24.17108154296875
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BtrkSubPt",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BtrkSubPtFrac": {
+      "range": [
+        -0.004789424489717932,
+        0.44393044885946437
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BtrkSubPtFrac",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bdoubleteta": {
+      "range": [
+        -2.8648603439331053,
+        3.1294110298156737
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bdoubleteta",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bdoubletphi": {
+      "range": [
+        -3.2986630856990815,
+        3.2986719071865083
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bdoubletphi",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bdoubletpt": {
+      "range": [
+        -1.1052010074257852,
+        58.54256028085947
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bdoubletpt",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bdoublety": {
+      "range": [
+        -2.5075851023197173,
+        2.508349710702896
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bdoublety",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btktketa": {
+      "range": [
+        -2.8582645893096923,
+        2.8631106853485107
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btktketa",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btktkmass": {
+      "range": [
+        0.7384408876299858,
+        1.053439898788929
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btktkmass",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btktkphi": {
+      "range": [
+        -3.2986709058284758,
+        3.2986720979213713
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btktkphi",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Btktkpt": {
+      "range": [
+        1.0,
+        10.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btktkpt",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BtktkvProb": {
+      "range": [
+        0.0,
+        1.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BtktkvProb",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Btktky": {
+      "range": [
+        -2.507503551244736,
+        2.5082204759120943
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Btktky",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu1HybridSoftMuID": {
+      "range": [
+        -0.025,
+        1.025
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu1HybridSoftMuID",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu1SoftMuID": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu1SoftMuID",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu1eta": {
+      "range": [
+        -2.5199985980987547,
+        2.5199985980987547
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu1eta",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu1isAcc": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu1isAcc",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu1isTriggered": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu1isTriggered",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu1phi": {
+      "range": [
+        -3.298664021492004,
+        3.298670220375061
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu1phi",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu1pt": {
+      "range": [
+        1.0,
+        25.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu1pt",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bmu2HybridSoftMuID": {
+      "range": [
+        -0.025,
+        1.025
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu2HybridSoftMuID",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu2SoftMuID": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu2SoftMuID",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu2eta": {
+      "range": [
+        -2.5199924767017365,
+        2.519997960329056
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu2eta",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu2isAcc": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu2isAcc",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu2isTriggered": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu2isTriggered",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu2phi": {
+      "range": [
+        -3.2986682176589968,
+        3.2986720323562624
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu2phi",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bmu2pt": {
+      "range": [
+        1.0,
+        25.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bmu2pt",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BmuLeadPt": {
+      "range": [
+        -2.4862236231565475,
+        166.49737219512463
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BmuLeadPt",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BmuMaxAbsEta": {
+      "range": [
+        -0.05961640428577084,
+        2.459989276298438
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BmuMaxAbsEta",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BmuMaxdR": {
+      "range": [
+        -0.035202473215758805,
+        2.531144536845386
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BmuMaxdR",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BmuMindR": {
+      "range": [
+        -0.050542713794857266,
+        2.2494651951827107
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BmuMindR",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BmuSubPt": {
+      "range": [
+        0.10043422281742087,
+        58.882342061400415
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BmuSubPt",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bujeta": {
+      "range": [
+        -4.342895889282227,
+        3.9504074096679687
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bujeta",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bujlxy": {
+      "range": [
+        -0.26953496523201464,
+        3.2720858503133057
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bujlxy",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bujmass": {
+      "range": [
+        2.9,
+        3.25
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bujmass [GeV/c^{2}]",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "Bujphi": {
+      "range": [
+        -3.298672103881836,
+        3.2986711502075194
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bujphi",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bujpt": {
+      "range": [
+        -4.333559297025204,
+        199.56219562143087
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bujpt",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "BujvProb": {
+      "range": [
+        0.0,
+        1.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BujvProb",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "BQvalue": {
+      "range": [
+        0.7202063545584678,
+        2.2941444769501684
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BQvalue",
+      "range_source": "full finite support: legacy range has no entries",
+      "log_y": false
+    },
+    "BdiTrackFitValid": {
+      "range": [
+        0.5,
+        1.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "BdiTrackFitValid",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bsize": {
+      "range": [
+        -0.5750000000000002,
+        65.575
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "Bsize",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "CentBin": {
+      "range": [
+        -0.5,
+        0.5
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "CentBin",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "PVnchi2": {
+      "range": [
+        0.0,
+        1.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "PVnchi2",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "PVx": {
+      "range": [
+        -0.1,
+        0.1
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "PVx",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "PVxE": {
+      "range": [
+        -0.003269269316660939,
+        0.15091733632652904
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "PVxE",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "PVy": {
+      "range": [
+        -0.1,
+        0.1
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "PVy",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "PVyE": {
+      "range": [
+        -0.007924162373092259,
+        0.3427542526311299
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "PVyE",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "PVz": {
+      "range": [
+        -25.0,
+        25.0
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "PVz",
+      "range_source": "existing aux.h",
+      "log_y": false
+    },
+    "PVzE": {
+      "range": [
+        -0.023746914512594232,
+        0.9990852476825239
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "PVzE",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "nChargedTracks": {
+      "range": [
+        -4.989016497135163,
+        250.33583112955094
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "nChargedTracks",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "nChargedTracks_LOOSE": {
+      "range": [
+        -4.187808001041413,
+        261.95234724283216
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "nChargedTracks_LOOSE",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "nChargedTracks_TIGHT": {
+      "range": [
+        -4.557752096652985,
+        235.93443962335587
+      ],
+      "bins": 15,
+      "absolute_display": false,
+      "title": "nChargedTracks_TIGHT",
+      "range_source": "full finite support",
+      "log_y": false
+    },
+    "Bgen": {
+      "bins": 15,
+      "range": [
+        22891.325,
+        41441.675
+      ],
+      "absolute_display": false,
+      "title": "Bgen",
+      "origin": "MC finite support"
+    },
+    "Bmass": {
+      "bins": 100,
+      "range": [
+        5.0,
+        6.0
+      ],
+      "absolute_display": false,
+      "title": "m(J/#psi K#pi) [GeV/c^{2}]",
+      "origin": "accepted Bmass 5-6 display"
+    },
+    "pThatreweight": {
+      "bins": 15,
+      "range": [
+        -7.118613409545508,
+        300.8666539697191
+      ],
+      "absolute_display": false,
+      "title": "pThatreweight",
+      "origin": "MC finite support"
+    },
+    "pThats": {
+      "bins": 15,
+      "range": [
+        3.875,
+        51.125
+      ],
+      "absolute_display": false,
+      "title": "pThats",
+      "origin": "MC finite support"
+    },
+    "pthat": {
+      "bins": 15,
+      "range": [
+        -6.76705894470215,
+        488.32420310974123
+      ],
+      "absolute_display": false,
+      "title": "pthat",
+      "origin": "MC finite support"
+    }
+  }
+}

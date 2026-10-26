@@ -1,0 +1,44 @@
+{
+  "Bu": {
+    "Bmass": {
+      "range": [
+        5.0,
+        6.0
+      ],
+      "bins": 100,
+      "absolute_display": false,
+      "title": "m(J/#psi K^{+}) [GeV/c^{2}]",
+      "range_source": "user requested common range 5 < Bmass < 6",
+      "log_y": false,
+      "display_expression": "Bmass > 5 && Bmass < 6"
+    }
+  },
+  "Bs": {
+    "Bmass": {
+      "range": [
+        5.0,
+        6.0
+      ],
+      "bins": 100,
+      "absolute_display": false,
+      "title": "m(J/#psi K^{+}K^{-}) [GeV/c^{2}]",
+      "range_source": "user requested common range 5 < Bmass < 6",
+      "log_y": false,
+      "display_expression": "Bmass > 5 && Bmass < 6"
+    }
+  },
+  "Bd": {
+    "Bmass": {
+      "range": [
+        5.0,
+        6.0
+      ],
+      "bins": 100,
+      "absolute_display": false,
+      "title": "m(J/#psi K#pi) [GeV/c^{2}]",
+      "range_source": "user requested common range 5 < Bmass < 6",
+      "log_y": false,
+      "display_expression": "Bmass > 5 && Bmass < 6"
+    }
+  }
+}

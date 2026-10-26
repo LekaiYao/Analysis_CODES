@@ -1,0 +1,27 @@
+{
+  "description": "Frozen input configuration extracted without changing variables, bins, ranges or order. Scientific outputs remain local.",
+  "files": [
+    {
+      "source": "plotER/results/Variables_ppRef/metadata/variables.json",
+      "destination": "plotER/configs/b_inputs/ppref_variables.json",
+      "sha256": "0e4a5369766cb5da716ea643765232430c7134251fca0dd693d25f7d36e4e5d0"
+    },
+    {
+      "source": "plotER/results/Bmass_ppRef/metadata/variables.json",
+      "destination": "plotER/configs/b_inputs/ppref_mass.json",
+      "sha256": "bbea5df5945fcf2d496dba185ec1a0879cc03c6044cca7a2a9222c89b36b5336"
+    },
+    {
+      "source": "plotER/results/Bvar_pb23_MC/metadata/variables.json",
+      "destination": "plotER/configs/b_inputs/pb23_mc_variables.json",
+      "sha256": "c6c02ebbcf555f5919b60255f1ed4522c1928b566c874a43a22678d440b7c2f0"
+    },
+    {
+      "source": "plotER/results/Variables_ppRef/metadata/provenance.json",
+      "destination": "plotER/configs/b_inputs/variable_order.json",
+      "projection": "channels[channel].variables",
+      "source_sha256": "aae4d96a9866f97f4e11ec7ff8ddc8a5ab4c428cf007fd67feb885d758df914c"
+    }
+  ],
+  "ML_inventory_sha256": "cfba30f234d23e13c4620b02b2589a0038d1dbb478f629da634923203f0ded02"
+}
