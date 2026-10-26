@@ -14,16 +14,54 @@ def selection_expression(expression):
             return ast.copy_location(result, node)
     tree = ast.parse(expression.replace('&&', ' and ').replace('||', ' or '), mode='eval')
     return ast.unparse(ast.fix_missing_locations(BooleanArray().visit(tree)))
-def load_training(repo, tag):
-    base = repo.parent/'XGBoost/output/selected'/tag
+def resolve_selected_dir(repo, tag):
+    """Read ML's authoritative owner registry; never pick a glob's first match.
+
+    The 2026-09-20 single-year delivery explicitly defines this path interface.
+    Read the literal registry without importing/executing upstream Python code.
+    """
+    if not re.fullmatch(r'[A-Za-z0-9_]+', tag):
+        raise ValueError('Invalid training tag: '+tag)
+    ml = repo.parent/'XGBoost'
+    registry = ml/'configs/feature_selection.py'
+    owner = None
+    if registry.exists():
+        assignments = [n for n in ast.parse(registry.read_text()).body
+                       if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'FEATURE_SELECTION_EXPERIMENTS' for t in n.targets)]
+        if len(assignments) != 1:
+            raise ValueError('Unsupported ML owner registry format')
+        experiments = ast.literal_eval(assignments[0].value)
+        owners = [name for name, cfg in experiments.items()
+                  if any(item['train_tag'] == tag for item in cfg['candidates'])]
+        if len(owners) > 1:
+            raise ValueError(f'Ambiguous ML owner for {tag}: {owners}')
+        if owners:
+            owner = owners[0]; cfg = experiments[owner]
+            tags = [item['train_tag'] for item in cfg['candidates']]
+            if len(tags) != len(set(tags)) or cfg['baseline'] in tags:
+                raise ValueError('Invalid duplicate/baseline candidates in '+owner)
+            varsets = re.findall(r'_(\d+v\d+)_', cfg['baseline'])
+            if len(varsets) != 1 or cfg['operation'] not in ('add1', 'drop1') or owner != f"fs_{varsets[0]}_{cfg['operation']}_{cfg['baseline']}":
+                raise ValueError('Invalid ML owner directory: '+owner)
+    root = ml/'output/selected'
+    base = root/owner/tag if owner else root/tag
+    if owner and (root/tag).exists():
+        raise ValueError(f'Ambiguous legacy and registered selected directories for {tag}')
+    if not base.is_dir():
+        raise FileNotFoundError(f'Missing or archived ML input for {tag}; expected owner path: {base}')
+    return base.resolve()
+
+def load_training(repo, tag, *, year="2023"):
+    base = resolve_selected_dir(repo, tag)
     tp = base/'cut_scan/thresholds.json'
     if not tp.exists(): tp = base/'cut_scan/weighted_signal_efficiency/thresholds.json'
     ts = json.loads(tp.read_text()); weight = ts['weight_branch']
     if isinstance(weight, list):
         assert len(weight)==1; weight=weight[0]
-    rec = dict(tag=tag, thresholds_file=str(tp), thresholds_sha256=sha(tp), weight=weight)
+    rec = dict(tag=tag, selected_dir=str(base), thresholds_file=str(tp), thresholds_sha256=sha(tp), weight=weight)
     mp=base/'fit_scan_manifest.pb23_pb24_simultaneous_mc_shape_nominal_v2.json'
     if mp.exists():
+        if str(year) != "2023": raise ValueError("Legacy paired-year manifest is PbPb23-only in this reader")
         manifest=json.loads(mp.read_text());cat=manifest['pairing']['categories']['pb23']
         assert cat['signal_mc']['event_weight_branch']==weight
         assert cat['threshold_provenance']['sha256']==sha(tp)
@@ -34,8 +72,10 @@ def load_training(repo, tag):
             if matches: assert matches[0]['categories']['pb23']['threshold']==point['score_threshold']
     else:
         bs=base/'batch_apply_summary.json';b=json.loads(bs.read_text())
-        assert str(b['input_datasets']['dataset_year'])=='2023'
-        rec.update(batch_apply_summary_sha256=sha(bs),selection=b['draw_selection']['fiducial_cut']['expression'])
+        assert str(b['input_datasets']['dataset_year'])==str(year), 'Dataset year mismatch'
+        rec.update(batch_apply_summary_sha256=sha(bs),selection=b.get('apply_selection', {}).get('expression', b['draw_selection']['fiducial_cut']['expression']))
+        assert rec['selection'] == b['draw_selection']['fiducial_cut']['expression'], 'Apply/draw fiducial mismatch'
+        rec['mc_apply_selection'] = b.get('apply_selection', {}).get('mc_expression', rec['selection'])
         specs={'data':{'path':'DATA_with_score.root','tree':'ntmix'},'mc':{'path':'MC_with_score.root','tree':'ntmix_X3872'}}
     rec['sources']={k:{'path':str((base/v['path']).resolve()),'tree':v['tree']} for k,v in specs.items()}
     return rec,ts['thresholds']
