@@ -17,6 +17,40 @@ def write(p,s):
  finally:
   if os.path.exists(name): os.unlink(name)
 def key(x):return (x[0]!=BASELINE,x[0],str(x[1]))
+COMBINED_HEADING = '## PbPb2018+2023 可选 combined fit'
+
+def combined_section():
+ doc=REPO/'docs/pb23_two_peak_results.md'
+ rows=[]
+ for path in sorted((REPO/'fitER/results/combined_fits').glob('**/fit_result.json')):
+  result=read(path)
+  if result.get('workflow_revision')!='pb18_pb23_two_peak_total_fraction_v1' or result.get('status')!='PASS':continue
+  manifest=read(path.parent/'manifest.json');cats=manifest['categories'];pars=result['fits']['full']['floating']
+  rows.append((path,result,manifest,cats,pars))
+ if not rows:return []
+ lines=['',COMBINED_HEADING,'','两年独立MC峰形、DATA均值和C2背景；各成分采用总yield与2023占比。条件检验固定首次拟合的形状、ψ总yield和全部年份fraction，仅X/背景总yield自由。','',
+        '| 2018 tag / 2023 tag | score18 / score23 | 总X yield（完整拟合） | f_X,2023 | 条件显著度 | 结果 |',
+        '|---|---|---:|---:|---:|---|']
+ for path,result,manifest,cats,pars in rows:
+  x=pars['x_total'];f=pars['x_fraction_2023'];z=result['conditional']['significance']
+  lines.append(f"| `{cats['2018']['tag']}` / `{cats['2023']['tag']}` | {cats['2018']['score']:.8g} / {cats['2023']['score']:.8g} | {x['value']:.2f} ± {x['error']:.2f} | {f['value']:.4f} ± {f['error']:.4f} | {z:.4f} | [DATA图册]({link(path.parent/'all_fits.pdf',doc)}) · [全部参数/审计]({link(path,doc)}) |")
+ return lines
+
+def update_combined_only():
+ """Update only the optional-method section; preserve existing single-year report text."""
+ import shutil,tempfile
+ doc=REPO/'docs/pb23_two_peak_results.md';old=doc.read_bytes();text=old.decode()
+ if text.count(COMBINED_HEADING)>1:raise ValueError('Duplicate combined report sections')
+ lines=combined_section()
+ if not lines:return
+ new=text.split(COMBINED_HEADING)[0].rstrip()+'\n'+'\n'.join(lines)+'\n'
+ if new==text:return
+ backup=Path(tempfile.mkdtemp(prefix='combined_report_backup_'))/doc.name
+ shutil.copy2(doc,backup)
+ if doc.read_bytes()!=old:raise RuntimeError('Report changed concurrently')
+ write(doc,new)
+ print('Updated combined section; previous report:',backup)
+
 def main():
  root=REPO/'fitER/results/ml_fits';wide_doc=REPO/'docs/pb23_wide_fit_results.md';two_doc=REPO/'docs/pb23_two_peak_results.md';scans=[];peaks=[]
  roots=[root,REPO/'fitER/results/archive/ml_fits']
@@ -107,6 +141,11 @@ def main():
    c=read(cp);s+=['',f"条件检验：q₀={c['q0']:.6f}，√q₀={c['Z_PL']:.6f}；质量{'PASS' if c['audit']['quality_pass'] else 'WARN'}。[条件拟合图]({link(p/'conditional/data_fit.pdf',two_doc)}) · [参数固定值与验收]({link(cp,two_doc)})。"]
  req=REPO/'docs/requests/4ML/open/fid6_10v9_psi2s_scored_mc.md'
  if req.exists() and not any(t=='X_pb23_v8_fid6_10v9_rw0_xgb_v1' and x['xeff']==15 for t,p,x in peaks):s+=['','## 待输入，尚无结果','',f"`X_pb23_v8_fid6_10v9_rw0_xgb_v1` / xeff15%：缺少同模型打分的ψ(2S) MC，未执行双峰或条件检验。[输入请求]({link(req,two_doc)})。"]
+ s+=combined_section()
  write(two_doc,'\n'.join(s)+'\n');write(REPO/'fitER/results/comparisons/pb23/two_peak_summary.json',json.dumps(summaries,indent=2)+'\n')
  print('Updated cumulative reports:',len(scans),'wide scans;',len(peaks),'two-peak points')
-if __name__=='__main__':main()
+if __name__=='__main__':
+ import sys
+ if sys.argv[1:]==['--combined-only']:update_combined_only()
+ elif len(sys.argv)==1:main()
+ else:raise SystemExit('Usage: update_fit_reports.py [--combined-only]')
