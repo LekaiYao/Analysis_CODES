@@ -1,0 +1,57 @@
+[
+  {
+    "original": "plotER/results/Variables_ppRef/metadata/finalize_ppref_b_display.py",
+    "archived_source": "scripts/history/Variables_ppRef/metadata/finalize_ppref_b_display.py",
+    "sha256": "53b925670079e7e4dad75e5dbaa44128ef0e265c70873d34cf9df2189a5e2395"
+  },
+  {
+    "original": "plotER/results/pb18_an_score/metadata/check_run2_fields.py",
+    "archived_source": "scripts/history/pb18_an_score/metadata/check_run2_fields.py",
+    "sha256": "1d7d241a99ef977ff987aa6cddff446e80429cde70a7422968ba84d48aab6211"
+  },
+  {
+    "original": "plotER/results/pb18_an_score/metadata/check_run2_score.py",
+    "archived_source": "scripts/history/pb18_an_score/metadata/check_run2_score.py",
+    "sha256": "5d01242eaa1fb62b18e44df78e4a73003003a77b9d6e7f11bfc3cdca554ecb09"
+  },
+  {
+    "original": "plotER/results/pb18_an_score/metadata/pb18_10mev.py",
+    "archived_source": "scripts/history/pb18_an_score/metadata/pb18_10mev.py",
+    "sha256": "38632cd755fba939cccf8d5d02bd5f573e3fa587c3b2725a530333c5ebd4476a"
+  },
+  {
+    "original": "plotER/results/pb18_an_score/metadata/plot_pb18_q013.py",
+    "archived_source": "scripts/history/pb18_an_score/metadata/plot_pb18_q013.py",
+    "sha256": "1f28b0fbee86814759cd6c342b805330052afeb4cff1dabfe35d8f2e91f8ff0c"
+  },
+  {
+    "original": "plotER/results/pb18_an_score/metadata/plot_pb18_qmumu.py",
+    "archived_source": "scripts/history/pb18_an_score/metadata/plot_pb18_qmumu.py",
+    "sha256": "10a9533cb1363c03538639c0081a121d6df808b0603ae34bb39fbc408fceb3c3"
+  },
+  {
+    "original": "plotER/results/pb18_an_score/metadata/plot_run2_an_score.py",
+    "archived_source": "scripts/history/pb18_an_score/metadata/plot_run2_an_score.py",
+    "sha256": "a4a5ffda4ee1b3282ccdb7fe35a755cf7f69e7695990c00a9ce1c5be0f3ea5af"
+  },
+  {
+    "original": "plotER/results/pb18_an_score/metadata/q_reconstruction/verify_run2_mumu.py",
+    "archived_source": "scripts/history/pb18_an_score/metadata/q_reconstruction/verify_run2_mumu.py",
+    "sha256": "8c121c53cd649359a0127b6a579c0395005ef3489e967f74c9f5e6203c822e00"
+  },
+  {
+    "original": "plotER/results/pb18_an_score/metadata/redraw_pb18_an_fiducial.py",
+    "archived_source": "scripts/history/pb18_an_score/metadata/redraw_pb18_an_fiducial.py",
+    "sha256": "0b79237c0ba7290b06318037e75c737d16c7177867c7c0709fa562d201c7a1d6"
+  },
+  {
+    "original": "plotER/results/prompt_x_pthat5/metadata/audit_pthat5_diagnostics.py",
+    "archived_source": "scripts/history/prompt_x_pthat5/metadata/audit_pthat5_diagnostics.py",
+    "sha256": "f2bd0225fb52b38c5446c5ed530e171112cd589b5404d2922944d72695fa035a"
+  },
+  {
+    "original": "plotER/results/prompt_x_pthat5/metadata/build_pb18_reco_source_map.py",
+    "archived_source": "scripts/history/prompt_x_pthat5/metadata/build_pb18_reco_source_map.py",
+    "sha256": "449a61fdfac9984ab284eba8e642c82f963859cda1f6905afe224aeea35869c7"
+  }
+]

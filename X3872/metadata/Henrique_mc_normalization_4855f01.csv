@@ -1,0 +1,44 @@
+# Per-candidate campaign weight: pThatreweight = xsec_pb * filter_eff / n_gen
+# Cross sections and filter efficiencies are from the corresponding production-request tables.
+# n_gen is the actual number of input events in the complete campaign, counted from Bfinder/ntGen before flattening selections.
+# B+ pThat4, prompt X->J/psi pi pi (without rho), and campaigns not present on EOS are intentionally omitted.
+system,tree,particle,promptness,pthat,path_pattern,xsec_pb,filter_eff,n_gen
+ppRef,ntmix,psi2s,prompt,5,PromptPsi2SToJPsiPiPi_pThat-5_,2.980e5,4.980e-1,495441
+ppRef,ntmix,psi2s,prompt,10,PromptPsi2SToJPsiPiPi_pThat-10_,3.571e4,5.380e-1,480327
+ppRef,ntmix,psi2s,prompt,15,PromptPsi2SToJPsiPiPi_pThat-15_,8.191e3,6.100e-1,520499
+ppRef,ntmix,psi2s,prompt,30,PromptPsi2SToJPsiPiPi_pThat-30_,5.566e2,6.640e-1,499452
+ppRef,ntmix,psi2s,prompt,50,PromptPsi2SToJPsiPiPi_pThat-50_,6.383e1,5.160e-1,511368
+ppRef,ntmix,psi2s,nonprompt,5,NonpromptPsi2SToJPsiPiPi_pThat-5_,2.271e7,5.160e-1,505723
+ppRef,ntmix,psi2s,nonprompt,10,NonpromptPsi2SToJPsiPiPi_pThat-10_,4.927e6,5.300e-1,497160
+ppRef,ntmix,psi2s,nonprompt,15,NonpromptPsi2SToJPsiPiPi_pThat-15_,1.348e6,6.600e-1,499251
+ppRef,ntmix,psi2s,nonprompt,30,NonpromptPsi2SToJPsiPiPi_pThat-30_,1.147e5,7.100e-1,504228
+ppRef,ntmix,psi2s,nonprompt,50,NonpromptPsi2SToJPsiPiPi_pThat-50_,1.481e4,7.900e-1,505515
+# These two private X(3872)->J/psi rho productions have their actual generated-event counts.
+ppRef,ntmix,x3872,prompt,10,MC_PRIVATE_prompt_X3872_to_Jpsi_Rho_phat10_Bfinder,1.099e5,6.200e-1,1268230
+ppRef,ntmix,x3872,nonprompt,5,MC_PRIVATE_nonprompt_X3872_to_Jpsi_Rho_phat5_Bfinder,2.532e7,3.000e-1,319543
+# PbPb23 official Psi(2S) and X(3872)->J/psi rho productions.
+PbPb23,ntmix,psi2s,prompt,5,PromptPsi2SToJPsiPiPi_pThat-5_,2.926e5,5.000e-1,470136
+PbPb23,ntmix,psi2s,prompt,10,PromptPsi2SToJPsiPiPi_pThat-10_,3.088e4,5.900e-1,491469
+PbPb23,ntmix,psi2s,prompt,15,PromptPsi2SToJPsiPiPi_pThat-15_,8.640e3,5.600e-1,497013
+PbPb23,ntmix,psi2s,prompt,30,PromptPsi2SToJPsiPiPi_pThat-30_,5.535e2,7.100e-1,500429
+PbPb23,ntmix,psi2s,prompt,50,PromptPsi2SToJPsiPiPi_pThat-50_,5.760e1,7.800e-1,487282
+PbPb23,ntmix,psi2s,nonprompt,5,NonpromptPsi2SToJPsiPiPi_pThat-5_,2.759e7,6.100e-1,489681
+PbPb23,ntmix,psi2s,nonprompt,10,NonpromptPsi2SToJPsiPiPi_pThat-10_,5.201e6,6.100e-1,487641
+PbPb23,ntmix,psi2s,nonprompt,15,NonpromptPsi2SToJPsiPiPi_pThat-15_,1.425e6,6.500e-1,483880
+PbPb23,ntmix,psi2s,nonprompt,30,NonpromptPsi2SToJPsiPiPi_pThat-30_,1.306e5,7.600e-1,507846
+PbPb23,ntmix,psi2s,nonprompt,50,NonpromptPsi2SToJPsiPiPi_pThat-50_,1.372e4,7.500e-1,497574
+PbPb23,ntmix,x3872,prompt,5,PromptX3872ToJPsiRho_pThat-5_,2.111e6,4.400e-1,502751
+PbPb23,ntmix,x3872,prompt,10,PromptX3872ToJPsiRho_pThat-10_,1.099e5,6.200e-1,508411
+PbPb23,ntmix,x3872,prompt,15,PromptX3872ToJPsiRho_pThat-15_,1.498e4,6.500e-1,507059
+PbPb23,ntmix,x3872,prompt,30,PromptX3872ToJPsiRho_pThat-30_,4.718e2,6.800e-1,506709
+PbPb23,ntmix,x3872,prompt,50,PromptX3872ToJPsiRho_pThat-50_,3.726e1,8.100e-1,510014
+PbPb23,ntmix,x3872,nonprompt,5,NonpromptX3872ToJPsiRho_pThat-5_,2.532e7,3.000e-1,495093
+PbPb23,ntmix,x3872,nonprompt,10,NonpromptX3872ToJPsiRho_pThat-10_,5.314e6,3.800e-1,510428
+PbPb23,ntmix,x3872,nonprompt,15,NonpromptX3872ToJPsiRho_pThat-15_,1.500e6,3.800e-1,512028
+PbPb23,ntmix,x3872,nonprompt,30,NonpromptX3872ToJPsiRho_pThat-30_,1.167e5,3.900e-1,511726
+PbPb23,ntmix,x3872,nonprompt,50,NonpromptX3872ToJPsiRho_pThat-50_,1.464e4,4.000e-1,518981
+ppRef,ntKp,bplus,inclusive,5,Bplus_to_JPsiK_pthat5/,1.588e10,3.400e-3,526691
+ppRef,ntKp,bplus,inclusive,10,Bplus_to_JPsiK_pthat10/,1.797e9,1.000e-2,504578
+ppRef,ntKp,bplus,inclusive,15,Bplus_to_JPsiK_pthat15/,4.412e8,1.300e-2,471548
+ppRef,ntKp,bplus,inclusive,30,Bplus_to_JPsiK_pthat30/,3.218e7,1.800e-2,512704
+ppRef,ntKp,bplus,inclusive,50,Bplus_to_JPsiK_pthat50/,3.908e6,2.300e-2,523004
